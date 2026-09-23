@@ -258,6 +258,10 @@ model EmailAccount {
   apiKeys                ApiKey[]
   classificationFeedback ClassificationFeedback[]
   mailSplits             MailSplit[]
+  categorizeCategories      CategorizeCategory[]
+  categorizeClassifications CategorizeClassification[]
+  categorizeDeadlineAlerts  CategorizeDeadlineAlert[]
+  categorizeNotifications   CategorizeNotification[]
 
   @@index([userId])
   @@index([lastSummaryEmailAt])
@@ -2744,3 +2748,132 @@ model ScimIdentityLink {
   @@unique([connectionId, externalId])
   @@index([userId])
 }
+
+// ==========================================
+// CategorAIze Core Models & Enums
+// ==========================================
+
+enum CategorizePriorityLevel {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CategorizeDeadlineStatus {
+  PENDING
+  NOTIFIED
+  COMPLETED
+  DISMISSED
+}
+
+enum CategorizeNotificationType {
+  URGENT_EMAIL
+  DEADLINE_APPROACHING
+  CLASSIFICATION_SUMMARY
+  SYSTEM
+}
+
+/// User-defined categories with customizable colors, icons, and AI classification prompts.
+model CategorizeCategory {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  name           String
+  description    String?
+  color          String? // Hex code or UI badge token
+  icon           String? // Icon identifier for UI display
+  aiInstructions String?  @db.Text // Guidance criteria for the AI classification prompt
+  priorityWeight Int      @default(1) // Priority multiplier/weight (1-5)
+  isDefault      Boolean  @default(false)
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  classifications CategorizeClassification[]
+
+  @@unique([emailAccountId, name])
+  @@index([emailAccountId])
+}
+
+/// AI-assisted classification metadata, priority score, reasoning, and email summaries.
+model CategorizeClassification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  threadId  String
+  messageId String
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   CategorizeCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  categoryName  String? // Historical snapshot of category name at classification time
+  confidence    Float                   @default(1.0) // AI confidence score (0.0 to 1.0)
+  priority      CategorizePriorityLevel @default(MEDIUM)
+  priorityScore Float                   @default(50.0) // Composite score (0 to 100)
+  urgency       Int                     @default(1) // Urgency rating (1 to 5)
+  importance    Int                     @default(1) // Importance rating (1 to 5)
+  aiReasoning   String?                 @db.Text // AI explanation for why this classification/priority was chosen
+  summary       String?                 @db.Text // AI-generated concise email summary
+
+  isReviewedByUser Boolean @default(false)
+  userCorrection   String?
+
+  @@unique([emailAccountId, threadId, messageId])
+  @@index([emailAccountId, priority])
+  @@index([emailAccountId, categoryId])
+  @@index([emailAccountId, createdAt])
+}
+
+/// Time-sensitive deadlines and action items detected by AI from emails.
+model CategorizeDeadlineAlert {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  threadId  String
+  messageId String
+
+  title       String
+  description String?                  @db.Text
+  dueDate     DateTime
+  priority    CategorizePriorityLevel  @default(HIGH)
+  status      CategorizeDeadlineStatus @default(PENDING)
+  notifiedAt  DateTime?
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  notifications CategorizeNotification[]
+
+  @@index([emailAccountId, status, dueDate])
+  @@index([emailAccountId, threadId])
+}
+
+/// In-app and push notification records for high-priority items and deadline reminders.
+model CategorizeNotification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  type    CategorizeNotificationType
+  title   String
+  message String                     @db.Text
+  read    Boolean                    @default(false)
+
+  threadId  String?
+  messageId String?
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  deadlineAlertId String?
+  deadlineAlert   CategorizeDeadlineAlert? @relation(fields: [deadlineAlertId], references: [id], onDelete: SetNull)
+
+  @@index([emailAccountId, read, createdAt])
+  @@index([emailAccountId, type])
+}
+
