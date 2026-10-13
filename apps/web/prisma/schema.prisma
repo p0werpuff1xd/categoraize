@@ -1,5 +1,6 @@
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 generator client {
@@ -7,7 +8,7 @@ generator client {
   output                 = "../generated/prisma"
   generatedFileExtension = "ts"
   importFileExtension    = "ts"
-  previewFeatures        = ["partialIndexes"]
+  previewFeatures        = ["partialIndexes", "postgresqlExtensions"]
 }
 
 // Account, User, Session, and VerificationToken based on: https://authjs.dev/reference/adapter/prisma
@@ -2926,6 +2927,9 @@ model CategorizeCategory {
   emailAccountId String
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
 
+  /// Rocchio centroid vector (384-dim MiniLM-L12-v2) — updated on user feedback via centroid adaptation
+  centroidEmbedding Unsupported("vector(384)")?  // pgvector: L2-normalised centroid in ℝ^384
+
   classifications CategorizeClassification[]
 
   @@unique([emailAccountId, name])
@@ -2958,6 +2962,12 @@ model CategorizeClassification {
 
   isReviewedByUser Boolean @default(false)
   userCorrection   String?
+
+  /// Dense email embedding from paraphrase-multilingual-MiniLM-L12-v2 (384-dim)
+  /// Used for cosine similarity search (<=>) via pgvector HNSW index
+  embedding        Unsupported("vector(384)")?  // pgvector: ℝ^384 — stored after FastAPI classification
+  detectedLang     String?  // e.g. "en", "tl", "taglish" from langdetect
+  actionDirective  String?  @db.Text  // Extracted imperative action item from email body
 
   @@unique([emailAccountId, threadId, messageId])
   @@index([emailAccountId, priority])
