@@ -6,6 +6,7 @@
       "env": [
         "VERCEL_ENV",
         "VERCEL_URL",
+        "VERCEL_REGION",
         "NODE_ENV",
         "SKIP_TYPE_CHECK",
         "INBOX_ZERO_ENV_FILE",
@@ -22,6 +23,11 @@
         "POSTGRES_PASSWORD",
         "POSTGRES_DATABASE",
         "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SECRET_KEY",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_JWT_SECRET",
         "NEXT_PUBLIC_SUPABASE_ANON_KEY",
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXTAUTH_SECRET",
@@ -141,6 +147,7 @@
         "UPSTASH_REDIS_TOKEN",
         "KV_REST_API_URL",
         "KV_REST_API_TOKEN",
+        "KV_REST_API_READ_ONLY_TOKEN",
         "KV_URL",
         "REDIS_URL",
         "QSTASH_TOKEN",
@@ -315,12 +322,20 @@
         "UNSUBSCRIBE_WORKER_URL",
         "UNSUBSCRIBE_WORKER_SECRET"
       ],
-      "outputs": [".next/**", "!.next/cache/**", "public/sw.js", "public/sw.js.map", "generated/mcp-app/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "public/sw.js",
+        "public/sw.js.map",
+        "generated/mcp-app/**"
+      ]
     },
     "build:ci": {
       "env": [
         "VERCEL_ENV",
         "VERCEL_URL",
+        "VERCEL_REGION",
         "NODE_ENV",
         "SKIP_TYPE_CHECK",
         "WEBHOOK_ALLOW_PRIVATE_IPS",
@@ -338,8 +353,16 @@
         "POSTGRES_PASSWORD",
         "POSTGRES_DATABASE",
         "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SECRET_KEY",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_JWT_SECRET",
         "NEXT_PUBLIC_SUPABASE_ANON_KEY",
         "NEXT_PUBLIC_SUPABASE_URL",
+        "KV_REST_API_URL",
+        "KV_REST_API_TOKEN",
+        "KV_REST_API_READ_ONLY_TOKEN",
         "AUTH_SECRET",
         "SCIM_CREDENTIAL_HASH_SECRET",
         "AUTH_ALLOWED_EMAILS",
@@ -469,7 +492,14 @@
         "UNSUBSCRIBE_WORKER_URL",
         "UNSUBSCRIBE_WORKER_SECRET"
       ],
-      "outputs": [".next/**", "!.next/cache/**", "public/sw.js", "public/sw.js.map", "generated/mcp-app/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "public/sw.js",
+        "public/sw.js.map",
+        "generated/mcp-app/**"
+      ]
     },
     "test": {
       "env": ["RUN_AI_TESTS"]

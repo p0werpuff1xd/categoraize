@@ -384,7 +384,7 @@ async function resolveProjectName(
   });
 
   if (p.isCancel(projectName)) cancelSetup();
-  return sanitizeProjectName(projectName);
+  return sanitizeProjectName(String(projectName));
 }
 
 async function resolveRegion(options: SetupVercelOptions): Promise<string> {
