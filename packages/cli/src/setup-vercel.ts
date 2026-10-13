@@ -135,6 +135,11 @@ export function buildVercelEnvValues(config: {
   return envValues;
 }
 
+function cancelSetup(): never {
+  p.cancel("Setup cancelled.");
+  process.exit(0);
+}
+
 export async function runVercelSetup(
   options: SetupVercelOptions,
 ): Promise<void> {
@@ -355,7 +360,7 @@ async function resolveProjectName(
   options: SetupVercelOptions,
   projectDir: string,
   linkedProject: boolean,
-) {
+): Promise<string> {
   if (linkedProject) {
     return sanitizeProjectName(
       options.project ||
@@ -382,7 +387,7 @@ async function resolveProjectName(
   return sanitizeProjectName(projectName);
 }
 
-async function resolveRegion(options: SetupVercelOptions) {
+async function resolveRegion(options: SetupVercelOptions): Promise<string> {
   if (options.region) return options.region;
   if (options.yes) return DEFAULT_VERCEL_REGION;
 
@@ -396,13 +401,13 @@ async function resolveRegion(options: SetupVercelOptions) {
   });
 
   if (p.isCancel(region)) cancelSetup();
-  return region;
+  return String(region);
 }
 
 async function resolveBaseUrl(
   options: SetupVercelOptions,
   projectName: string,
-) {
+): Promise<string> {
   if (options.baseUrl) return options.baseUrl;
 
   const defaultBaseUrl = `https://${projectName}.vercel.app`;
@@ -424,7 +429,7 @@ async function resolveBaseUrl(
   });
 
   if (p.isCancel(baseUrl)) cancelSetup();
-  return baseUrl;
+  return String(baseUrl);
 }
 
 async function resolveDeployPreference(options: SetupVercelOptions) {
@@ -463,10 +468,11 @@ async function promptEmailProviders(
 
   if (p.isCancel(providers)) cancelSetup();
 
-  const google = providers.includes("google")
+  const selectedProviders = providers as ("google" | "microsoft")[];
+  const google = selectedProviders.includes("google")
     ? await promptGoogleConfig(baseUrl)
     : {};
-  const microsoft = providers.includes("microsoft")
+  const microsoft = selectedProviders.includes("microsoft")
     ? await promptMicrosoftConfig(baseUrl)
     : {};
 
@@ -728,9 +734,4 @@ function readLinkedProjectName(projectDir: string) {
   } catch {
     return;
   }
-}
-
-function cancelSetup(): never {
-  p.cancel("Setup cancelled.");
-  process.exit(0);
 }
