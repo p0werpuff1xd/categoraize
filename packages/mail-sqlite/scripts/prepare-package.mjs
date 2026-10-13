@@ -1,6 +1,7 @@
 import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { rewriteRelativeImports } from "../../mail-core/scripts/rewrite-relative-imports.mjs";
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryDirectory = resolve(packageDirectory, "../..");
@@ -11,10 +12,13 @@ const packageJson = JSON.parse(
 
 const publishedExports = Object.fromEntries(
   Object.entries(packageJson.exports).map(([name, source]) => {
-    if (typeof source !== "string" || !source.startsWith("./src/")) {
+    if (
+      typeof source !== "string" ||
+      !(source.startsWith("./src/") || source.startsWith("./test-support/"))
+    ) {
       throw new Error(`Unsupported package export: ${name}`);
     }
-    const output = source.slice("./src/".length).replace(/\.ts$/u, "");
+    const output = source.replace(/^\.\//u, "").replace(/\.ts$/u, "");
     return [
       name,
       {
@@ -25,6 +29,8 @@ const publishedExports = Object.fromEntries(
     ];
   }),
 );
+
+await rewriteRelativeImports(outputDirectory);
 
 await Promise.all([
   copyFile(
@@ -49,7 +55,10 @@ await Promise.all([
         type: packageJson.type,
         sideEffects: packageJson.sideEffects,
         exports: publishedExports,
-        dependencies: packageJson.dependencies,
+        dependencies: publishDependencies(
+          packageJson.dependencies,
+          packageJson.version,
+        ),
         publishConfig: { access: "public" },
       },
       null,
@@ -57,3 +66,15 @@ await Promise.all([
     )}\n`,
   ),
 ]);
+
+function publishDependencies(dependencies, version) {
+  if (!dependencies) return;
+  return Object.fromEntries(
+    Object.entries(dependencies).map(([name, range]) => [
+      name,
+      typeof range === "string" && range.startsWith("workspace:")
+        ? version
+        : range,
+    ]),
+  );
+}

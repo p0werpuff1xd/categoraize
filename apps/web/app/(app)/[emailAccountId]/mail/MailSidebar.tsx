@@ -2,6 +2,7 @@
 
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
+import { getMailSidebarRowPresentation } from "@inboxzero/mail-ui/MailSidebarRow";
 import {
   ArchiveIcon,
   ArrowLeftIcon,
@@ -27,7 +28,7 @@ import {
   Users2Icon,
 } from "lucide-react";
 import type { MailboxLabelCount } from "@/utils/mail-engine/label-count-targets";
-import { Kbd } from "@/components/Kbd";
+import { Tooltip as ShortcutTooltip } from "@/components/Tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -36,12 +37,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getShortcutHint } from "@/lib/shortcuts/registry";
 import type { EmailLabel } from "@/providers/email-label-types";
 import { GmailLabel } from "@/utils/gmail/label";
 import { cn } from "@/utils";
 import type { OutlookFolder } from "@/utils/outlook/folders";
-import { OUTLOOK_INBOX_SECTIONS } from "@/utils/mail/outlook-inbox";
+import { OUTLOOK_INBOX_SECTIONS } from "@/utils/outlook/inbox-sections";
 import { getLabelTree, type SidebarLabel } from "./label-tree";
 import { splitLabelsByListVisibility } from "./label-visibility";
 import { getMailSidebarFolders } from "./outlook-folder-list";
@@ -260,16 +260,9 @@ export function MailSidebar({
         className,
       )}
     >
+      {/* Collapsed, the toggle moves beside the traffic lights (`MailTitlebarNav`). */}
       {collapsed ? (
-        <div
-          data-desktop-mac-titlebar-spacer
-          className="mb-2.5 flex shrink-0 justify-center"
-        >
-          <SidebarTrigger
-            name="left-sidebar"
-            className="text-muted-foreground"
-          />
-        </div>
+        <div data-desktop-mac-titlebar-spacer className="shrink-0" />
       ) : (
         <div className="mb-2.5 flex shrink-0 items-center gap-1">
           <Link
@@ -289,8 +282,11 @@ export function MailSidebar({
         </div>
       )}
 
-      {collapsed ? (
-        <RailTooltip label="Compose">
+      <ShortcutTooltip
+        shortcuts={[{ id: "compose", label: "Compose" }]}
+        side={collapsed ? "right" : "bottom"}
+      >
+        {collapsed ? (
           <Button
             variant="gradient"
             size="icon"
@@ -300,18 +296,17 @@ export function MailSidebar({
           >
             <PenLineIcon className="size-4" />
           </Button>
-        </RailTooltip>
-      ) : (
-        <Button
-          variant="gradient"
-          onClick={onCompose}
-          className="mb-3.5 w-full shrink-0 justify-start gap-2 rounded-xl px-3"
-        >
-          <PenLineIcon className="size-4 shrink-0" />
-          <span className="flex-1 text-left">Compose</span>
-          <Kbd variant="onColor">{getShortcutHint("compose")}</Kbd>
-        </Button>
-      )}
+        ) : (
+          <Button
+            variant="gradient"
+            onClick={onCompose}
+            className="mb-3.5 w-full shrink-0 justify-start gap-2 rounded-xl px-3"
+          >
+            <PenLineIcon className="size-4 shrink-0" />
+            Compose
+          </Button>
+        )}
+      </ShortcutTooltip>
 
       {/* The negative margin lets the scrollbar sit in the sidebar's own
           padding, so a platform-width bar can't crowd the unread counts. */}
@@ -752,43 +747,17 @@ function NavRow({
   nested?: boolean;
   collapsed?: boolean;
 }) {
-  const className = cn(
-    "flex items-center rounded-lg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-    collapsed
-      ? "relative mx-auto size-10 justify-center"
-      : "gap-2.5 px-2.5 py-1.5",
-    nested && "pl-7",
-    active
-      ? "bg-card font-medium text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(17,24,39,0.05)]"
-      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-  );
-  const content = collapsed ? (
-    <>
-      {icon}
-      {count !== null && (
-        // The rail has no room for a number, so unread mail shows as a dot.
-        <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary" />
-      )}
-      <span className="sr-only">{name}</span>
-    </>
-  ) : (
-    <>
-      {icon}
-      <span className="flex-1 truncate">{name}</span>
-      {count !== null && (
-        <span
-          className={cn(
-            "shrink-0 text-xs",
-            emphasizeCount
-              ? "rounded-full bg-primary/10 px-1.5 py-px font-medium text-primary"
-              : "text-sidebar-muted-foreground",
-          )}
-        >
-          {count}
-        </span>
-      )}
-    </>
-  );
+  const presentation = getMailSidebarRowPresentation({
+    active,
+    icon,
+    name,
+    count,
+    emphasizeCount,
+    nested,
+    collapsed,
+  });
+  const className = cn(presentation.className);
+  const content = presentation.content;
 
   const row = href ? (
     <Link
@@ -829,6 +798,29 @@ export function RailTooltip({
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+export function getMailCategories({
+  isGoogle,
+  isOutlook,
+}: {
+  isGoogle: boolean;
+  isOutlook: boolean;
+}): MailCategory[] {
+  if (isGoogle) return MAIL_CATEGORIES;
+  if (isOutlook) return OUTLOOK_INBOX_CATEGORIES;
+  return [];
+}
+
+export function getMailNavPath(target: MailNavTarget): `/${string}` {
+  switch (target.kind) {
+    case "label":
+      return `/mail?type=label&labelId=${encodeURIComponent(target.labelId)}`;
+    case "folder":
+      return `/mail?type=folder&folderId=${encodeURIComponent(target.folderId)}`;
+    case "type":
+      return `/mail?type=${encodeURIComponent(target.type)}`;
+  }
 }
 
 /**

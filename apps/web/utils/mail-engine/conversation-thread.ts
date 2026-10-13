@@ -1,4 +1,6 @@
 import type { MessageAttachmentDescriptor } from "@inboxzero/mail-core/messages";
+import type { MailClient } from "@inboxzero/mail-core/engine";
+import type { OperationStatus } from "@inboxzero/mail-core/operations";
 import type { ConversationView } from "@inboxzero/mail-core/ports/mail-store";
 import type { ThreadResponse } from "@/app/api/threads/[id]/route";
 import { messageLabelIds } from "@/utils/mail-engine/list-thread";
@@ -63,10 +65,81 @@ export function conversationMessageToParsed(
       from: message.metadata.from,
       to: message.metadata.to.join(", "),
       cc: message.metadata.cc.join(", ") || undefined,
+      bcc: message.metadata.bcc?.join(", ") || undefined,
       date,
       subject: message.metadata.subject,
     },
   };
+}
+
+export type OutgoingThreadMessage = {
+  operationId: string;
+  status: OperationStatus;
+  message: ParsedMessage;
+};
+
+/**
+ * Sends queued on this device, shaped like the messages they will become so the
+ * reader shows them in the conversation until the provider confirms them.
+ */
+export function conversationOutgoingMessages(
+  view: ConversationView,
+): OutgoingThreadMessage[] {
+  return (view.outgoing ?? []).map((outgoing) => ({
+    operationId: outgoing.operationId,
+    status: outgoing.status,
+    message: conversationMessageToParsed(view, {
+      key: {
+        accountId: view.key.accountId,
+        messageId: `outgoing:${outgoing.operationId}`,
+      },
+      metadata: outgoing.metadata,
+      content: {
+        status: "available",
+        html: outgoing.html,
+        text: null,
+        attachments: [],
+        isMeetingInvitation: false,
+      },
+      pendingOperationIds: [outgoing.operationId],
+    }),
+  }));
+}
+
+/** Which send each confirmed message came from, keyed by message id. */
+export function conversationSendOperationIds(view: ConversationView) {
+  return new Map(
+    view.messages.flatMap((message) =>
+      message.sendOperationId
+        ? [[message.key.messageId, message.sendOperationId] as const]
+        : [],
+    ),
+  );
+}
+
+export const CONVERSATION_PAGE_SIZE = 50;
+
+/**
+ * `requested` spans one observation so each snapshot doesn't re-request. A
+ * rejected or failed request is forgotten so the next snapshot retries it.
+ */
+export function requestMissingMessageContent(
+  client: Pick<MailClient, "ensureMessageContent">,
+  view: ConversationView,
+  requested: Set<string>,
+) {
+  for (const message of view.messages) {
+    const { messageId } = message.key;
+    if (message.content.status === "available") continue;
+    if (requested.has(messageId)) continue;
+    requested.add(messageId);
+    client
+      .ensureMessageContent(message.key)
+      .then((admission) => {
+        if (admission.status === "rejected") requested.delete(messageId);
+      })
+      .catch(() => requested.delete(messageId));
+  }
 }
 
 export function missingConversationBodyIds(view: ConversationView) {
@@ -97,12 +170,7 @@ function descriptorToInline(
     filename: attachment.filename,
     mimeType: attachment.mimeType,
     size: attachment.size,
-    headers: {
-      "content-description": "",
-      "content-id": "",
-      "content-transfer-encoding": "base64",
-      "content-type": attachment.mimeType,
-    },
+    headers: descriptorHeaders(attachment),
   };
 }
 
@@ -112,7 +180,7 @@ function descriptorHeaders(attachment: MessageAttachmentDescriptor) {
     "content-disposition": attachment.inline
       ? `inline; filename="${attachment.filename}"`
       : `attachment; filename="${attachment.filename}"`,
-    "content-id": "",
+    "content-id": attachment.contentId ?? "",
     "content-transfer-encoding": "base64",
     "content-type": attachment.mimeType,
   };

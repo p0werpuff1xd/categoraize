@@ -182,7 +182,8 @@ function stubClient(input: {
     };
   }
   return {
-    observeMailbox: () => handle(snapshot),
+    observeMailbox: () => handle(snapshot as never),
+    observeMailboxCounts: () => handle(snapshot as never),
     observeConversation: () => handle(snapshot as never),
     observeOperation: () => handle(snapshot as never),
     async submitMetadata(command) {
@@ -234,6 +235,7 @@ function stubClient(input: {
     async purgeAccount() {
       return { databaseEpoch: "e", sequence: 1 };
     },
+    async retainAccounts() {},
   };
 }
 

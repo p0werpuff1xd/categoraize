@@ -41,6 +41,7 @@ describe.skipIf(!hasElectronBinary())(
       expect(payload.url).toContain("renderer/index.html");
       expect(payload.url).not.toContain("getinboxzero.com");
       expect(payload.ready).toBe(true);
+      expect(payload.engine).toBe(true);
     }, 90_000);
 
     it.skipIf(!existsSync(packagedBin))(
@@ -72,13 +73,18 @@ async function launchLocalMailSmoke(binary: string, extraArgs: string[]) {
     ]),
   );
   const output = await runElectron(binary, extraArgs, userData);
-  await rm(userData, { recursive: true, force: true });
+  await rm(userData, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 200,
+  });
   const line = output
     .split("\n")
     .find((item) => item.startsWith("ELECTRON_PACKAGED_LOCAL_MAIL "));
   return JSON.parse(
     line?.slice("ELECTRON_PACKAGED_LOCAL_MAIL ".length) ?? "{}",
-  ) as { url?: string; ready?: boolean };
+  ) as { url?: string; ready?: boolean; engine?: boolean };
 }
 
 function runElectron(binary: string, extraArgs: string[], userData: string) {
@@ -102,11 +108,21 @@ function runElectron(binary: string, extraArgs: string[], userData: string) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      child.kill();
       if (ok) {
-        resolve(stdout);
+        // The smoke exits the app itself. Killing the xvfb-run wrapper early
+        // leaves Electron's helpers writing into the profile the caller deletes.
+        if (child.exitCode !== null || child.signalCode !== null) {
+          resolve(stdout);
+          return;
+        }
+        const fallback = setTimeout(() => child.kill(), 10_000);
+        child.once("exit", () => {
+          clearTimeout(fallback);
+          resolve(stdout);
+        });
         return;
       }
+      child.kill();
       reject(
         new Error(
           `electron packaged local mail exited ${code}\n${stdout}\n${stderr}`,

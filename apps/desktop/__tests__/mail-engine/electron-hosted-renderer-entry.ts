@@ -8,11 +8,15 @@ import {
   type IpcMainInvokeEvent,
 } from "electron";
 import { createDesktopMailOwner } from "../../src/mail-engine/owner";
+import { registerMailEnginePushIpc } from "../../src/mail-engine/push-ipc";
 import { createRoutedBackendPorts } from "../../src/mail-engine/backend";
 import { createOriginMailRequest } from "../../src/mail-engine/request";
 import { closeAndWipeDesktopMailbox } from "../../src/mail-engine/wipe";
 import type { MailHttpRequestFn } from "@inboxzero/mail-core/protocol/backend-adapter";
-import { changesRequestSchema } from "@inboxzero/mail-core/protocol/mail-http";
+import {
+  changesBatchRequestSchema,
+  changesRequestSchema,
+} from "@inboxzero/mail-core/protocol/mail-http";
 
 const PARTITION = "persist:inbox-zero";
 const PROOF = process.env.ELECTRON_PROOF ?? "search-archive";
@@ -43,6 +47,8 @@ const DRAFT_TO = process.env.ELECTRON_DRAFT_TO ?? "recipient@example.com";
 const DRAFT_BODY = process.env.ELECTRON_DRAFT_BODY ?? "A hosted desktop draft.";
 const HOSTED_IDLE_PROOF_TIMEOUT_MS = 90_000;
 const HOSTED_PROOF_POLL_MS = 500;
+// Idle catch-up proofs would otherwise wait out the 60s production interval.
+const HOSTED_IDLE_CATCH_UP_INTERVAL_MS = 1000;
 
 if (process.env.ELECTRON_USER_DATA) {
   app.setPath("userData", process.env.ELECTRON_USER_DATA);
@@ -67,6 +73,7 @@ async function runHostedMail() {
   let owner: Awaited<ReturnType<typeof createDesktopMailOwner>> | undefined =
     await createDesktopMailOwner({
       databasePath: sqlitePath,
+      idleCatchUpIntervalMs: HOSTED_IDLE_CATCH_UP_INTERVAL_MS,
       ...createRoutedBackendPorts(
         wrapBlockedAuthRequest(createSessionRequest(appOrigin), authGate),
       ),
@@ -91,6 +98,7 @@ async function runHostedMail() {
       return owner.handleIpc(payload);
     },
   );
+  registerMailEnginePushIpc({ ipcMain, getOwner: () => owner });
   ipcMain.handle("mail-engine-wipe", async () => {
     const current = owner;
     owner = undefined;
@@ -321,7 +329,16 @@ async function proveSend(
   await delay(3000);
   await clickSend(window);
   await waitForComposeClosed(window);
-  const sendSucceeded = await waitForSendSucceeded(window);
+  // Once the server holds the send for its undo window, closing the page must
+  // not stop it. Leaving also keeps the idle page off the emulator's quota.
+  await waitForNativeSendStatus(owner, accountId, ["verifying", "succeeded"]);
+  const mailUrl = window.webContents.getURL();
+  await window.loadURL("about:blank");
+  const sendSucceeded = Boolean(
+    await waitForNativeSendStatus(owner, accountId, ["succeeded"]),
+  );
+  await window.loadURL(mailUrl);
+  await waitForConversations(window);
   await openDraftsMailbox(window);
   await waitForSubjectGone(window, SEND_SUBJECT);
   const nativeDraftsAfterSend = await waitForNativeRoleSubject(
@@ -822,6 +839,9 @@ async function proveReconnect(
   gate: BlockedAuthGate,
 ) {
   await waitForSubject(window, ARCHIVE_SUBJECT);
+  // Pushed snapshots show the subject before bootstrap finishes; only
+  // catch-up after the block should be counted.
+  await waitForCoverage(window);
   gate.enabled = true;
   await requestHostedSync(window);
   await waitForReconnectBanner(window);
@@ -901,6 +921,27 @@ function wrapBlockedAuthRequest(
     if (input.path.includes("/changes")) {
       if (gate.countCatchUp || gate.enabled) {
         gate.changes += 1;
+      }
+      if (
+        gate.resetOnce &&
+        !gate.resetFired &&
+        input.path.endsWith("/changes/batch")
+      ) {
+        const { reads } = changesBatchRequestSchema.parse(input.body);
+        gate.resetFired = true;
+        return {
+          status: 200,
+          json: {
+            protocolVersion: 1,
+            requestId: "hosted-electron-reset",
+            results: reads.map((read) => ({
+              protocolVersion: 1,
+              requestId: read.requestId,
+              status: "reset_required",
+              scopeId: read.position.streamId,
+            })),
+          },
+        };
       }
       if (gate.resetOnce && !gate.resetFired) {
         const { position } = changesRequestSchema.parse(input.body);
@@ -1650,12 +1691,11 @@ async function readBodyText(window: BrowserWindow) {
 async function openCompose(window: BrowserWindow) {
   const clicked = (await window.webContents.executeJavaScript(`
     (() => {
-      const button = [...document.querySelectorAll("button")].find((item) => {
-        if (item.getAttribute("aria-label") === "Compose") return true;
-        return [...item.querySelectorAll("span")].some(
-          (span) => span.textContent?.trim() === "Compose",
-        );
-      });
+      const button = [...document.querySelectorAll("button")].find(
+        (item) =>
+          item.getAttribute("aria-label") === "Compose" ||
+          item.textContent?.trim() === "Compose",
+      );
       if (!(button instanceof HTMLElement)) return false;
       button.click();
       return true;
@@ -2039,32 +2079,35 @@ async function waitForComposeClosed(window: BrowserWindow) {
   throw new Error("New Message dialog stayed open after send");
 }
 
-async function waitForSendSucceeded(window: BrowserWindow) {
-  for (let attempt = 0; attempt < 80; attempt += 1) {
-    const result = (await window.webContents.executeJavaScript(`
-      (async () => {
-        const inspect = window.__inboxZeroMailInspect;
-        if (!inspect?.read) return { status: "missing" };
-        const diagnostics = await inspect.read();
-        const send = diagnostics?.commands
-          ?.filter((command) => command.kind === "send")
-          .at(-1);
-        return send
-          ? { status: send.status, kind: send.kind }
-          : { status: "missing" };
-      })()
-    `)) as { status?: string };
-    if (result.status === "succeeded") return true;
+async function waitForNativeSendStatus(
+  owner: Awaited<ReturnType<typeof createDesktopMailOwner>>,
+  accountId: string,
+  statuses: string[],
+) {
+  // The send leaves once its 30-second undo window closes.
+  for (let attempt = 0; attempt < 160; attempt += 1) {
+    const response = (await owner.handleIpc({
+      protocolVersion: 1,
+      requestId: "hosted-send-status",
+      method: "getDiagnostics",
+      payload: { accountId },
+    })) as {
+      result?: { commands?: Array<{ kind: string; status: string }> };
+    };
+    const status = response.result?.commands
+      ?.filter((command) => command.kind === "send")
+      .at(-1)?.status;
+    if (status && statuses.includes(status)) return status;
     if (
-      result.status === "failed" ||
-      result.status === "cancelled" ||
-      result.status === "needs_attention"
+      status === "failed" ||
+      status === "cancelled" ||
+      status === "needs_attention"
     ) {
-      throw new Error(`hosted send ${result.status}`);
+      throw new Error(`hosted send ${status}`);
     }
     await delay(500);
   }
-  throw new Error("hosted send never reached succeeded");
+  throw new Error(`hosted send never reached ${statuses.join(" or ")}`);
 }
 
 async function waitForStarredReader(window: BrowserWindow) {

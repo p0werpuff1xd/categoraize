@@ -34,6 +34,73 @@ const inboxQuery = {
 };
 
 describe("sqlite mail store", () => {
+  it("drops inbox unread when a message leaves its inbox folder", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    const session = { accountId: "acc-1", generation: "g1" };
+    const leaving = messagePatch("m-left", "c-left", 1000, ["inbox"]);
+    leaving.fields.folderId = "AAMk-inbox-folder";
+    const staying = messagePatch("m-stay", "c-stay", 2000, ["inbox"]);
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "microsoft",
+      generation: "g1",
+    });
+    await store.applySyncPage({
+      ownerId: "owner",
+      page: {
+        session,
+        requestId: "seed",
+        from: {
+          streamId: "AAMk-inbox-folder",
+          generation: "g1",
+          checkpoint: null,
+        },
+        to: {
+          streamId: "AAMk-inbox-folder",
+          generation: "g1",
+          checkpoint: "1",
+        },
+        changes: [leaving, staying],
+        requiredHydration: [],
+        roundComplete: true,
+      },
+    });
+    await store.applySyncPage({
+      ownerId: "owner",
+      page: {
+        session,
+        requestId: "archive",
+        from: {
+          streamId: "AAMk-inbox-folder",
+          generation: "g1",
+          checkpoint: "1",
+        },
+        to: {
+          streamId: "AAMk-inbox-folder",
+          generation: "g1",
+          checkpoint: "2",
+        },
+        changes: [
+          {
+            kind: "removed_from_scope",
+            key: { accountId: "acc-1", messageId: "m-left" },
+            scopeId: "AAMk-inbox-folder",
+          },
+        ],
+        requiredHydration: [],
+        roundComplete: true,
+      },
+    });
+    const counts = await store.readMailboxCounts({
+      accountIds: ["acc-1"],
+      targets: [{ id: "INBOX", predicate: { kind: "role", role: "inbox" } }],
+    });
+    expect(counts.view.counts).toEqual([
+      { id: "INBOX", matchingConversations: 1, unreadConversations: 1 },
+    ]);
+    await store.close();
+  });
+
   it("keeps two inbox queries and counts aligned across archive, new mail, and reopen", async () => {
     const directory = await mkdtemp(join(tmpdir(), "mail-sqlite-"));
     const path = join(directory, "mailbox.sqlite");
@@ -268,6 +335,78 @@ describe("sqlite mail store", () => {
     await rm(directory, { recursive: true, force: true });
   });
 
+  it("keeps Cc and Bcc recipients on cached messages and filters on Cc", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    const withCc = messagePatch("m1", "c1", 1000, ["inbox"]);
+    await store.applySyncPage({
+      ownerId: "owner",
+      page: {
+        session: { accountId: "acc-1", generation: "g1" },
+        requestId: "cc",
+        from: { streamId: "primary", generation: "g1", checkpoint: null },
+        to: { streamId: "primary", generation: "g1", checkpoint: "1" },
+        changes: [
+          {
+            ...withCc,
+            fields: {
+              ...withCc.fields,
+              cc: ["copied@example.com"],
+              bcc: ["hidden@example.com"],
+            },
+          },
+          messagePatch("m2", "c2", 2000, ["inbox"]),
+        ],
+        requiredHydration: [],
+        roundComplete: true,
+      },
+    });
+
+    const conversation = await store.readConversation(
+      { accountId: "acc-1", conversationId: "c1" },
+      { pageSize: 10, after: null },
+    );
+    expect(conversation.view.messages[0]?.metadata).toMatchObject({
+      cc: ["copied@example.com"],
+      bcc: ["hidden@example.com"],
+    });
+
+    const ccMatches = await store.readMailboxView({
+      accountIds: ["acc-1"],
+      predicate: {
+        kind: "address",
+        field: "cc",
+        value: "copied@example.com",
+        match: "address",
+      },
+      order: "newest_first",
+      pageSize: 25,
+      after: null,
+    });
+    expect(
+      ccMatches.view.conversations.map((row) => row.key.conversationId),
+    ).toEqual(["c1"]);
+    await store.close();
+  });
+
+  it("backfills Cc recipients on cached messages when upgrading", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "mail-sqlite-"));
+    const path = join(directory, "mailbox.sqlite");
+    createLegacyMailboxWithoutExternalUrl(path);
+
+    const store = await createSqliteMailStore(createNodeSqliteDriver(path));
+    const inspection = await store.inspect({ accountIds: ["acc-1"] });
+    expect(inspection.messages[0]?.effective.cc).toEqual([
+      "copied@example.com",
+    ]);
+    await store.close();
+    await rm(directory, { recursive: true, force: true });
+  });
+
   it("rejects stale sync pages that do not start from the stored checkpoint", async () => {
     const store = await createSqliteMailStore(createNodeSqliteDriver());
     await store.ensureAccount({
@@ -409,6 +548,61 @@ describe("engine plus sqlite archive slice", () => {
     ).toMatchObject({
       fields: { roles: [] },
     });
+    await engine.close();
+  });
+
+  it("hides a removed label at once and restores it when the provider rejects", async () => {
+    const labelled = messagePatch("m1", "c1", 1000, ["inbox"]);
+    labelled.fields.labelIds = ["INBOX", "Label_project"];
+    const source = fixtureSource(new Map([["m1", labelled]]));
+    const executor: OperationExecutor = {
+      async execute() {
+        return { status: "rejected", code: "provider_error", targets: [] };
+      },
+      async inspect(input) {
+        return this.execute({ ...input, attemptId: "inspect" });
+      },
+    };
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    const engine = createMailEngine({
+      store,
+      source,
+      executor,
+      runtime: createHostRuntime(),
+    });
+    await engine.requestSync(["acc-1"]);
+    await engine.runUntil(Date.now() + 2000);
+    const labelIds = async () =>
+      (
+        await store.readConversation(
+          { accountId: "acc-1", conversationId: "c1" },
+          { after: null, pageSize: 10 },
+        )
+      ).view.messages[0]?.metadata.labelIds;
+    expect(await labelIds()).toContain("Label_project");
+
+    const admission = await engine.submitConversations({
+      accountId: "acc-1",
+      commandId: "remove-label",
+      conversations: [{ accountId: "acc-1", conversationId: "c1" }],
+      change: {
+        kind: "set_membership",
+        membership: "label",
+        id: "Label_project",
+        present: false,
+      },
+      observedRevision: (await store.readMailboxView(inboxQuery)).revision,
+    });
+    expect(admission.status).not.toBe("rejected");
+    expect(await labelIds()).not.toContain("Label_project");
+
+    await engine.runUntil(Date.now() + 2000);
+    expect(await labelIds()).toContain("Label_project");
     await engine.close();
   });
 
@@ -592,7 +786,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -621,7 +814,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi later",
         editableHtml: "<p>Later</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(conflict.status).toBe("conflict");
@@ -654,6 +846,46 @@ describe("drafts, freeze, and uncertain settlement", () => {
     await rm(directory, { recursive: true, force: true });
   });
 
+  it("sends from the draft's send-as address", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    const saved = await store.saveDraft({
+      key: { accountId: "acc-1", draftId: "d-alias" },
+      expectedRevision: null,
+      content: {
+        from: "Support <support@example.com>",
+        to: ["ada@example.com"],
+        cc: [],
+        bcc: [],
+        subject: "Hi",
+        editableHtml: "<p>Hi</p>",
+        quotedHtml: "",
+      },
+    });
+    if (saved.status !== "saved") throw new Error("expected save");
+    await store.admitSend({
+      commandId: "send-alias",
+      draft: { accountId: "acc-1", draftId: "d-alias" },
+      draftRevision: saved.draftRevision,
+      replyTo: null,
+    });
+    const work = await store.claimWork({
+      ownerId: "owner",
+      nowMs: Date.now(),
+      leaseMs: 30_000,
+    });
+    if (work?.kind !== "command") throw new Error("expected command");
+    expect(work.operation.intent).toMatchObject({
+      kind: "send",
+      from: "Support <support@example.com>",
+    });
+    await store.close();
+  });
+
   it("unfreezes a draft when a queued send is cancelled", async () => {
     const store = await createSqliteMailStore(createNodeSqliteDriver());
     await store.ensureAccount({
@@ -671,7 +903,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -695,7 +926,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Hi later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -715,7 +945,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi later",
         editableHtml: "<p>Later</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(edited.status).toBe("saved");
@@ -745,7 +974,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -785,7 +1013,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Hi later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -808,7 +1035,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi later",
         editableHtml: "<p>Later</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(edited.status).toBe("saved");
@@ -851,7 +1077,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -891,7 +1116,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi later",
         editableHtml: "<p>Later</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(edited.status).toBe("saved");
@@ -949,7 +1173,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Hi later still",
             editableHtml: "<p>Later still</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -982,7 +1205,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1023,7 +1245,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi later",
         editableHtml: "<p>Later</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(edited.status).toBe("saved");
@@ -1058,7 +1279,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Uncertain",
         editableHtml: "<p>Uncertain</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     const confirmedDraft = await store.saveDraft({
@@ -1071,7 +1291,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Confirmed",
         editableHtml: "<p>Confirmed</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(uncertainDraft.status).toBe("saved");
@@ -1145,7 +1364,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Uncertain later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -1162,7 +1380,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Confirmed later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -1203,7 +1420,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
         providerDraftId: "gmail-draft-1",
       },
     });
@@ -1247,7 +1463,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1315,7 +1530,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Hi later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -1340,7 +1554,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1416,7 +1629,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Hi later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -1478,7 +1690,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1563,7 +1774,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1627,7 +1837,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1712,7 +1921,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1811,7 +2019,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -1870,7 +2077,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
             subject: "Hi later",
             editableHtml: "<p>Later</p>",
             quotedHtml: "",
-            attachmentIds: [],
           },
         })
       ).status,
@@ -1895,7 +2101,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -2347,7 +2552,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Draft",
         editableHtml: "<p>Draft</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -2694,7 +2898,7 @@ describe("drafts, freeze, and uncertain settlement", () => {
     await store.close();
   });
 
-  it("holds a send until notBeforeMs and records the conversation on diagnostics", async () => {
+  it("hands an undo-window send to the server at once with its send time", async () => {
     const store = await createSqliteMailStore(createNodeSqliteDriver());
     await store.ensureAccount({
       accountId: "acc-1",
@@ -2711,12 +2915,12 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Hold",
         editableHtml: "<p>Hold</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
     if (saved.status !== "saved") throw new Error("expected save");
-    const notBeforeMs = Date.now() + 5000;
+    const nowMs = Date.now();
+    const notBeforeMs = nowMs + 30_000;
     const send = await store.admitSend({
       commandId: "send-hold",
       conversationId: "thread-hold",
@@ -2726,24 +2930,23 @@ describe("drafts, freeze, and uncertain settlement", () => {
       replyTo: null,
     });
     expect(send.status).toBe("queued");
-    expect(
-      await store.claimWork({
-        ownerId: "owner",
-        nowMs: notBeforeMs - 1,
-        leaseMs: 30_000,
-      }),
-    ).toBeNull();
     const work = await store.claimWork({
       ownerId: "owner",
-      nowMs: notBeforeMs,
+      nowMs,
       leaseMs: 30_000,
     });
     expect(work?.kind).toBe("command");
+    if (work?.kind !== "command") throw new Error("expected command");
+    expect(work.operation.intent).toMatchObject({
+      kind: "send",
+      sendAtMs: notBeforeMs,
+    });
     const replay = await store.admitSend({
       commandId: "send-hold",
       conversationId: "thread-hold",
       draft: { accountId: "acc-1", draftId: "d-hold" },
       draftRevision: saved.draftRevision,
+      notBeforeMs: notBeforeMs + 1000,
       replyTo: null,
     });
     expect(replay.status).toBe("already_recorded");
@@ -2753,6 +2956,114 @@ describe("drafts, freeze, and uncertain settlement", () => {
         (command) => command.operationId === "send-hold",
       )?.conversationIds,
     ).toEqual(["thread-hold"]);
+    await store.close();
+  });
+
+  it("cancels a held send only once the server has let it go", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    const saved = await store.saveDraft({
+      key: { accountId: "acc-1", draftId: "d-held" },
+      expectedRevision: null,
+      content: {
+        to: ["ada@example.com"],
+        cc: [],
+        bcc: [],
+        subject: "Held",
+        editableHtml: "<p>Held</p>",
+        quotedHtml: "",
+      },
+    });
+    if (saved.status !== "saved") throw new Error("expected save");
+    const nowMs = Date.now();
+    await store.admitSend({
+      commandId: "send-held",
+      conversationId: "thread-held",
+      draft: { accountId: "acc-1", draftId: "d-held" },
+      draftRevision: saved.draftRevision,
+      notBeforeMs: nowMs + 30_000,
+      replyTo: null,
+    });
+    const work = await store.claimWork({
+      ownerId: "owner",
+      nowMs,
+      leaseMs: 30_000,
+    });
+    if (work?.kind !== "command") throw new Error("expected command");
+    await store.settleAttempt({
+      attemptId: work.attemptId,
+      operation: work.operation,
+      result: { status: "accepted", receiptId: "r1", retryAfterMs: 30_000 },
+    });
+    const key = { accountId: "acc-1", operationId: "send-held" };
+
+    expect(await store.cancelOperation(key)).toEqual({ status: "too_late" });
+    expect((await store.readHeldSend(key))?.intent).toMatchObject({
+      kind: "send",
+      sendAtMs: nowMs + 30_000,
+    });
+
+    expect((await store.cancelHeldSend(key)).status).toBe("cancelled");
+    expect((await store.readOperation(key)).operation?.status).toBe(
+      "cancelled",
+    );
+    expect(await store.readHeldSend(key)).toBeNull();
+    const resaved = await store.saveDraft({
+      key: { accountId: "acc-1", draftId: "d-held" },
+      expectedRevision: saved.draftRevision,
+      content: {
+        to: ["ada@example.com"],
+        cc: [],
+        bcc: [],
+        subject: "Held",
+        editableHtml: "<p>Held, edited</p>",
+        quotedHtml: "",
+      },
+    });
+    expect(resaved.status).toBe("saved");
+    await store.close();
+  });
+
+  it("does not treat a send without a server hold as cancellable there", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    const saved = await store.saveDraft({
+      key: { accountId: "acc-1", draftId: "d-now" },
+      expectedRevision: null,
+      content: {
+        to: ["ada@example.com"],
+        cc: [],
+        bcc: [],
+        subject: "Now",
+        editableHtml: "<p>Now</p>",
+        quotedHtml: "",
+      },
+    });
+    if (saved.status !== "saved") throw new Error("expected save");
+    await store.admitSend({
+      commandId: "send-now",
+      conversationId: "thread-now",
+      draft: { accountId: "acc-1", draftId: "d-now" },
+      draftRevision: saved.draftRevision,
+      replyTo: null,
+    });
+    const work = await store.claimWork({
+      ownerId: "owner",
+      nowMs: Date.now(),
+      leaseMs: 30_000,
+    });
+    expect(work?.kind).toBe("command");
+    expect(
+      await store.readHeldSend({ accountId: "acc-1", operationId: "send-now" }),
+    ).toBeNull();
     await store.close();
   });
 
@@ -2773,7 +3084,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Re: Reply Workflow Message",
         editableHtml: "<p>Thursday works.</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -2801,7 +3111,7 @@ describe("drafts, freeze, and uncertain settlement", () => {
     await store.close();
   });
 
-  it("releases connectivity holds without clearing undo holds", async () => {
+  it("keeps connectivity holds on the device while undo holds go to the server", async () => {
     const store = await createSqliteMailStore(createNodeSqliteDriver());
     await store.ensureAccount({
       accountId: "acc-1",
@@ -2818,7 +3128,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Offline",
         editableHtml: "<p>Offline</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     const undoDraft = await store.saveDraft({
@@ -2831,7 +3140,6 @@ describe("drafts, freeze, and uncertain settlement", () => {
         subject: "Undo",
         editableHtml: "<p>Undo</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(offlineDraft.status).toBe("saved");
@@ -2859,11 +3167,18 @@ describe("drafts, freeze, and uncertain settlement", () => {
           conversationId: "thread-undo",
           draft: { accountId: "acc-1", draftId: "d-undo" },
           draftRevision: undoDraft.draftRevision,
-          notBeforeMs: nowMs + 5000,
+          notBeforeMs: nowMs + 30_000,
           replyTo: null,
         })
       ).status,
     ).toBe("queued");
+    const undo = await store.claimWork({
+      ownerId: "owner",
+      nowMs,
+      leaseMs: 30_000,
+    });
+    if (undo?.kind !== "command") throw new Error("expected command");
+    expect(undo.operation.key.operationId).toBe("send-undo");
     expect(
       await store.claimWork({
         ownerId: "owner",
@@ -2883,13 +3198,31 @@ describe("drafts, freeze, and uncertain settlement", () => {
     expect(work?.kind).toBe("command");
     if (work?.kind !== "command") throw new Error("expected command");
     expect(work.operation.key.operationId).toBe("send-offline");
+    expect(work.operation.intent).not.toHaveProperty("sendAtMs");
+    await store.close();
+  });
+
+  it("only bumps the revision when the connection state changes", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    const revision = async () =>
+      (await store.getDiagnostics("acc-1")).revision.sequence;
+    const initial = await revision();
     expect(
-      await store.claimWork({
-        ownerId: "owner",
-        nowMs: nowMs + 5000 - 1,
-        leaseMs: 30_000,
+      await store.recordConnection({ accountId: "acc-1", connection: "ready" }),
+    ).toBe(false);
+    expect(await revision()).toBe(initial);
+    expect(
+      await store.recordConnection({
+        accountId: "acc-1",
+        connection: "offline",
       }),
-    ).toBeNull();
+    ).toBe(true);
+    expect(await revision()).toBe(initial + 1);
     await store.close();
   });
 
@@ -2943,6 +3276,92 @@ describe("drafts, freeze, and uncertain settlement", () => {
       },
     });
     expect(delayed.status).toBe("stale");
+    await store.close();
+  });
+
+  it("applies a preparing conversation command to locally known messages", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    await store.applySyncPage({
+      ownerId: "owner",
+      page: {
+        session: { accountId: "acc-1", generation: "g1" },
+        requestId: "boot",
+        from: { streamId: "primary", generation: "g1", checkpoint: null },
+        to: { streamId: "primary", generation: "g1", checkpoint: "1" },
+        changes: [
+          messagePatch("m1", "c1", 2000, ["inbox"]),
+          messagePatch("m2", "c2", 1000, ["inbox"]),
+        ],
+        requiredHydration: [],
+        roundComplete: true,
+      },
+    });
+    const listed = async () =>
+      (await store.readMailboxView(inboxQuery)).view.conversations.map(
+        (conversation) => conversation.key.conversationId,
+      );
+    const admission = await store.admitConversations({
+      accountId: "acc-1",
+      commandId: "archive-c1",
+      conversations: [{ accountId: "acc-1", conversationId: "c1" }],
+      change: { kind: "archive" },
+      observedRevision: (await store.readMailboxView(inboxQuery)).revision,
+    });
+    expect(admission.status).toBe("preparing");
+    expect(await listed()).toEqual(["c2"]);
+
+    await store.cancelOperation({
+      accountId: "acc-1",
+      operationId: "archive-c1",
+    });
+    expect(await listed()).toEqual(["c1", "c2"]);
+    await store.close();
+  });
+
+  it("restores locally applied effects when conversation preparation fails", async () => {
+    const store = await createSqliteMailStore(createNodeSqliteDriver());
+    await store.ensureAccount({
+      accountId: "acc-1",
+      provider: "google",
+      generation: "g1",
+    });
+    await store.applySyncPage({
+      ownerId: "owner",
+      page: {
+        session: { accountId: "acc-1", generation: "g1" },
+        requestId: "boot",
+        from: { streamId: "primary", generation: "g1", checkpoint: null },
+        to: { streamId: "primary", generation: "g1", checkpoint: "1" },
+        changes: [messagePatch("m1", "c1", 1000, ["inbox"])],
+        requiredHydration: [],
+        roundComplete: true,
+      },
+    });
+    await store.admitConversations({
+      accountId: "acc-1",
+      commandId: "archive-c1",
+      conversations: [{ accountId: "acc-1", conversationId: "c1" }],
+      change: { kind: "archive" },
+      observedRevision: (await store.readMailboxView(inboxQuery)).revision,
+    });
+    const work = await claimPreparation(store, "archive-c1");
+    await store.failPreparation({
+      accountId: "acc-1",
+      commandId: "archive-c1",
+      attemptId: work.attemptId,
+      session: work.session,
+      code: "conversation_not_found",
+    });
+    expect(
+      (await store.readMailboxView(inboxQuery)).view.conversations.map(
+        (conversation) => conversation.key.conversationId,
+      ),
+    ).toEqual(["c1"]);
     await store.close();
   });
 
@@ -3574,7 +3993,7 @@ describe("per-target outcomes, dependencies, pagination, and stale hydration", (
     );
     expect(conversation.view.messages[0]?.content).toMatchObject({
       status: "available",
-      text: "current",
+      html: "<p>current</p>",
     });
     await store.close();
   });
@@ -3674,7 +4093,7 @@ describe("per-target outcomes, dependencies, pagination, and stale hydration", (
     expect(conversation.view.messages[0]?.content).toEqual({
       status: "available",
       html: "<p>First saved reply</p>",
-      text: "First saved reply",
+      text: null,
       attachments: [
         {
           attachmentId: "att-1",
@@ -3706,7 +4125,6 @@ describe("per-target outcomes, dependencies, pagination, and stale hydration", (
         subject: "Local",
         editableHtml: "<p>Local</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -3768,7 +4186,6 @@ describe("per-target outcomes, dependencies, pagination, and stale hydration", (
         subject: "Still local",
         editableHtml: "<p>Still local</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(later.status).toBe("saved");
@@ -4070,7 +4487,6 @@ describe("quota, retention, and recovery", () => {
         subject: "Hi",
         editableHtml: "<p>Hi</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(saved.status).toBe("saved");
@@ -4092,7 +4508,6 @@ describe("quota, retention, and recovery", () => {
         subject: "Hi later",
         editableHtml: "<p>Later</p>",
         quotedHtml: "",
-        attachmentIds: [],
       },
     });
     expect(edited.status).toBe("saved");
@@ -4130,7 +4545,8 @@ describe("sqlite scale smoke", () => {
     expect(view.view.conversations).toHaveLength(25);
     expect(elapsedMs).toBeLessThan(5000);
     await store.close();
-  });
+    // Seeding 10k messages is setup; the budget above covers the read.
+  }, 30_000);
 
   it.skipIf(process.env.SCALE_TESTS !== "1")(
     "lists and counts 100k conversations under the local query budget",
@@ -4224,6 +4640,187 @@ describe("sqlite scale smoke", () => {
     600_000,
   );
 });
+
+describe("outgoing sends in the conversation view", () => {
+  it("shows a queued reply in place of its draft until the sent message replaces it", async () => {
+    const store = await replyThreadStore("google");
+    await queueReply(store, ["draft-1"]);
+
+    const queued = await readThread(store);
+    expect(queued.messages.map((message) => message.key.messageId)).toEqual([
+      "m1",
+    ]);
+    expect(queued.outgoing).toEqual([
+      {
+        operationId: "send-1",
+        status: "queued",
+        html: "<p>Thanks, see you then</p><blockquote>Earlier</blockquote>",
+        metadata: expect.objectContaining({
+          subject: "Re: Plans",
+          to: ["ada@example.com"],
+          roles: ["sent"],
+          read: true,
+        }),
+      },
+    ]);
+
+    await confirmSend(store, "sent-1");
+
+    const sent = await readThread(store);
+    expect(sent.outgoing).toEqual([]);
+    expect(
+      sent.messages.map((message) => ({
+        id: message.key.messageId,
+        sendOperationId: message.sendOperationId,
+        content: message.content.status,
+      })),
+    ).toEqual([
+      { id: "m1", sendOperationId: undefined, content: "not_requested" },
+      { id: "sent-1", sendOperationId: "send-1", content: "available" },
+    ]);
+    await store.close();
+  });
+
+  it("keeps the sent message when the provider sends the draft message itself", async () => {
+    const store = await replyThreadStore("microsoft");
+    await queueReply(store, ["draft-1"]);
+
+    await confirmSend(store, "draft-1");
+
+    const sent = await readThread(store);
+    expect(sent.outgoing).toEqual([]);
+    expect(
+      sent.messages.map((message) => [
+        message.key.messageId,
+        message.metadata.roles,
+        message.sendOperationId,
+      ]),
+    ).toEqual([
+      ["m1", ["inbox"], undefined],
+      ["draft-1", ["sent"], "send-1"],
+    ]);
+    await store.close();
+  });
+
+  it("returns the draft to the conversation when the send is undone", async () => {
+    const store = await replyThreadStore("google");
+    await queueReply(store, ["draft-1"]);
+
+    await store.cancelOperation({ accountId: "acc-1", operationId: "send-1" });
+
+    const view = await readThread(store);
+    expect(view.outgoing).toEqual([]);
+    expect(view.messages.map((message) => message.key.messageId)).toEqual([
+      "m1",
+      "draft-1",
+    ]);
+    await store.close();
+  });
+
+  it("drops the outgoing message when the provider rejects the send", async () => {
+    const store = await replyThreadStore("google");
+    await queueReply(store, []);
+    const work = await store.claimWork({
+      ownerId: "owner",
+      nowMs: Date.now(),
+      leaseMs: 30_000,
+    });
+    if (work?.kind !== "command") throw new Error("expected command");
+
+    await store.settleAttempt({
+      attemptId: work.attemptId,
+      operation: work.operation,
+      result: { status: "rejected", code: "invalid_recipient", targets: [] },
+    });
+
+    expect((await readThread(store)).outgoing).toEqual([]);
+    await store.close();
+  });
+});
+
+async function replyThreadStore(provider: "google" | "microsoft") {
+  const store = await createSqliteMailStore(createNodeSqliteDriver());
+  await store.ensureAccount({ accountId: "acc-1", provider, generation: "g1" });
+  await store.applySyncPage({
+    ownerId: "owner",
+    page: {
+      session: { accountId: "acc-1", generation: "g1" },
+      requestId: "reply-thread",
+      from: { streamId: "inbox", generation: "g1", checkpoint: null },
+      to: { streamId: "inbox", generation: "g1", checkpoint: "1" },
+      changes: [
+        messagePatch("m1", "c1", 1000, ["inbox"], { provider }),
+        messagePatch("draft-1", "c1", 1500, ["draft"], { provider }),
+      ],
+      requiredHydration: [],
+      roundComplete: true,
+    },
+  });
+  return store;
+}
+
+async function queueReply(store: MailStore, providerDraftMessageIds: string[]) {
+  const saved = await store.saveDraft({
+    key: { accountId: "acc-1", draftId: "send-1" },
+    expectedRevision: null,
+    content: {
+      to: ["ada@example.com"],
+      cc: [],
+      bcc: [],
+      subject: "Re: Plans",
+      editableHtml: "<p>Thanks, see you then</p>",
+      quotedHtml: "<blockquote>Earlier</blockquote>",
+      conversationId: "c1",
+      ...(providerDraftMessageIds.length
+        ? { providerDraftId: "r-1", providerDraftMessageIds }
+        : {}),
+    },
+  });
+  if (saved.status !== "saved") throw new Error("expected save");
+  const admission = await store.admitSend({
+    commandId: "send-1",
+    conversationId: "c1",
+    draft: { accountId: "acc-1", draftId: "send-1" },
+    draftRevision: saved.draftRevision,
+    replyTo: { accountId: "acc-1", messageId: "m1" },
+  });
+  expect(admission.status).toBe("queued");
+}
+
+async function confirmSend(store: MailStore, sentMessageId: string) {
+  const work = await store.claimWork({
+    ownerId: "owner",
+    nowMs: Date.now(),
+    leaseMs: 30_000,
+  });
+  if (work?.kind !== "command") throw new Error("expected command");
+  await store.settleAttempt({
+    attemptId: work.attemptId,
+    operation: work.operation,
+    result: {
+      status: "confirmed",
+      receiptId: "receipt-1",
+      observations: [messagePatch(sentMessageId, "c1", 2000, ["sent"])],
+      bodies: [
+        {
+          key: { accountId: "acc-1", messageId: sentMessageId },
+          version: "1",
+          html: "<p>Thanks, see you then</p>",
+          text: null,
+        },
+      ],
+      targets: [],
+    },
+  });
+}
+
+async function readThread(store: MailStore) {
+  const { view } = await store.readConversation(
+    { accountId: "acc-1", conversationId: "c1" },
+    { pageSize: 10, after: null },
+  );
+  return view;
+}
 
 function messagePatch(
   messageId: string,
@@ -4363,7 +4960,7 @@ function createLegacyMailboxWithoutExternalUrl(path: string) {
         in_trash, in_spam, has_attachments, deleted
       ) VALUES (
         'acc-1', 'm1', 'c1', 'microsoft', '1', 'Legacy subject', 'Legacy preview',
-        'ada@example.com', '["me@example.com"]', '[]', 1000, 0, 0, 'inbox',
+        'ada@example.com', '["me@example.com"]', '["copied@example.com"]', 1000, 0, 0, 'inbox',
         '["INBOX"]', '[]', '["inbox"]', 1, 0, 0, 0, 0, 0, 0
       );
       INSERT INTO effective_messages(
@@ -4493,7 +5090,7 @@ function fixtureSource(messages: Map<string, ProviderChange>): MailboxSource {
         value: { changes: [], bodies: [], unresolved: [] },
       };
     },
-    async readConversationMembership({ conversation }) {
+    async readConversationMembership({ conversation, resolutionId }) {
       const keys = [...messages.values()]
         .filter(
           (
@@ -4509,7 +5106,7 @@ function fixtureSource(messages: Map<string, ProviderChange>): MailboxSource {
           status: "page",
           page: {
             conversation,
-            resolutionId: "res",
+            resolutionId,
             keys,
             changes: [],
             nextPage: null,

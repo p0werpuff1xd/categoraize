@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ConversationView } from "@inboxzero/mail-core/ports/mail-store";
 import type { MessageAttachmentDescriptor } from "@inboxzero/mail-core/messages";
-import { conversationViewToThreadResponse } from "./conversation-thread";
+import {
+  conversationViewToThreadResponse,
+  requestMissingMessageContent,
+} from "./conversation-thread";
 
 describe("conversationViewToThreadResponse", () => {
   it("projects engine messages onto the reader thread shape", () => {
@@ -69,6 +72,60 @@ describe("conversationViewToThreadResponse", () => {
         includeDrafts: true,
       }).thread.messages.map((item) => item.id),
     ).toEqual(["m-draft", "m-1"]);
+  });
+
+  it("preserves actual inline IDs through storage and reader projection without inventing IDs", () => {
+    const thread = conversationViewToThreadResponse(
+      view({
+        messages: [
+          message({
+            attachments: [
+              {
+                attachmentId: "gmail-part:0.1",
+                filename: "different-name.png",
+                mimeType: "image/png",
+                size: 4,
+                inline: true,
+                contentId: "logo@example.test",
+              },
+              {
+                attachmentId: "inline-missing",
+                filename: "not-a-cid.png",
+                mimeType: "image/png",
+                size: 4,
+                inline: true,
+                contentId: null,
+              },
+            ],
+          }),
+        ],
+      }),
+    );
+    expect(
+      thread.thread.messages[0].inline.map(
+        (attachment) => attachment.headers["content-id"],
+      ),
+    ).toEqual(["logo@example.test", ""]);
+  });
+});
+
+describe("requestMissingMessageContent", () => {
+  it("requests each missing body once and retries one the engine rejected", async () => {
+    const ensureMessageContent = vi
+      .fn()
+      .mockResolvedValueOnce({ status: "rejected", code: "queue_full" })
+      .mockResolvedValue({ status: "scheduled" });
+    const requested = new Set<string>();
+    const missing = view({
+      messages: [{ ...message(), content: { status: "not_requested" } }],
+    });
+
+    requestMissingMessageContent({ ensureMessageContent }, missing, requested);
+    await vi.waitFor(() => expect(requested.size).toBe(0));
+    requestMissingMessageContent({ ensureMessageContent }, missing, requested);
+    requestMissingMessageContent({ ensureMessageContent }, missing, requested);
+
+    expect(ensureMessageContent).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -1,12 +1,17 @@
-import type {
-  MessageAttachmentDescriptor,
-  MessageMetadata,
+import {
+  MAX_ATTACHMENT_CONTENT_ID_LENGTH,
+  MAX_RECIPIENTS,
+  type MessageAttachmentDescriptor,
+  type MessageMetadata,
 } from "@inboxzero/mail-core/messages";
 import type { Provider } from "@inboxzero/mail-core/identities";
-import type {
-  BodyObservation,
-  ProviderChange,
+import {
+  type BodyObservation,
+  MAX_BODY_ATTACHMENTS,
+  MAX_BODY_LENGTH,
+  type ProviderChange,
 } from "@inboxzero/mail-core/sync";
+import { splitRecipientList } from "@/utils/email";
 import type { ParsedMessage } from "@/utils/types";
 
 const ROLE_LABELS = {
@@ -19,6 +24,7 @@ const ROLE_LABELS = {
 
 export function parsedMessageMetadata(message: ParsedMessage): MessageMetadata {
   const labels = message.labelIds ?? [];
+  const archived = labels.includes("ARCHIVE");
   const roles = [
     ...new Set([
       ...labels.flatMap((label) => {
@@ -27,7 +33,7 @@ export function parsedMessageMetadata(message: ParsedMessage): MessageMetadata {
       }),
       ...rolesFromFolder(message.parentFolderId),
     ]),
-  ];
+  ].filter((role) => role !== "inbox" || !archived);
   const categoryIds = labels.filter((label) => label.startsWith("CATEGORY_"));
   const labelIds = labels.filter(
     (label) =>
@@ -44,6 +50,7 @@ export function parsedMessageMetadata(message: ParsedMessage): MessageMetadata {
     from: message.headers.from || "",
     to: splitAddresses(message.headers.to),
     cc: splitAddresses(message.headers.cc),
+    bcc: splitAddresses(message.headers.bcc),
     receivedAtMs: receivedAtMs(message),
     read: !labels.includes("UNREAD"),
     starred: labels.includes("STARRED"),
@@ -89,12 +96,14 @@ export function parsedMessageBodyObservation(
   ) {
     return null;
   }
+  // Protocol limits are enforced on every page, so one oversized message
+  // would otherwise fail its whole page on every retry and stall sync.
   return {
     key: { accountId, messageId: message.id },
     version: message.historyId || null,
-    html: message.textHtml ?? null,
-    text: message.textPlain ?? null,
-    attachments,
+    html: message.textHtml?.slice(0, MAX_BODY_LENGTH) ?? null,
+    text: message.textPlain?.slice(0, MAX_BODY_LENGTH) ?? null,
+    attachments: attachments.slice(0, MAX_BODY_ATTACHMENTS),
     isMeetingInvitation,
   };
 }
@@ -109,7 +118,10 @@ function parsedMessageAttachmentDescriptors(
     ...(message.inline ?? []).map((attachment) =>
       descriptorFromParsed(attachment, true),
     ),
-  ];
+  ].filter(
+    // A provider part without a native or authoritative MIME reference cannot be retrieved.
+    (descriptor) => Boolean(descriptor.attachmentId),
+  );
 }
 
 function descriptorFromParsed(
@@ -118,15 +130,23 @@ function descriptorFromParsed(
     filename: string;
     mimeType: string;
     size: number;
+    headers?: { "content-id"?: string };
   },
   inline: boolean,
 ): MessageAttachmentDescriptor {
+  const contentId = attachment.headers?.["content-id"]
+    ?.trim()
+    .replace(/^<|>$/g, "");
   return {
     attachmentId: attachment.attachmentId,
     filename: attachment.filename,
     mimeType: attachment.mimeType,
     size: Number.isFinite(attachment.size) ? attachment.size : 0,
     inline,
+    contentId:
+      contentId && contentId.length <= MAX_ATTACHMENT_CONTENT_ID_LENGTH
+        ? contentId
+        : null,
   };
 }
 
@@ -143,10 +163,7 @@ function receivedAtMs(message: ParsedMessage): number {
 
 function splitAddresses(value: string | undefined): string[] {
   if (!value) return [];
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
+  return splitRecipientList(value).slice(0, MAX_RECIPIENTS);
 }
 
 function rolesFromFolder(
@@ -154,7 +171,9 @@ function rolesFromFolder(
 ): Array<"inbox" | "sent" | "draft" | "trash" | "spam"> {
   if (!folderId) return [];
   const folder = folderId.toLowerCase();
-  if (folder.includes("inbox")) return ["inbox"];
+  // Folder ids are often opaque. A substring match treated archive folders
+  // whose id happened to contain "inbox" as the inbox itself.
+  if (folder === "inbox") return ["inbox"];
   if (folder.includes("sent")) return ["sent"];
   if (folder.includes("draft")) return ["draft"];
   if (folder.includes("deleted") || folder.includes("trash")) return ["trash"];

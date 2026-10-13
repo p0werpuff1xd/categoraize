@@ -22,12 +22,18 @@ export function applyMetadataChange(
 ): MessageMetadata {
   switch (change.kind) {
     case "archive":
-      return withRoles(metadata, withoutRole(metadata.roles, "inbox"));
+      return {
+        ...withRoles(metadata, withoutRole(metadata.roles, "inbox")),
+        snoozedUntilMs: null,
+      };
     case "unarchive":
-      return withRoles(
-        metadata,
-        uniqueRoles([...withoutRole(metadata.roles, "trash"), "inbox"]),
-      );
+      return {
+        ...withRoles(
+          metadata,
+          uniqueRoles([...withoutRole(metadata.roles, "trash"), "inbox"]),
+        ),
+        snoozedUntilMs: null,
+      };
     case "set_read":
       return { ...metadata, read: change.read };
     case "set_starred":
@@ -67,7 +73,10 @@ export function applyMetadataChange(
         ),
       };
     case "snooze":
-      return withRoles(metadata, withoutRole(metadata.roles, "inbox"));
+      return {
+        ...withRoles(metadata, withoutRole(metadata.roles, "inbox")),
+        snoozedUntilMs: change.untilMs,
+      };
     default: {
       const exhaustive: never = change;
       return exhaustive;
@@ -116,6 +125,7 @@ export function applyMetadataPatch(
     from: patch.from ?? current.from,
     to: patch.to ?? current.to,
     cc: patch.cc ?? current.cc,
+    bcc: patch.bcc ?? current.bcc,
     receivedAtMs: patch.receivedAtMs ?? current.receivedAtMs,
     read: patch.read ?? current.read,
     starred: patch.starred ?? current.starred,
@@ -128,6 +138,10 @@ export function applyMetadataPatch(
     categoryIds: patch.categoryIds ?? current.categoryIds,
     roles: patch.roles ?? current.roles,
     hasAttachments: patch.hasAttachments ?? current.hasAttachments,
+    snoozedUntilMs:
+      patch.snoozedUntilMs === undefined
+        ? current.snoozedUntilMs
+        : patch.snoozedUntilMs,
   };
 }
 

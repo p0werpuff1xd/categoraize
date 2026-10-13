@@ -20,6 +20,7 @@ import {
   requestSyncUnlessOffline,
   shouldReleaseDeferredOnStart,
   type BrowserEngineStart,
+  type WorkerObserveKind,
   type WorkerRequest,
   type WorkerResponse,
 } from "@/utils/mail-engine/worker-protocol";
@@ -57,8 +58,12 @@ async function createInTabEngine(
   input: BrowserEngineStart,
 ): Promise<BrowserMailEngine> {
   const driver = await createWasmSqliteDriver({ persist: input.persist });
+  const runtime = createHostRuntime({
+    storagePressure: browserStoragePressure,
+  });
   const store = await createSqliteMailStore(driver, {
     maxPendingOperations: input.maxPendingOperations,
+    runtime,
   });
   const ensureAccount: BrowserMailEngine["ensureAccount"] = async (account) => {
     await store.ensureAccount({
@@ -76,7 +81,7 @@ async function createInTabEngine(
     source: ports.source,
     executor: ports.executor,
     assistant: ports.assistant,
-    runtime: createHostRuntime({ storagePressure: browserStoragePressure }),
+    runtime,
     ownerId: "browser-owner",
   });
   if (shouldReleaseDeferredOnStart(input.online)) {
@@ -97,6 +102,8 @@ async function createInTabEngine(
   const originalRequestSync = engine.requestSync.bind(engine);
   return {
     ...engine,
+    // Local autocomplete stays off the UI thread if dedicated workers fail.
+    queryContactSuggestions: undefined,
     ensureAccount,
     requestSync: (accountIds) =>
       requestSyncUnlessOffline(pageConnectivityOnline(), () =>
@@ -157,7 +164,7 @@ async function createWorkerOwnedEngine(
   });
 
   function observe<T>(
-    kind: "mailbox" | "mailboxWindow" | "conversation" | "operation",
+    kind: WorkerObserveKind,
     args: unknown[],
   ): QueryHandle<T> & { handleId: string } {
     const handleId = crypto.randomUUID();
@@ -198,7 +205,10 @@ async function createWorkerOwnedEngine(
   }
 
   return {
+    queryContactSuggestions: (query) =>
+      callWorker(worker, pending, "queryContactSuggestions", [query]),
     observeMailbox: (query) => observe("mailbox", [query]),
+    observeMailboxCounts: (query) => observe("mailboxCounts", [query]),
     observeMailboxWindow: (query) => {
       const handle = observe<MailboxView>("mailboxWindow", [query]);
       return {
@@ -235,6 +245,8 @@ async function createWorkerOwnedEngine(
       callWorker(worker, pending, "getDiagnostics", [accountId]),
     purgeAccount: (accountId) =>
       callWorker(worker, pending, "purgeAccount", [accountId]),
+    retainAccounts: (accountIds) =>
+      callWorker<void>(worker, pending, "retainAccounts", [accountIds]),
     inspect: () => callWorker(worker, pending, "inspect", []),
     runUntil: (deadlineMs) =>
       callWorker(worker, pending, "runUntil", [deadlineMs]),

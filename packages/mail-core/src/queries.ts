@@ -6,6 +6,21 @@ import {
 } from "./identities";
 import { inboxSectionSchema, mailboxRoleSchema } from "./messages";
 
+export const MAX_MESSAGE_PREDICATE_IDS = 10_000;
+
+export const wellKnownMailboxSchema = z.enum([
+  "inbox",
+  "sent",
+  "drafts",
+  "archive",
+  "all",
+  "starred",
+  "trash",
+  "spam",
+  "snoozed",
+]);
+export type WellKnownMailbox = z.infer<typeof wellKnownMailboxSchema>;
+
 export const mailPredicateSchema: z.ZodType<MailPredicate> = z.lazy(() =>
   z.discriminatedUnion("kind", [
     z.object({
@@ -20,6 +35,10 @@ export const mailPredicateSchema: z.ZodType<MailPredicate> = z.lazy(() =>
     z.object({
       kind: z.literal("role"),
       role: z.enum(["inbox", "sent", "draft", "trash", "spam"]),
+    }),
+    z.object({
+      kind: z.literal("mailbox"),
+      mailbox: wellKnownMailboxSchema,
     }),
     z.object({ kind: z.literal("read"), value: z.boolean() }),
     z.object({ kind: z.literal("starred"), value: z.boolean() }),
@@ -46,6 +65,10 @@ export const mailPredicateSchema: z.ZodType<MailPredicate> = z.lazy(() =>
     }),
     z.object({ kind: z.literal("has_attachment"), value: z.boolean() }),
     z.object({
+      kind: z.literal("message"),
+      ids: z.array(z.string().min(1).max(512)).max(MAX_MESSAGE_PREDICATE_IDS),
+    }),
+    z.object({
       kind: z.literal("text"),
       field: z.enum(["any", "subject", "body"]),
       value: z.string().min(1).max(4096),
@@ -59,6 +82,7 @@ export type MailPredicate =
   | { kind: "any"; predicates: MailPredicate[] }
   | { kind: "not"; predicate: MailPredicate }
   | { kind: "role"; role: "inbox" | "sent" | "draft" | "trash" | "spam" }
+  | { kind: "mailbox"; mailbox: WellKnownMailbox }
   | { kind: "read"; value: boolean }
   | { kind: "starred"; value: boolean }
   | { kind: "inbox_section"; section: "focused" | "other" }
@@ -76,6 +100,7 @@ export type MailPredicate =
     }
   | { kind: "received"; afterMs: number | null; beforeMs: number | null }
   | { kind: "has_attachment"; value: boolean }
+  | { kind: "message"; ids: string[] }
   | {
       kind: "text";
       field: "any" | "subject" | "body";
@@ -131,6 +156,32 @@ export const mailboxViewSchema = z.object({
 });
 export type MailboxView = z.infer<typeof mailboxViewSchema>;
 
+export const MAX_MAILBOX_COUNT_TARGETS = 500;
+
+export const mailboxCountsQuerySchema = z.object({
+  accountIds: z.array(accountIdSchema).min(1).max(50),
+  targets: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(256),
+        predicate: mailPredicateSchema,
+      }),
+    )
+    .max(MAX_MAILBOX_COUNT_TARGETS),
+});
+export type MailboxCountsQuery = z.infer<typeof mailboxCountsQuerySchema>;
+
+export const mailboxCountsViewSchema = z.object({
+  counts: z.array(
+    z.object({
+      id: z.string(),
+      matchingConversations: z.number().int().nonnegative(),
+      unreadConversations: z.number().int().nonnegative(),
+    }),
+  ),
+});
+export type MailboxCountsView = z.infer<typeof mailboxCountsViewSchema>;
+
 export const querySnapshotSchema = z.object({
   status: z.enum(["loading", "ready", "unavailable", "error"]),
   revision: localRevisionSchema.nullable(),
@@ -166,3 +217,26 @@ export function canonicalizeQuery(query: ConversationQuery): string {
     after: query.after,
   });
 }
+
+export function canonicalizeCountsQuery(query: MailboxCountsQuery): string {
+  return JSON.stringify({
+    accountIds: [...query.accountIds].sort(),
+    targets: query.targets,
+  });
+}
+
+export function mailboxPredicate(mailbox: WellKnownMailbox): MailPredicate {
+  return { kind: "mailbox", mailbox };
+}
+
+export type ContactSuggestion = {
+  emailAddress: string;
+  name?: string;
+};
+
+export type ContactSuggestionQuery = {
+  accountId: string;
+  query: string;
+  ownAddresses: string[];
+  excludeEmails: string[];
+};

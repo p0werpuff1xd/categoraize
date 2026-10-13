@@ -1,10 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
-import { dirname, extname, join, resolve } from "node:path";
+import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const portableFiles = [
   "driver.ts",
+  "contact-suggestions.ts",
   "migrations.ts",
   "store.ts",
   "rows.ts",
@@ -13,6 +14,11 @@ const portableFiles = [
   "observations.ts",
   "drafts.ts",
   "maintenance.ts",
+  "capabilities.ts",
+  "mailbox-view-readers.ts",
+  "store-read-utils.ts",
+  "message-body-codec.ts",
+  "message-body-migration.ts",
 ];
 const forbidden = [
   /from\s+["']react/,
@@ -20,6 +26,8 @@ const forbidden = [
   /from\s+["']electron/,
   /from\s+["']better-sqlite3/,
   /from\s+["']@sqlite.org\/sqlite-wasm/,
+  /from\s+["']node:/,
+  /from\s+["']expo/,
 ];
 
 async function walk(directory) {
@@ -37,7 +45,7 @@ async function walk(directory) {
 }
 
 const files = (await walk(join(packageDirectory, "src"))).filter((file) =>
-  portableFiles.some((name) => file.endsWith(name)),
+  portableFiles.includes(basename(file)),
 );
 const violations = [];
 for (const file of files) {

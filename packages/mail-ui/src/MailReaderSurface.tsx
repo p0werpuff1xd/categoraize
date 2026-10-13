@@ -6,6 +6,7 @@ export type MailReaderToolbarButton = {
     | "expand_all"
     | "collapse_all"
     | "archive"
+    | "move_to_inbox"
     | "mark_read"
     | "mark_unread";
   ariaLabel: string;
@@ -23,6 +24,8 @@ export type MailReaderToolbarProps = {
   labelChips?: ReactNode[];
   onBackToInbox: () => void;
   onArchive: () => void;
+  /** Replaces Archive when the thread is already out of the inbox. */
+  onMoveToInbox?: () => void;
   onMarkRead: () => void;
   onMarkUnread: () => void;
   menu?: ReactNode;
@@ -46,6 +49,7 @@ export function MailReaderToolbar({
   labelChips = [],
   onBackToInbox,
   onArchive,
+  onMoveToInbox,
   onMarkRead,
   onMarkUnread,
   menu,
@@ -113,13 +117,23 @@ export function MailReaderToolbar({
               onClick: messageExpansion.onToggleAll,
             })
           : null}
-        {actionButton({
-          action: "archive",
-          ariaLabel: "Archive",
-          variant: "outline",
-          icon: icons?.archive,
-          onClick: onArchive,
-        })}
+        {actionButton(
+          onMoveToInbox
+            ? {
+                action: "move_to_inbox",
+                ariaLabel: "Move to inbox",
+                variant: "outline",
+                icon: icons?.move_to_inbox,
+                onClick: onMoveToInbox,
+              }
+            : {
+                action: "archive",
+                ariaLabel: "Archive",
+                variant: "outline",
+                icon: icons?.archive,
+                onClick: onArchive,
+              },
+        )}
         {actionButton({
           action: readAction,
           ariaLabel: readLabel,
@@ -143,14 +157,7 @@ export type MailReaderSurfaceProps = {
     hasMore: boolean;
     loadingMore: boolean;
     loadMore: () => unknown;
-    refreshing: boolean;
-    providerConfirmed: boolean;
   };
-  onRefresh: () => void;
-  renderRefreshButton?: (input: {
-    disabled: boolean;
-    onClick: () => void;
-  }) => ReactNode;
   renderLoadMoreButton?: (input: {
     disabled: boolean;
     loading: boolean;
@@ -165,12 +172,6 @@ export function MailReaderSurface({
   containerRef,
   sidePanel,
   localAvailability,
-  onRefresh,
-  renderRefreshButton = ({ disabled, onClick }) => (
-    <button disabled={disabled} onClick={onClick} type="button">
-      Refresh
-    </button>
-  ),
   renderLoadMoreButton = ({ disabled, loading, onClick }) => (
     <button disabled={disabled} onClick={onClick} type="button">
       {loading ? "Loading messages…" : "Load older messages"}
@@ -185,22 +186,6 @@ export function MailReaderSurface({
         data-testid="thread-reader"
       >
         <div className={readerMeasure({ layout })}>
-          {localAvailability && !localAvailability.providerConfirmed ? (
-            <div
-              className="mb-3 flex items-center justify-between gap-3 text-muted-foreground text-sm"
-              role="status"
-            >
-              <span>
-                {localAvailability.refreshing
-                  ? "Checking for more messages…"
-                  : "This conversation may be incomplete."}
-              </span>
-              {renderRefreshButton({
-                disabled: localAvailability.refreshing,
-                onClick: onRefresh,
-              })}
-            </div>
-          ) : null}
           {localAvailability?.hasMore
             ? renderLoadMoreButton({
                 disabled: localAvailability.loadingMore,

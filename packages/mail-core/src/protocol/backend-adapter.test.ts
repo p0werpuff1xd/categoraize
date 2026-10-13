@@ -31,6 +31,187 @@ describe("backend mailbox source", () => {
     });
   });
 
+  it.each([
+    {
+      name: "a session or provider auth failure",
+      status: 401,
+      json: { error: "Authorization required. Please grant permissions." },
+      expected: { status: "blocked_auth" },
+    },
+    {
+      name: "a platform rate limit",
+      status: 429,
+      json: { error: "Rate limited" },
+      expected: { status: "paused", reason: "throttled" },
+    },
+    {
+      name: "a server error outside the mail protocol",
+      status: 400,
+      json: { error: { issues: [] }, isKnownError: true },
+      expected: { status: "paused", reason: "unavailable" },
+    },
+    {
+      name: "a proxy error page",
+      status: 502,
+      json: null,
+      expected: { status: "paused", reason: "unavailable" },
+    },
+  ])("classifies $name instead of parsing it as a result", async ({
+    status,
+    json,
+    expected,
+  }) => {
+    const source = createBackendMailboxSource({
+      accountId: "acc-1",
+      request: async () => ({ status, json }),
+    });
+    const session = { accountId: "acc-1", generation: "g1" };
+    const signal = new AbortController().signal;
+
+    await expect(
+      source.discoverScopes({ session, requestId: "r1", page: null, signal }),
+    ).resolves.toMatchObject(expected);
+    await expect(
+      source.enumerate({
+        session,
+        requestId: "r1",
+        bootstrapId: "boot",
+        page: "page-1",
+        pageSize: 50,
+        signal,
+      }),
+    ).resolves.toMatchObject(expected);
+    await expect(
+      source.search({
+        session,
+        requestId: "r1",
+        predicate: {
+          kind: "text",
+          field: "any",
+          value: "invoice",
+          match: "term",
+        },
+        page: null,
+        pageSize: 50,
+        signal,
+      }),
+    ).resolves.toMatchObject(expected);
+  });
+
+  it("reads several streams in one batch request", async () => {
+    const paths: string[] = [];
+    const source = createBackendMailboxSource({
+      accountId: "acc-1",
+      request: async (input) => {
+        paths.push(input.path);
+        return {
+          status: 200,
+          json: {
+            protocolVersion: MAIL_PROTOCOL_VERSION,
+            requestId: "r1",
+            results: [
+              {
+                status: "reset_required",
+                protocolVersion: MAIL_PROTOCOL_VERSION,
+                requestId: "r1",
+                scopeId: "inbox",
+              },
+              {
+                status: "blocked_auth",
+                protocolVersion: MAIL_PROTOCOL_VERSION,
+                requestId: "r2",
+              },
+            ],
+          },
+        };
+      },
+    });
+
+    const results = await source.readChangesBatch(batchInput());
+
+    expect(paths).toEqual(["/api/mail/v1/accounts/acc-1/changes/batch"]);
+    expect(results).toMatchObject([
+      { status: "reset_required", scopeId: "inbox" },
+      { status: "blocked_auth" },
+    ]);
+  });
+
+  it("resets every stream when the server reports the batch position expired", async () => {
+    const source = createBackendMailboxSource({
+      accountId: "acc-1",
+      request: async () => ({
+        status: 410,
+        json: {
+          protocolVersion: MAIL_PROTOCOL_VERSION,
+          requestId: "r1",
+          error: { code: "expired_position", retryable: false },
+        },
+      }),
+    });
+
+    await expect(source.readChangesBatch(batchInput())).resolves.toEqual([
+      { status: "reset_required", scopeId: "inbox" },
+      { status: "reset_required", scopeId: "archive" },
+    ]);
+  });
+
+  it("falls back to one request per stream when the server has no batch route", async () => {
+    const paths: string[] = [];
+    const source = createBackendMailboxSource({
+      accountId: "acc-1",
+      request: async (input) => {
+        paths.push(input.path);
+        if (input.path.endsWith("/changes/batch")) {
+          return { status: 404, json: null };
+        }
+        return {
+          status: 409,
+          json: { status: "reset_required", scopeId: "primary" },
+        };
+      },
+    });
+
+    await source.readChangesBatch(batchInput());
+    await source.readChangesBatch(batchInput());
+
+    expect(paths).toEqual([
+      "/api/mail/v1/accounts/acc-1/changes/batch",
+      "/api/mail/v1/accounts/acc-1/changes",
+      "/api/mail/v1/accounts/acc-1/changes",
+      "/api/mail/v1/accounts/acc-1/changes",
+      "/api/mail/v1/accounts/acc-1/changes",
+    ]);
+  });
+
+  it("drops a search the server will never accept instead of retrying it", async () => {
+    const source = createBackendMailboxSource({
+      accountId: "acc-1",
+      request: async () => ({
+        status: 400,
+        json: {
+          protocolVersion: MAIL_PROTOCOL_VERSION,
+          requestId: "r1",
+          error: { code: "invalid", retryable: false },
+        },
+      }),
+    });
+    await expect(
+      source.search({
+        session: { accountId: "acc-1", generation: "g1" },
+        requestId: "r1",
+        predicate: {
+          kind: "text",
+          field: "any",
+          value: "invoice",
+          match: "term",
+        },
+        page: null,
+        pageSize: 50,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ status: "unsupported" });
+  });
+
   it("sends the protocol version on bootstrap", async () => {
     let body: unknown;
     const source = createBackendMailboxSource({
@@ -193,4 +374,65 @@ describe("backend operation executor", () => {
       receiptId: "receipt-1",
     });
   });
+
+  it("cancels a held send and treats an unreachable server as retryable", async () => {
+    const operation = {
+      key: { accountId: "acc-1", operationId: "send-1" },
+      session: { accountId: "acc-1", generation: "g1" },
+      authority: "backend" as const,
+      payloadHash: "hash",
+      intent: {
+        kind: "metadata" as const,
+        targets: [{ accountId: "acc-1", messageId: "m1" }],
+        change: { kind: "archive" as const },
+      },
+    };
+    const requests: Array<{ method: string; path: string }> = [];
+    const responding = createBackendOperationExecutor({
+      accountId: "acc-1",
+      request: async (input) => {
+        requests.push({ method: input.method, path: input.path });
+        return {
+          status: 200,
+          json: {
+            protocolVersion: MAIL_PROTOCOL_VERSION,
+            requestId: "cancel-send-1",
+            status: "too_late",
+          },
+        };
+      },
+    });
+    const offline = createBackendOperationExecutor({
+      accountId: "acc-1",
+      request: async () => {
+        throw new TypeError("Failed to fetch");
+      },
+    });
+    const signal = new AbortController().signal;
+
+    await expect(responding.cancel?.({ operation, signal })).resolves.toEqual({
+      status: "too_late",
+    });
+    expect(requests).toEqual([
+      {
+        method: "DELETE",
+        path: "/api/mail/v1/accounts/acc-1/operations/send-1",
+      },
+    ]);
+    await expect(offline.cancel?.({ operation, signal })).resolves.toEqual({
+      status: "unavailable",
+    });
+  });
 });
+
+function batchInput() {
+  return {
+    session: { accountId: "acc-1", generation: "g1" },
+    reads: ["inbox", "archive"].map((streamId, index) => ({
+      requestId: `r${index + 1}`,
+      position: { streamId, generation: "g1", checkpoint: "cursor" },
+    })),
+    pageSize: 50,
+    signal: new AbortController().signal,
+  };
+}

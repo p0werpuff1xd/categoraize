@@ -1,3 +1,4 @@
+import type { ProviderMailboxSearch } from "@/utils/email/types";
 import { CALENDAR_INVITATION_LIMITS } from "@/utils/calendar/invitations/constants";
 import { isSameCalendarInvitation } from "@/utils/calendar/invitations/content";
 import { escapeSearchValue } from "@/utils/outlook/search-escape";
@@ -11,22 +12,29 @@ import type { ParsedMessage, Attachment } from "@/utils/types";
 import type { OutlookClient } from "@/utils/outlook/client";
 import { OutlookLabel, WELL_KNOWN_FOLDERS } from "./constants";
 import { escapeODataString } from "@/utils/outlook/odata-escape";
-import { withMicrosoftGraphRetry } from "@/utils/microsoft/retry";
+import { withMicrosoftGraphRetry } from "@/utils/outlook/retry";
 import { formatEmailWithName } from "@/utils/email";
 import type { Logger } from "@/utils/logger";
 import { isOutlookThrottlingError } from "@/utils/error";
+import { isMicrosoftEmulationEnabled } from "@/utils/outlook/oauth";
 import { resolveMicrosoftGraphNextLink } from "@/utils/outlook/page-token";
 
 // Standard fields to select when fetching messages from Microsoft Graph API
 // internetMessageId is the RFC 5322 Message-ID header, needed for cross-provider email threading
 export const MESSAGE_LIST_SELECT_FIELDS =
   "id,conversationId,conversationIndex,internetMessageId,subject,bodyPreview,from,sender,toRecipients,ccRecipients,receivedDateTime,createdDateTime,isDraft,isRead,flag,categories,parentFolderId,hasAttachments,webLink,inferenceClassification";
-export const MESSAGE_SELECT_FIELDS = `${MESSAGE_LIST_SELECT_FIELDS},body,internetMessageHeaders`;
+export const MESSAGE_SELECT_FIELDS = `${MESSAGE_LIST_SELECT_FIELDS},bccRecipients,body,internetMessageHeaders`;
 
 // contentId belongs to fileAttachment, so selecting it without this type cast
 // makes Graph reject the entire attachment collection query.
 export const MESSAGE_EXPAND_ATTACHMENTS =
   "attachments($select=id,name,contentType,size,isInline,microsoft.graph.fileAttachment/contentId)";
+
+// Outlook keeps its own copy of the invitation on the user's calendar and links
+// the email to it. The calendar lookup needs that id to sync the RSVP. The type
+// cast scopes the expand to invitations, so plain messages are unaffected.
+const MESSAGE_EXPAND_LINKED_EVENT =
+  "microsoft.graph.eventMessage/event($select=id)";
 
 export async function getFolderIds(
   client: OutlookClient,
@@ -420,6 +428,8 @@ function splitOutlookQueryTerms(query: string) {
 
 type OutlookMetadataFilters = {
   isRead?: boolean;
+  starred?: boolean;
+  hasAttachment?: boolean;
   categoryNames: string[];
 };
 
@@ -427,6 +437,8 @@ function createOutlookMetadataFilters(options: {
   searchQuery?: string;
   readState?: "read" | "unread";
   categoryNames?: string[];
+  starred?: boolean;
+  hasAttachment?: boolean;
 }): {
   filters: OutlookMetadataFilters;
   odataFilters: string[];
@@ -437,7 +449,9 @@ function createOutlookMetadataFilters(options: {
   const queryReadState =
     hasRead === hasUnread ? undefined : hasRead ? "read" : "unread";
   const readState = options.readState ?? queryReadState;
-  const filters = {
+  const filters: OutlookMetadataFilters = {
+    starred: options.starred,
+    hasAttachment: options.hasAttachment,
     isRead:
       readState === "read" ? true : readState === "unread" ? false : undefined,
     categoryNames: [...new Set(options.categoryNames ?? [])],
@@ -459,6 +473,17 @@ function matchesOutlookMetadataFilters(
   ) {
     return false;
   }
+
+  if (
+    filters.starred !== undefined &&
+    (message.flag?.flagStatus === "flagged") !== filters.starred
+  )
+    return false;
+  if (
+    filters.hasAttachment !== undefined &&
+    Boolean(message.hasAttachments) !== filters.hasAttachment
+  )
+    return false;
 
   if (filters.categoryNames.length) {
     const messageCategories = new Set(message.categories ?? []);
@@ -484,6 +509,13 @@ function createOutlookMetadataODataFilters(filters: OutlookMetadataFilters) {
     odataFilters.push(`isRead eq ${filters.isRead}`);
   }
 
+  if (filters.starred !== undefined)
+    odataFilters.push(
+      `flag/flagStatus ${filters.starred ? "eq" : "ne"} 'flagged'`,
+    );
+  if (filters.hasAttachment !== undefined)
+    odataFilters.push(`hasAttachments eq ${filters.hasAttachment}`);
+
   for (const categoryName of filters.categoryNames) {
     odataFilters.push(
       `categories/any(category: category eq '${escapeODataString(categoryName)}')`,
@@ -505,6 +537,7 @@ export async function queryBatchMessages(
     readState?: "read" | "unread";
     categoryNames?: string[];
     includeDrafts?: boolean;
+    mailboxSearch?: ProviderMailboxSearch;
   },
   logger: Logger,
 ) {
@@ -527,17 +560,28 @@ export async function queryBatchMessages(
 
   const [folderIds, categoryMap] = await Promise.all([
     getFolderIds(client, logger, {
-      includeDrafts: Boolean(options.includeDrafts),
+      includeDrafts:
+        Boolean(options.includeDrafts) || folderId?.toLowerCase() === "drafts",
     }),
     getCategoryMap(client, logger),
   ]);
   const parseMessages = (messages: Message[]) =>
     convertMessages(messages, folderIds, categoryMap, options.includeDrafts);
+  // Messages carry the folder's opaque id, so a well-known name like "inbox" must be resolved before comparing.
+  const expectedParentFolderId = resolveFolderId(folderId, folderIds);
 
+  let readState = options.readState;
+  if (options.mailboxSearch?.read !== undefined) {
+    readState = options.mailboxSearch.read ? "read" : "unread";
+  }
   const metadataSearch = createOutlookMetadataFilters({
-    searchQuery,
-    readState: options.readState,
+    searchQuery: options.mailboxSearch ? undefined : searchQuery,
+    readState,
     categoryNames: options.categoryNames,
+    starred:
+      options.mailboxSearch?.starred ??
+      (options.mailboxSearch?.mailbox === "starred" ? true : undefined),
+    hasAttachment: options.mailboxSearch?.hasAttachment,
   });
 
   const nextLink = resolveMicrosoftGraphNextLink(pageToken);
@@ -549,7 +593,11 @@ export async function queryBatchMessages(
       );
 
     const filteredMessages = response.value.filter((message) => {
-      if (folderId && message.parentFolderId !== folderId) return false;
+      if (
+        expectedParentFolderId &&
+        message.parentFolderId !== expectedParentFolderId
+      )
+        return false;
       if (
         normalizedFromEmail &&
         !matchesOutlookSender(message, normalizedFromEmail)
@@ -558,16 +606,25 @@ export async function queryBatchMessages(
       }
       return matchesOutlookMetadataFilters(message, metadataSearch.filters);
     });
-    const messages = await parseMessages(filteredMessages);
+    const isSearchPage = new URL(
+      nextLink,
+      "https://graph.microsoft.com",
+    ).searchParams.has("$search");
+    const messages = await parseMessages(
+      isSearchPage
+        ? await normalizeOutlookSearchIds(client, filteredMessages, logger)
+        : filteredMessages,
+    );
 
     return { messages, nextPageToken: response["@odata.nextLink"] };
   }
 
-  const rawSearchQuery = stripStandaloneOutlookStateTerms(
-    searchQuery?.trim() || "",
-  ).trim();
-  const { sanitized: cleanedSearchQuery, wasSanitized } =
-    sanitizeOutlookSearchQuery(rawSearchQuery);
+  const rawSearchQuery = options.mailboxSearch
+    ? outlookMailboxText(options.mailboxSearch)
+    : stripStandaloneOutlookStateTerms(searchQuery?.trim() || "").trim();
+  const { sanitized: cleanedSearchQuery, wasSanitized } = options.mailboxSearch
+    ? { sanitized: rawSearchQuery, wasSanitized: false }
+    : sanitizeOutlookSearchQuery(rawSearchQuery);
   const effectiveSearchQuery = cleanedSearchQuery || undefined;
 
   logger.info("Building Outlook request", {
@@ -605,13 +662,21 @@ export async function queryBatchMessages(
       metadataFilters: metadataSearch.odataFilters,
     });
 
-    request = request.search(effectiveSearchQuery!);
+    request = request.search(
+      options.mailboxSearch
+        ? encodeURIComponent(effectiveSearchQuery!)
+        : effectiveSearchQuery!,
+    );
 
     const response: { value: Message[]; "@odata.nextLink"?: string } =
       await withMicrosoftGraphRetry(() => request.get(), logger);
 
     const filteredMessages = response.value.filter((message) => {
-      if (folderId && message.parentFolderId !== folderId) return false;
+      if (
+        expectedParentFolderId &&
+        message.parentFolderId !== expectedParentFolderId
+      )
+        return false;
       if (
         normalizedFromEmail &&
         !matchesOutlookSender(message, normalizedFromEmail)
@@ -620,7 +685,9 @@ export async function queryBatchMessages(
       }
       return matchesOutlookMetadataFilters(message, metadataSearch.filters);
     });
-    const messages = await parseMessages(filteredMessages);
+    const messages = await parseMessages(
+      await normalizeOutlookSearchIds(client, filteredMessages, logger),
+    );
 
     nextPageToken = response["@odata.nextLink"];
 
@@ -869,10 +936,14 @@ export async function getMessage(
   logger: Logger,
   options?: { includeCalendarContent?: boolean },
 ): Promise<ParsedMessage> {
-  const message = await withMicrosoftGraphRetry(
-    () => createMessageRequest(client, messageId).get(),
-    logger,
-  );
+  const message: Message & { event?: { id?: string } } =
+    await withMicrosoftGraphRetry(
+      () =>
+        createMessageRequest(client, messageId, {
+          includeLinkedCalendarEvent: options?.includeCalendarContent,
+        }).get(),
+      logger,
+    );
 
   const [folderIds, categoryMap] = await Promise.all([
     getFolderIds(client, logger, { includeDrafts: false }),
@@ -922,6 +993,7 @@ export async function getMessage(
         error,
       });
     }
+    if (parsed.isMeetingInvitation) parsed.calendarEventId = message.event?.id;
   }
   return parsed;
 }
@@ -985,12 +1057,20 @@ export function createMessagesRequest(
 /**
  * Helper to create a request for fetching a single message with standard fields selected.
  */
-export function createMessageRequest(client: OutlookClient, messageId: string) {
+export function createMessageRequest(
+  client: OutlookClient,
+  messageId: string,
+  options?: { includeLinkedCalendarEvent?: boolean },
+) {
   return client
     .getClient()
     .api(`/me/messages/${messageId}`)
     .select(MESSAGE_SELECT_FIELDS)
-    .expand(MESSAGE_EXPAND_ATTACHMENTS);
+    .expand(
+      options?.includeLinkedCalendarEvent
+        ? [MESSAGE_EXPAND_ATTACHMENTS, MESSAGE_EXPAND_LINKED_EVENT]
+        : MESSAGE_EXPAND_ATTACHMENTS,
+    );
 }
 
 /**
@@ -1068,6 +1148,7 @@ export function convertMessage(
         ) || "",
       to: formatRecipientsList(message.toRecipients) || "",
       cc: formatRecipientsList(message.ccRecipients),
+      bcc: formatRecipientsList(message.bccRecipients),
       subject: message.subject || "",
       date,
       // RFC 5322 Message-ID header, needed for cross-provider email threading (e.g., Outlook -> Gmail)
@@ -1135,9 +1216,7 @@ function convertInlineAttachments(
       const contentId =
         ("contentId" in attachment && typeof attachment.contentId === "string"
           ? attachment.contentId
-          : undefined) ||
-        attachment.name ||
-        "";
+          : undefined) || "";
 
       return {
         filename: attachment.name || "",
@@ -1172,4 +1251,74 @@ function getInternetHeader(message: Message, name: string) {
       (header) => header.name?.toLowerCase() === name,
     )?.value ?? undefined
   );
+}
+
+/** Maps a well-known folder name (`inbox`, `sentitems`, ...) to its id. Other ids pass through. */
+function resolveFolderId(
+  folderId: string | undefined,
+  folderIds: Record<string, string>,
+): string | undefined {
+  if (!folderId) return;
+  return folderIds[folderId.toLowerCase()] ?? folderId;
+}
+
+function outlookMailboxText(search: ProviderMailboxSearch): string {
+  if (!search.text) return "";
+  const terms =
+    search.text.match === "phrase"
+      ? [search.text.value]
+      : search.text.value.trim().split(/\s+/).filter(Boolean);
+  if (!terms.some((term) => term.trim())) return "";
+  const expression = terms
+    .map((term) => {
+      const literal = `"${escapeSearchValue(term)}"`;
+      return search.text?.field === "any"
+        ? literal
+        : `${search.text?.field}:${literal}`;
+    })
+    .join(" AND ");
+  return JSON.stringify(expression);
+}
+
+async function normalizeOutlookSearchIds(
+  client: OutlookClient,
+  messages: Message[],
+  logger: Logger,
+): Promise<Message[]> {
+  const inputIds = [
+    ...new Set(messages.flatMap((message) => (message.id ? [message.id] : []))),
+  ];
+  if (!inputIds.length) return messages;
+
+  // The emulator already uses stable IDs and does not implement Exchange ID translation.
+  if (isMicrosoftEmulationEnabled()) return messages;
+
+  // Graph's $search can return folder-dependent REST IDs despite the ImmutableId preference.
+  const response: { value: { sourceId: string; targetId?: string }[] } =
+    await withMicrosoftGraphRetry(
+      () =>
+        client.getClient().api("/me/translateExchangeIds").post({
+          inputIds,
+          sourceIdType: "restId",
+          targetIdType: "restImmutableEntryId",
+        }),
+      logger,
+    );
+  const ids = new Map(
+    response.value.map((item) => [item.sourceId, item.targetId]),
+  );
+  const unresolvedIds = inputIds.filter((id) => !ids.get(id));
+  if (unresolvedIds.length) {
+    logger.warn("Some Outlook search messages could not be resolved", {
+      unresolvedCount: unresolvedIds.length,
+      messageCount: messages.length,
+    });
+    logger.trace("Unresolved Outlook search message IDs", {
+      messageIds: unresolvedIds,
+    });
+  }
+  return messages.flatMap((message) => {
+    const id = message.id ? ids.get(message.id) : null;
+    return id ? [{ ...message, id }] : [];
+  });
 }

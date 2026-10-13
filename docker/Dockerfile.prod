@@ -4,7 +4,7 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 RUN apk add --no-cache openssl
-RUN npm install -g pnpm@11.0.9
+RUN npm install -g pnpm@11.19.0
 RUN pnpm config set store-dir /app/.pnpm-store
 
 # Docker build layers are non-interactive; let pnpm handle module purges without a TTY.
@@ -28,6 +28,7 @@ COPY packages/mail-sqlite/package.json packages/mail-sqlite/package.json
 COPY packages/mail-react/package.json packages/mail-react/package.json
 COPY packages/mail-ui/package.json packages/mail-ui/package.json
 COPY packages/image-proxy/package.json packages/image-proxy/package.json
+COPY packages/network/package.json packages/network/package.json
 COPY packages/loops/package.json packages/loops/package.json
 COPY packages/transactional-email/package.json packages/transactional-email/package.json
 COPY packages/scheduling/package.json packages/scheduling/package.json
@@ -74,6 +75,10 @@ ARG NEXT_PUBLIC_MEETING_BRIEFS_ENABLED="NEXT_PUBLIC_MEETING_BRIEFS_ENABLED_PLACE
 ENV NEXT_PUBLIC_MEETING_BRIEFS_ENABLED=${NEXT_PUBLIC_MEETING_BRIEFS_ENABLED}
 ARG NEXT_PUBLIC_INTEGRATIONS_ENABLED="NEXT_PUBLIC_INTEGRATIONS_ENABLED_PLACEHOLDER"
 ENV NEXT_PUBLIC_INTEGRATIONS_ENABLED=${NEXT_PUBLIC_INTEGRATIONS_ENABLED}
+ARG NEXT_PUBLIC_BOOKING_LINKS_ENABLED="NEXT_PUBLIC_BOOKING_LINKS_ENABLED_PLACEHOLDER"
+ENV NEXT_PUBLIC_BOOKING_LINKS_ENABLED=${NEXT_PUBLIC_BOOKING_LINKS_ENABLED}
+ARG NEXT_PUBLIC_SMART_FILING_ENABLED="NEXT_PUBLIC_SMART_FILING_ENABLED_PLACEHOLDER"
+ENV NEXT_PUBLIC_SMART_FILING_ENABLED=${NEXT_PUBLIC_SMART_FILING_ENABLED}
 ARG NEXT_PUBLIC_DIGEST_ENABLED="NEXT_PUBLIC_DIGEST_ENABLED_PLACEHOLDER"
 ENV NEXT_PUBLIC_DIGEST_ENABLED=${NEXT_PUBLIC_DIGEST_ENABLED}
 ARG NEXT_PUBLIC_WEBHOOK_ACTION_ENABLED="NEXT_PUBLIC_WEBHOOK_ACTION_ENABLED_PLACEHOLDER"
@@ -97,8 +102,8 @@ ENV GOOGLE_PUBSUB_VERIFICATION_TOKEN="dummy_pubsub_token_for_build"
 ENV DEFAULT_LLMS="anthropic:claude-sonnet-4-6"
 ENV INTERNAL_API_KEY="dummy_apikey_for_build_only"
 ENV API_KEY_SALT="dummy_salt_for_build_only"
-ENV UPSTASH_REDIS_URL="http://dummy-redis-for-build:6379"
-ENV UPSTASH_REDIS_TOKEN="dummy_redis_token_for_build"
+ENV REDIS_HTTP_URL="http://dummy-redis-for-build:6379"
+ENV REDIS_HTTP_TOKEN="dummy_redis_token_for_build"
 ENV REDIS_URL="redis://dummy:dummy@dummy:6379"
 ENV QSTASH_TOKEN="dummy_qstash_token_for_build"
 ENV QSTASH_CURRENT_SIGNING_KEY="dummy_qstash_curr_key_for_build"

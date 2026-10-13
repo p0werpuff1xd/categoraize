@@ -1,7 +1,8 @@
 import {
+  parseBooleanSearchValue,
   tokenizeSearchQuery,
   unquoteSearchValue,
-} from "@/utils/mail/tokenize-search-query";
+} from "@/utils/tokenize-search-query";
 import { escapeSearchValue } from "@/utils/outlook/search-escape";
 import type { WELL_KNOWN_FOLDERS } from "@/utils/outlook/constants";
 
@@ -36,7 +37,9 @@ const FOLDER_KEY_BY_IN_VALUE: Record<string, OutlookWellKnownFolder> = {
   drafts: "drafts",
   archive: "archive",
   junk: "junkemail",
+  spam: "junkemail",
   deleted: "deleteditems",
+  trash: "deleteditems",
 };
 
 const KQL_TEXT_FIELDS = new Set(["from", "to", "subject"]);
@@ -177,7 +180,7 @@ function toKqlTerm(parsed: OutlookSearchToken): string | null {
     return kqlValue ? `${field}:${kqlValue}` : null;
   }
 
-  if (field === "hasattachments" && /^(true|yes)$/i.test(value)) {
+  if (field === "hasattachments" && parseBooleanSearchValue(value) === true) {
     return "hasattachments:true";
   }
 

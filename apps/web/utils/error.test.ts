@@ -22,6 +22,7 @@ import {
   getActionErrorMessage,
   getUserFacingErrorMessage,
   isInsufficientCreditsError,
+  getAIApiCallError,
   isContentFilterRefusal,
   isHandledUserKeyError,
   isAiQuotaExceededError,
@@ -45,6 +46,17 @@ describe("isAiQuotaExceededError", () => {
     });
 
     expect(isAiQuotaExceededError(error)).toBe(true);
+  });
+
+  it("detects an exhausted credit balance by its error type", () => {
+    const error = new RetryError({
+      message: "Failed after 3 attempts",
+      reason: "maxRetriesExceeded",
+      errors: [createInsufficientQuotaError()],
+    });
+
+    expect(isAiQuotaExceededError(error)).toBe(true);
+    expect(isKnownApiError(error)).toBe(true);
   });
 });
 
@@ -350,13 +362,72 @@ describe("isInsufficientCreditsError", () => {
 
     expect(isInsufficientCreditsError(error)).toBe(expected);
   });
+
+  it("recognizes an exhausted OpenAI balance reported as a 429", () => {
+    const error = createAPICallError({
+      message: "No credits",
+      statusCode: 429,
+      responseBody: JSON.stringify({
+        error: { type: "insufficient_quota", code: "credit_balance_exhausted" },
+      }),
+    });
+
+    expect(isInsufficientCreditsError(error)).toBe(true);
+  });
+
+  it("does not treat an ordinary OpenAI rate limit as missing credits", () => {
+    const error = createAPICallError({
+      message: "Rate limited",
+      statusCode: 429,
+      responseBody: JSON.stringify({
+        error: { type: "requests", code: "rate_limit_exceeded" },
+      }),
+    });
+
+    expect(isInsufficientCreditsError(error)).toBe(false);
+  });
+});
+
+describe("getAIApiCallError", () => {
+  it("returns the provider error behind exhausted retries", () => {
+    const apiError = createAPICallError({
+      message: "No credits",
+      statusCode: 429,
+    });
+    const retryError = new RetryError({
+      message: "Failed after 3 attempts",
+      reason: "maxRetriesExceeded",
+      errors: [
+        createAPICallError({ message: "Earlier failure", statusCode: 500 }),
+        createAPICallError({ message: "Another failure", statusCode: 503 }),
+        apiError,
+      ],
+    });
+
+    expect(getAIApiCallError(retryError)).toBe(apiError);
+    expect(getAIApiCallError(apiError)).toBe(apiError);
+    expect(getAIApiCallError(new Error("other"))).toBeNull();
+  });
 });
 
 describe("isInvalidAIModelError", () => {
+  it("does not treat an unavailable service as an invalid model", () => {
+    const error = createAPICallError({
+      message: "The service is no longer available in this region",
+      statusCode: 400,
+    });
+
+    expect(isInvalidAIModelError(error)).toBe(false);
+  });
+
   it.each([
     ["deprecated models", "The configured model is deprecated"],
     ["models without endpoints", "No endpoints found for the configured model"],
     ["invalid model IDs", "The configured model is not a valid model ID"],
+    [
+      "retired Gemini models",
+      "This model models/retired-model is no longer available. Please update your code to use a newer model.",
+    ],
   ])("detects %s", (_caseName, message) => {
     const error = createAPICallError({ message, statusCode: 400 });
 
@@ -618,9 +689,11 @@ function createLlmRepairMetadata() {
 function createAPICallError({
   message,
   statusCode,
+  responseBody = "",
 }: {
   message: string;
   statusCode: number;
+  responseBody?: string;
 }): APICallError {
   return new APICallError({
     message,
@@ -628,7 +701,26 @@ function createAPICallError({
     requestBodyValues: {},
     statusCode,
     responseHeaders: {},
+    responseBody,
+  });
+}
+
+function createInsufficientQuotaError(): APICallError {
+  return new APICallError({
+    message: "Billing limit reached",
+    url: "https://example.com",
+    requestBodyValues: {},
+    statusCode: 429,
+    responseHeaders: {},
     responseBody: "",
+    isRetryable: true,
+    data: {
+      error: {
+        message: "Billing limit reached",
+        type: "insufficient_quota",
+        code: "credit_balance_exhausted",
+      },
+    },
   });
 }
 

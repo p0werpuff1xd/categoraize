@@ -147,21 +147,36 @@ test("deletes an open conversation and restores it from Trash", async ({
   await page.getByRole("button", { name: /^More actions/ }).click();
   await page.getByRole("menuitem", { name: /^Delete/ }).click();
 
-  await expect(conversations).toBeVisible();
-  await expect(deletedConversation).toHaveCount(0);
-  await expectEngineMutation(page, emailAccountId, "trash", DELETE_THREAD);
+  let advancedThreadId: string | null = null;
+  try {
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("thread-id"))
+      .not.toBe(DELETE_THREAD);
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("thread-id"))
+      .not.toBeNull();
+    advancedThreadId = new URL(page.url()).searchParams.get("thread-id");
+    await expect(deletedConversation).toHaveCount(0);
+    await expectEngineMutation(page, emailAccountId, "trash", DELETE_THREAD);
 
-  await openMailboxFromSidebar(page, "Trash");
-  await expect(deletedConversation).toBeVisible();
-  await capturePlaywrightCheckpoint(page, testInfo, "trashed-in-trash-view");
-  await undoLastTriage(page);
-  await expect(deletedConversation).toHaveCount(0);
-  await expectEngineMutation(page, emailAccountId, "untrash", DELETE_THREAD);
-  await page.goto(`/${emailAccountId}/mail`, {
-    waitUntil: "domcontentloaded",
-  });
-  await expect(conversations).toBeVisible({ timeout: 60_000 });
-  await expect(deletedConversation).toBeVisible();
+    await openMailboxFromSidebar(page, "Trash");
+    await expect(deletedConversation).toBeVisible();
+    await capturePlaywrightCheckpoint(page, testInfo, "trashed-in-trash-view");
+    await undoLastTriage(page);
+    await expect(deletedConversation).toHaveCount(0);
+    await expectEngineMutation(page, emailAccountId, "untrash", DELETE_THREAD);
+    await page.goto(`/${emailAccountId}/mail`, {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(conversations).toBeVisible({ timeout: 60_000 });
+    await expect(deletedConversation).toBeVisible();
+  } finally {
+    // Advancing opened the next conversation and marked it read; later specs
+    // expect the seeded unread state.
+    if (advancedThreadId) {
+      await markThreadUnread(page, emailAccountId, advancedThreadId);
+    }
+  }
 });
 
 test("advances the split reader after archiving an open conversation", async ({
@@ -314,7 +329,7 @@ test("selects ranges and opens conversations with the keyboard", async ({
   await expect(conversations).toBeVisible();
 });
 
-test("selects and clears all conversations from the list toolbar", async ({
+test("selects and clears all conversations from the split tabs row", async ({
   page,
 }, testInfo) => {
   const { conversations } = await openMail(page);
@@ -325,7 +340,11 @@ test("selects and clears all conversations from the list toolbar", async ({
   const selectAll = page.getByRole("checkbox", {
     name: "Select all conversations",
   });
-  await expect(selectAll).not.toBeChecked();
+  await expect(selectAll).toBeHidden();
+
+  await options.first().hover();
+  await options.first().getByRole("checkbox").click();
+  await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
 
   await selectAll.click();
 
@@ -348,7 +367,7 @@ test("selects and clears all conversations from the list toolbar", async ({
   await expect.poll(() => allRowsAreSelected(options, true)).toBe(true);
 
   await selectAll.click();
-  await expect(selectAll).not.toBeChecked();
+  await expect(selectAll).toBeHidden();
   await expect(page.getByText(/\d+ selected/)).toHaveCount(0);
   await expect.poll(() => allRowsAreSelected(options, false)).toBe(true);
 });
@@ -434,4 +453,30 @@ function allRowsAreSelected(rows: Locator, selected: boolean) {
       ),
     selected,
   );
+}
+
+async function markThreadUnread(
+  page: Page,
+  emailAccountId: string,
+  threadId: string,
+) {
+  await page.goto(`/${emailAccountId}/mail?thread-id=${threadId}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await page
+    .getByRole("group", { name: "Thread actions" })
+    .getByRole("button", { name: /Mark as unread/ })
+    .click();
+  await expect
+    .poll(
+      () =>
+        readLatestMailMutation(page, {
+          emailAccountId,
+          kind: "set_read_state",
+          threadId,
+          payload: { read: false },
+        }),
+      { timeout: 60_000 },
+    )
+    .toMatchObject({ status: "succeeded" });
 }

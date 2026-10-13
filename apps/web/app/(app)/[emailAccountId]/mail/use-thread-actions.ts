@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { format } from "date-fns";
+import groupBy from "lodash/groupBy";
 import { toast } from "sonner";
 import { toastUndo } from "@/components/Toast";
 import { getShortcutHint } from "@/lib/shortcuts/registry";
@@ -17,10 +18,10 @@ import {
   mutationPayloadToChange,
   type ThreadMutationPayload,
 } from "@/utils/mail-engine/mutation-change";
-import { submitConversationChange } from "@/utils/mail-engine/submit-conversations";
+import { submitConversationChanges } from "@/utils/mail-engine/submit-conversations";
 import { admissionRejectionCopy } from "@/utils/mail-engine/admission-notice";
 
-type UndoableAction = "archive" | "trash";
+type UndoableAction = "archive" | "unarchive" | "trash";
 
 type ThreadSnapshot = {
   emailAccountId: string;
@@ -98,20 +99,25 @@ export function useThreadActions({
       }
       const change = mutationPayloadToChange(payload);
       if (!change) return { snapshots: [], rejectionCodes: [] };
-      const snapshots = [];
+      const snapshots: ThreadSnapshot[] = [];
       const rejectionCodes: string[] = [];
-      for (const target of targets) {
-        const { admission, commandId } = await submitConversationChange({
-          accountId: target.emailAccountId,
+      for (const [accountId, accountTargets] of Object.entries(
+        groupBy(targets, (target) => target.emailAccountId),
+      )) {
+        const result = await submitConversationChanges({
+          accountId,
           change,
           client,
-          conversationId: target.threadId,
+          conversationIds: accountTargets.map((target) => target.threadId),
         });
-        if (admission.status === "rejected") {
-          rejectionCodes.push(admission.code);
-          continue;
+        rejectionCodes.push(...result.rejectionCodes);
+        const commandIds = new Map(
+          result.accepted.map((item) => [item.conversationId, item.commandId]),
+        );
+        for (const target of accountTargets) {
+          const mutationId = commandIds.get(target.threadId);
+          if (mutationId) snapshots.push({ ...target, mutationId });
         }
-        snapshots.push({ ...target, mutationId: commandId });
       }
       return { snapshots, rejectionCodes };
     },
@@ -124,54 +130,54 @@ export function useThreadActions({
       batch.undone = true;
       if (lastAction.current === batch) lastAction.current = null;
 
-      const compensation = mutationPayloadToChange(
-        batch.action === "archive"
-          ? { kind: "unarchive" }
-          : { kind: "untrash" },
-      );
+      const compensation = mutationPayloadToChange({
+        kind: UNDOABLE_COPY[batch.action].compensation,
+      });
       if (!compensation) return [];
       const results = await Promise.allSettled(
-        batch.snapshots.map(async (snapshot) => {
+        Object.values(
+          groupBy(batch.snapshots, (snapshot) => snapshot.mutationId),
+        ).map(async (snapshots) => {
+          const { emailAccountId, mutationId } = snapshots[0];
           const cancelled =
             (
               await client.cancelOperation({
-                accountId: snapshot.emailAccountId,
-                operationId: snapshot.mutationId,
+                accountId: emailAccountId,
+                operationId: mutationId,
               })
             ).status === "cancelled";
           if (!cancelled) {
-            const diagnostics = await client.getDiagnostics(
-              snapshot.emailAccountId,
-            );
-            await client.submitConversations({
-              accountId: snapshot.emailAccountId,
+            const diagnostics = await client.getDiagnostics(emailAccountId);
+            const admission = await client.submitConversations({
+              accountId: emailAccountId,
               commandId: randomUuid(),
-              conversations: [
-                {
-                  accountId: snapshot.emailAccountId,
-                  conversationId: snapshot.threadId,
-                },
-              ],
+              conversations: snapshots.map((snapshot) => ({
+                accountId: emailAccountId,
+                conversationId: snapshot.threadId,
+              })),
               change: compensation,
               observedRevision: diagnostics.revision,
             });
+            if (admission.status === "rejected") {
+              throw new Error(admission.code);
+            }
           }
-          return snapshot.key;
+          return snapshots.map((snapshot) => snapshot.key);
         }),
       );
       const restoredKeys = results.flatMap((result) =>
-        result.status === "fulfilled" ? [result.value] : [],
+        result.status === "fulfilled" ? result.value : [],
       );
-      const failedCount = results.length - restoredKeys.length;
+      const failedCount = batch.snapshots.length - restoredKeys.length;
 
       if (restoredKeys.length) {
         toast.success(summarise("Restored", restoredKeys.length));
       }
       if (failedCount) {
         toast.error(
-          failedCount === results.length
+          failedCount === batch.snapshots.length
             ? "Couldn't restore"
-            : `Couldn't restore ${failedCount} of ${results.length}`,
+            : `Couldn't restore ${failedCount} of ${batch.snapshots.length}`,
         );
       }
       if (!restoredKeys.length) {
@@ -198,9 +204,7 @@ export function useThreadActions({
         if (threadKeys.length) {
           toast.error(
             enqueueFailureCopy(
-              action === "archive"
-                ? "Couldn't queue archiving"
-                : "Couldn't queue deletion",
+              `Couldn't queue ${UNDOABLE_COPY[action].noun}`,
               rejectionCodes,
             ),
           );
@@ -212,10 +216,7 @@ export function useThreadActions({
       lastAction.current = batch;
       const failedCount = threadKeys.length - snapshots.length;
       toastUndo({
-        message: summarise(
-          action === "archive" ? "Archived" : "Deleted",
-          snapshots.length,
-        ),
+        message: UNDOABLE_COPY[action].done(snapshots.length),
         shortcut: getShortcutHint("undo"),
         onUndo: () => {
           undoBatch(batch);
@@ -224,9 +225,7 @@ export function useThreadActions({
       if (failedCount) {
         toast.error(
           enqueueFailureCopy(
-            action === "archive"
-              ? `Couldn't queue ${failedCount} of ${threadKeys.length} for archiving`
-              : `Couldn't queue ${failedCount} of ${threadKeys.length} for deletion`,
+            `Couldn't queue ${failedCount} of ${threadKeys.length} for ${UNDOABLE_COPY[action].noun}`,
             rejectionCodes,
           ),
         );
@@ -354,6 +353,10 @@ export function useThreadActions({
       (threadKeys: string[]) => runUndoable("archive", threadKeys),
       [runUndoable],
     ),
+    moveToInbox: useCallback(
+      (threadKeys: string[]) => runUndoable("unarchive", threadKeys),
+      [runUndoable],
+    ),
     trash: useCallback(
       (threadKeys: string[]) => runUndoable("trash", threadKeys),
       [runUndoable],
@@ -369,6 +372,32 @@ export function useThreadActions({
     undo,
   };
 }
+
+const UNDOABLE_COPY: Record<
+  UndoableAction,
+  {
+    compensation: "archive" | "unarchive" | "untrash";
+    done: (count: number) => string;
+    noun: string;
+  }
+> = {
+  archive: {
+    compensation: "unarchive",
+    done: (count) => summarise("Archived", count),
+    noun: "archiving",
+  },
+  unarchive: {
+    compensation: "archive",
+    done: (count) =>
+      count === 1 ? "Moved to inbox" : `Moved ${count} conversations to inbox`,
+    noun: "moving to inbox",
+  },
+  trash: {
+    compensation: "untrash",
+    done: (count) => summarise("Deleted", count),
+    noun: "deletion",
+  },
+};
 
 function summarise(verb: string, count: number) {
   return count === 1 ? verb : `${verb} ${count} conversations`;

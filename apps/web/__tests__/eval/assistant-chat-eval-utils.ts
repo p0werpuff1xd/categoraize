@@ -5,6 +5,7 @@ import type { MessageContext } from "@/utils/ai/assistant/chat-context-validatio
 import { writeEvalDebugArtifact } from "@/__tests__/eval/debug-artifacts";
 import { aiProcessAssistantChat } from "@/utils/ai/assistant/chat";
 import type { Logger } from "@/utils/logger";
+import prisma from "@/utils/prisma";
 
 const assistantWriteToolNames = new Set([
   "startSenderCategorization",
@@ -78,6 +79,7 @@ export async function captureAssistantChatTrace({
   messages,
   logger,
   inboxStats,
+  supportsInlineEmailCards = true,
   context,
   chatHasHistory,
   chatLastSeenRulesRevision,
@@ -86,6 +88,7 @@ export async function captureAssistantChatTrace({
   messages: ModelMessage[];
   logger: Logger;
   inboxStats?: { total: number; unread: number } | null;
+  supportsInlineEmailCards?: boolean;
   context?: MessageContext;
   chatHasHistory?: boolean;
   chatLastSeenRulesRevision?: number | null;
@@ -95,11 +98,14 @@ export async function captureAssistantChatTrace({
   const steps: unknown[] = [];
   const resolvedModels: unknown[] = [];
 
+  ensureCalendarConnectionLookup();
+
   const result = await aiProcessAssistantChat({
     messages,
     emailAccountId: emailAccount.id,
     user: emailAccount,
     inboxStats,
+    supportsInlineEmailCards,
     context,
     chatHasHistory,
     chatLastSeenRulesRevision,
@@ -169,6 +175,21 @@ export async function captureAssistantChatTrace({
     toolCalls: recordedToolCalls,
     stepTexts,
   };
+}
+
+// Chat looks up calendar connections before registering tools. Evals that do
+// not stage a connection should run as disconnected. Do not call a mock that
+// is already implemented — that would consume one-shot return values.
+function ensureCalendarConnectionLookup() {
+  const findMany = prisma.calendarConnection.findMany as unknown as {
+    getMockImplementation?: () => unknown;
+    mockResolvedValue?: (value: unknown[]) => void;
+  };
+
+  if (typeof findMany.mockResolvedValue !== "function") return;
+  if (findMany.getMockImplementation?.()) return;
+
+  findMany.mockResolvedValue([]);
 }
 
 function isToolResultWithOutput(

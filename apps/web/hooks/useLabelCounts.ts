@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOptionalMailClient } from "@inboxzero/mail-react/MailEngineProvider";
+import { useHiddenDraftMessageIds } from "@/hooks/useHiddenDraftMessageIds";
 import {
   mailboxCountTargets,
   type MailboxCountFolder,
@@ -25,14 +26,15 @@ export function useLabelCounts({
   const client = useOptionalMailClient();
   const resolvedLabels = labels.length > 0 ? labels : NO_LABELS;
   const resolvedFolders = folders.length > 0 ? folders : NO_FOLDERS;
+  const hiddenDraftMessageIds = useHiddenDraftMessageIds(emailAccountId);
   const targets = useMemo(
     () =>
       mailboxCountTargets({
-        accountId: emailAccountId,
         labels: resolvedLabels,
         folders: resolvedFolders,
+        hiddenDraftMessageIds,
       }),
-    [emailAccountId, resolvedFolders, resolvedLabels],
+    [resolvedFolders, resolvedLabels, hiddenDraftMessageIds],
   );
   const [countsById, setCountsById] = useState(
     new Map<string, MailboxLabelCount>(),
@@ -43,43 +45,56 @@ export function useLabelCounts({
       setCountsById(new Map());
       return;
     }
-    const subscriptions = targets.map((target) => ({
-      target,
-      handle: client.observeMailbox(target.query),
-    }));
+    const handle = client.observeMailboxCounts({
+      accountIds: [emailAccountId],
+      targets: targets.map(({ id, predicate }) => ({ id, predicate })),
+    });
+    const targetsById = new Map(targets.map((target) => [target.id, target]));
     const apply = () => {
       const next = new Map<string, MailboxLabelCount>();
-      for (const { target, handle } of subscriptions) {
-        const counts = handle.getSnapshot().data?.counts;
-        if (!counts) continue;
+      for (const count of handle.getSnapshot().data?.counts ?? []) {
+        const target = targetsById.get(count.id);
+        if (!target) continue;
         next.set(target.id, {
           id: target.id,
           name: target.name,
           kind: target.kind,
-          total: counts.matchingConversations,
-          unread: counts.unreadConversations,
+          total: count.matchingConversations,
+          unread: count.unreadConversations,
         });
       }
-      setCountsById(next);
+      setCountsById((current) => (sameCounts(current, next) ? current : next));
     };
-    const unsubscribers = subscriptions.map(({ handle }) =>
-      handle.subscribe(apply),
-    );
+    const unsubscribe = handle.subscribe(apply);
     apply();
     return () => {
-      for (const unsubscribe of unsubscribers) unsubscribe();
-      for (const { handle } of subscriptions) handle.close();
+      unsubscribe();
+      handle.close();
     };
-  }, [client, targets]);
+  }, [client, emailAccountId, targets]);
 
   const mutate = useCallback(async () => {
     await client?.requestSync([emailAccountId]);
   }, [client, emailAccountId]);
 
-  return {
-    countsById,
-    isPartial: countsById.size < targets.length,
-    isLoading: Boolean(client) && countsById.size === 0,
-    mutate,
-  };
+  return { countsById, mutate };
+}
+
+function sameCounts(
+  left: Map<string, MailboxLabelCount>,
+  right: Map<string, MailboxLabelCount>,
+) {
+  if (left.size !== right.size) return false;
+  for (const [id, count] of right) {
+    const previous = left.get(id);
+    if (
+      !previous ||
+      previous.total !== count.total ||
+      previous.unread !== count.unread ||
+      previous.name !== count.name
+    ) {
+      return false;
+    }
+  }
+  return true;
 }

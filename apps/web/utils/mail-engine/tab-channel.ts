@@ -5,8 +5,10 @@ import type {
   QuerySnapshot,
 } from "@inboxzero/mail-core/queries";
 import {
+  observeByKind,
   pageConnectivityOnline,
   requestSyncUnlessOffline,
+  type WorkerObserveKind,
 } from "@/utils/mail-engine/worker-protocol";
 
 export const MAIL_ENGINE_OWNER_LOCK = "inbox-zero:mail-engine-owner";
@@ -32,7 +34,7 @@ export type TabMailMessage =
       id: string;
       accountId: string;
       handleId: string;
-      kind: "mailbox" | "mailboxWindow" | "conversation" | "operation";
+      kind: WorkerObserveKind;
       args: unknown[];
     }
   | { type: "loadMore"; id: string; handleId: string }
@@ -105,7 +107,7 @@ export function bindTabMailOwner(input: {
       return;
     }
     if (message.type === "observe") {
-      const observed = observe(input.client, message.kind, message.args);
+      const observed = observeByKind(input.client, message.kind, message.args);
       handles.set(message.handleId, observed);
       observed.subscribe(() => {
         input.bus.post({
@@ -235,7 +237,7 @@ export function createTabFollowerClient(input: {
   }
 
   function observeRemote<T>(
-    kind: "mailbox" | "mailboxWindow" | "conversation" | "operation",
+    kind: WorkerObserveKind,
     args: unknown[],
   ): QueryHandle<T> & { handleId: string } {
     const handleId = crypto.randomUUID();
@@ -283,6 +285,7 @@ export function createTabFollowerClient(input: {
 
   const client: MailClient = {
     observeMailbox: (query) => observeRemote("mailbox", [query]),
+    observeMailboxCounts: (query) => observeRemote("mailboxCounts", [query]),
     observeMailboxWindow: (query) => {
       const handle = observeRemote<MailboxView>("mailboxWindow", [query]);
       return {
@@ -312,6 +315,9 @@ export function createTabFollowerClient(input: {
     async purgeAccount(accountId) {
       return call("purgeAccount", [accountId]) as never;
     },
+    async retainAccounts(accountIds) {
+      await call("retainAccounts", [accountIds]);
+    },
   };
   followerDisposers.set(client, () => {
     dispose();
@@ -338,24 +344,6 @@ export function createBroadcastTabBus(channel: BroadcastChannel): TabMailBus {
       return () => channel.removeEventListener("message", handler);
     },
   };
-}
-
-function observe(
-  client: MailClient,
-  kind: "mailbox" | "mailboxWindow" | "conversation" | "operation",
-  args: unknown[],
-) {
-  if (kind === "mailbox") return client.observeMailbox(args[0] as never);
-  if (kind === "mailboxWindow") {
-    return (
-      client.observeMailboxWindow?.(args[0] as never) ??
-      client.observeMailbox(args[0] as never)
-    );
-  }
-  if (kind === "conversation") {
-    return client.observeConversation(args[0] as never, args[1] as never);
-  }
-  return client.observeOperation(args[0] as never);
 }
 
 function announceOwner(

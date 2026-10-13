@@ -5,10 +5,16 @@ const PRODUCT_NAME = "Inbox Zero";
 export function configureDesktopApplicationMenu({
   checkForUpdates,
   createWindow,
+  recordDiagnostics,
+  updateReady = false,
+  downloadPercent = null,
   platform = process.platform,
 }: {
   checkForUpdates: () => void;
   createWindow: () => void;
+  recordDiagnostics: () => void;
+  updateReady?: boolean;
+  downloadPercent?: number | null;
   platform?: NodeJS.Platform;
 }) {
   app.setAboutPanelOptions({
@@ -17,9 +23,25 @@ export function configureDesktopApplicationMenu({
   });
 
   const checkForUpdatesItem: MenuItemConstructorOptions = {
-    label: "Check for Updates…",
+    label: updateMenuLabel(updateReady, downloadPercent),
     click: checkForUpdates,
   };
+  const recordDiagnosticsItem: MenuItemConstructorOptions = {
+    label: "Record Diagnostics…",
+    click: recordDiagnostics,
+  };
+  const helpSubmenu: MenuItemConstructorOptions[] =
+    platform === "darwin"
+      ? [recordDiagnosticsItem]
+      : [
+          checkForUpdatesItem,
+          recordDiagnosticsItem,
+          { type: "separator" },
+          {
+            label: `About ${PRODUCT_NAME}`,
+            click: () => app.showAboutPanel(),
+          },
+        ];
   const template: MenuItemConstructorOptions[] = [
     ...(platform === "darwin"
       ? [
@@ -58,22 +80,14 @@ export function configureDesktopApplicationMenu({
     { role: "editMenu" },
     { role: "viewMenu" },
     { role: "windowMenu" },
-    ...(platform === "darwin"
-      ? []
-      : [
-          {
-            role: "help",
-            submenu: [
-              checkForUpdatesItem,
-              { type: "separator" },
-              {
-                label: `About ${PRODUCT_NAME}`,
-                click: () => app.showAboutPanel(),
-              },
-            ],
-          } satisfies MenuItemConstructorOptions,
-        ]),
+    { role: "help", submenu: helpSubmenu },
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function updateMenuLabel(updateReady: boolean, downloadPercent: number | null) {
+  if (updateReady) return "Restart to Update";
+  if (downloadPercent === null) return "Check for Updates…";
+  return `Downloading update… ${downloadPercent}%`;
 }

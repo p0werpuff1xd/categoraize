@@ -78,7 +78,8 @@ export function metadataFromEffective(
       row.external_url == null ? undefined : String(row.external_url),
     from: String(row.from_address),
     to: JSON.parse(String(row.to_json)) as string[],
-    cc: [],
+    cc: jsonStringArray(row.cc_json),
+    bcc: jsonStringArray(row.bcc_json),
     receivedAtMs: Number(row.received_at_ms),
     read: Number(row.read) === 1,
     starred: Number(row.starred) === 1,
@@ -91,6 +92,8 @@ export function metadataFromEffective(
     categoryIds: JSON.parse(String(row.category_ids_json)) as string[],
     roles: JSON.parse(String(row.roles_json)) as MessageMetadata["roles"],
     hasAttachments: Number(row.has_attachments) === 1,
+    snoozedUntilMs:
+      row.snoozed_until_ms == null ? null : Number(row.snoozed_until_ms),
   };
 }
 

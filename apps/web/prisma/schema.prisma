@@ -7,6 +7,7 @@ generator client {
   output                 = "../generated/prisma"
   generatedFileExtension = "ts"
   importFileExtension    = "ts"
+  previewFeatures        = ["partialIndexes"]
 }
 
 // Account, User, Session, and VerificationToken based on: https://authjs.dev/reference/adapter/prisma
@@ -308,18 +309,19 @@ model MailSplitFilter {
 }
 
 model Organization {
-  id          String             @id @default(cuid())
-  name        String
-  slug        String             @unique
-  logo        String?
-  metadata    Json?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  members     Member[]
-  SsoProvider SsoProvider?
-  sessions    Session[]
-  invitations Invitation[]
-  rules       OrganizationRule[]
+  id            String             @id @default(cuid())
+  name          String
+  slug          String             @unique
+  logo          String?
+  metadata      Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  members       Member[]
+  SsoProvider   SsoProvider?
+  sessions      Session[]
+  invitations   Invitation[]
+  rules         OrganizationRule[]
+  conversations Conversation[]
 }
 
 // Org-managed rule, materialized into a normal member Rule (+ Action) copy per
@@ -377,18 +379,89 @@ model OrganizationRuleAction {
 }
 
 model Member {
-  id                     String       @id @default(cuid())
-  organizationId         String
-  emailAccountId         String
-  role                   String       @default("member") // "owner" | "admin" | "member"
-  allowOrgAdminAnalytics Boolean      @default(false)
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
-  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  emailAccount           EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Restrict)
+  id                       String                    @id @default(cuid())
+  organizationId           String
+  emailAccountId           String
+  role                     String                    @default("member") // "owner" | "admin" | "member"
+  allowOrgAdminAnalytics   Boolean                   @default(false)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emailAccount             EmailAccount              @relation(fields: [emailAccountId], references: [id], onDelete: Restrict)
+  conversations            Conversation[]
+  conversationParticipants ConversationParticipant[]
+  conversationComments     ConversationComment[]
 
   @@unique([organizationId, emailAccountId])
   @@unique([emailAccountId])
+}
+
+model Conversation {
+  id             String                    @id @default(cuid())
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  organizationId String
+  organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  publisherId    String
+  publisher      Member                    @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  threadId       String
+  status         ConversationStatus        @default(ACTIVE)
+  revision       Int                       @default(0)
+  generation     Int                       @default(1)
+  participants   ConversationParticipant[]
+  comments       ConversationComment[]
+
+  @@unique([publisherId, threadId])
+  @@index([organizationId])
+}
+
+model ConversationParticipant {
+  id             String                 @id @default(cuid())
+  conversationId String
+  conversation   Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  memberId       String
+  member         Member                 @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  generation     Int
+  active         Boolean                @default(true)
+  readRevision   Int                    @default(0)
+  muted          Boolean                @default(false)
+  createdAt      DateTime               @default(now())
+  activity       ConversationActivity[]
+
+  @@unique([conversationId, memberId, generation])
+  @@index([memberId])
+}
+
+model ConversationComment {
+  id               String                 @id @default(cuid())
+  conversationId   String
+  conversation     Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  // SetNull keeps the discussion readable after the author leaves the organization.
+  authorMemberId   String?
+  author           Member?                @relation(fields: [authorMemberId], references: [id], onDelete: SetNull)
+  clientMutationId String
+  body             String                 @db.Text
+  revision         Int
+  deletedAt        DateTime?
+  createdAt        DateTime               @default(now())
+  activity         ConversationActivity[]
+
+  @@unique([conversationId, revision])
+  @@unique([conversationId, authorMemberId, clientMutationId])
+}
+
+model ConversationActivity {
+  id            String                   @id @default(cuid())
+  participantId String
+  participant   ConversationParticipant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  commentId     String?
+  comment       ConversationComment?     @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  kind          ConversationActivityKind
+  revision      Int
+  createdAt     DateTime                 @default(now())
+
+  @@unique([participantId, kind, revision])
+  @@index([participantId, createdAt, id])
 }
 
 model Invitation {
@@ -571,6 +644,18 @@ model Premium {
   payments Payment[]
 
   @@index([pendingInvites])
+}
+
+// Admin grant for an email that has not signed up yet. Applied and deleted on sign-up.
+model PendingPremiumGrant {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email               String      @unique
+  tier                PremiumTier
+  count               Int         @default(1)
+  emailAccountsAccess Int?
 }
 
 model VerificationToken {
@@ -885,6 +970,10 @@ model ScheduledEmail {
   remindAt            DateTime?
   reminderStatus      EmailReminderStatus  @default(NONE)
   reminderStartedAt   DateTime?
+  // A just-sent email the server holds for the undo window, not one the user scheduled.
+  heldForUndo         Boolean              @default(false)
+  // The mailbox draft's saved copies, which the thread hides while the send is pending.
+  draftMessageIds     String[]             @default([])
 
   @@unique([emailAccountId, clientMutationId])
   @@index([status, sendAt])
@@ -921,7 +1010,6 @@ model EmailSendOperation {
   status              EmailSendOperationStatus @default(PROCESSING)
   processingStartedAt DateTime                 @default(now())
   result              Json?
-  attachmentIds       String[]                 @default([])
 
   emailAccountId String
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
@@ -1345,8 +1433,10 @@ model Chat {
 
   name String?
 
-  compactionCount       Int  @default(0)
+  compactionCount       Int     @default(0)
   lastSeenRulesRevision Int?
+  activeStreamId        String?
+  activeStreamStartedAt DateTime?
 
   messages       ChatMessage[]
   compactions    ChatCompaction[]
@@ -1479,7 +1569,7 @@ model AvailabilitySchedule {
 
   name      String
   isDefault Boolean @default(false)
-  timezone  String
+  timezone  String  @default("UTC") // Deprecated: schedules use EmailAccount.timezone. Drop once no deployment reads it.
 
   emailAccountId String
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
@@ -1977,6 +2067,7 @@ model McpIntegration {
 enum McpAuthType {
   OAUTH
   API_TOKEN
+  NONE
 }
 
 model McpConnection {
@@ -2020,11 +2111,13 @@ model McpTool {
 }
 
 model MobilePushToken {
-  id        String             @id @default(cuid())
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  token     String             @unique
-  platform  MobilePushPlatform
+  id         String              @id @default(cuid())
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  token      String              @unique
+  platform   MobilePushPlatform
+  tokenType  MobilePushTokenType @default(EXPO)
+  appVersion String?
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -2050,6 +2143,11 @@ model MobilePushDelivery {
 enum MobilePushPlatform {
   ANDROID @map("android")
   IOS     @map("ios")
+}
+
+enum MobilePushTokenType {
+  EXPO @map("expo")
+  APNS @map("apns")
 }
 
 enum ActionType {
@@ -2347,6 +2445,17 @@ enum AutomationJobRunStatus {
   SENT
   SKIPPED
   FAILED
+}
+
+enum ConversationStatus {
+  ACTIVE
+  STOPPED
+}
+
+enum ConversationActivityKind {
+  INVITED
+  COMMENT
+  MENTION
 }
 
 model OauthClient {
@@ -2749,131 +2858,29 @@ model ScimIdentityLink {
   @@index([userId])
 }
 
-// ==========================================
-// CategorAIze Core Models & Enums
-// ==========================================
-
-enum CategorizePriorityLevel {
-  URGENT
-  HIGH
-  MEDIUM
-  LOW
-}
-
-enum CategorizeDeadlineStatus {
-  PENDING
-  NOTIFIED
-  COMPLETED
-  DISMISSED
-}
-
-enum CategorizeNotificationType {
-  URGENT_EMAIL
-  DEADLINE_APPROACHING
-  CLASSIFICATION_SUMMARY
-  SYSTEM
-}
-
-/// User-defined categories with customizable colors, icons, and AI classification prompts.
-model CategorizeCategory {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  name           String
-  description    String?
-  color          String? // Hex code or UI badge token
-  icon           String? // Icon identifier for UI display
-  aiInstructions String?  @db.Text // Guidance criteria for the AI classification prompt
-  priorityWeight Int      @default(1) // Priority multiplier/weight (1-5)
-  isDefault      Boolean  @default(false)
-
-  emailAccountId String
-  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
-
-  classifications CategorizeClassification[]
-
-  @@unique([emailAccountId, name])
-  @@index([emailAccountId])
-}
-
-/// AI-assisted classification metadata, priority score, reasoning, and email summaries.
-model CategorizeClassification {
+// Loops includes loopName and campaignName only on *.email.sent webhooks.
+// Later engagement events identify the same email by id, so the name is remembered here.
+model LoopsEmailSource {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  threadId  String
-  messageId String
+  // Shared by every recipient of one sent version of a workflow or campaign email.
+  emailMessageId String? @unique
 
-  emailAccountId String
-  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+  loopId       String?
+  loopName     String?
+  campaignId   String?
+  campaignName String?
+  sourceType   String?
+  // When this send happened in Loops. Name fallback uses this, so a retry of an
+  // older send cannot outrank a newer version.
+  eventTime    DateTime?
 
-  categoryId String?
-  category   CategorizeCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  categoryName  String? // Historical snapshot of category name at classification time
-  confidence    Float                   @default(1.0) // AI confidence score (0.0 to 1.0)
-  priority      CategorizePriorityLevel @default(MEDIUM)
-  priorityScore Float                   @default(50.0) // Composite score (0 to 100)
-  urgency       Int                     @default(1) // Urgency rating (1 to 5)
-  importance    Int                     @default(1) // Importance rating (1 to 5)
-  aiReasoning   String?                 @db.Text // AI explanation for why this classification/priority was chosen
-  summary       String?                 @db.Text // AI-generated concise email summary
-
-  isReviewedByUser Boolean @default(false)
-  userCorrection   String?
-
-  @@unique([emailAccountId, threadId, messageId])
-  @@index([emailAccountId, priority])
-  @@index([emailAccountId, categoryId])
-  @@index([emailAccountId, createdAt])
+  // One unversioned row per workflow or campaign, so a name learned without an
+  // email version cannot overwrite a version-specific row.
+  @@unique([loopId], map: "LoopsEmailSource_loopId_unversioned_key", where: { emailMessageId: null, loopId: { not: null } })
+  @@unique([campaignId], map: "LoopsEmailSource_campaignId_unversioned_key", where: { emailMessageId: null, campaignId: { not: null } })
+  @@index([loopId])
+  @@index([campaignId])
 }
-
-/// Time-sensitive deadlines and action items detected by AI from emails.
-model CategorizeDeadlineAlert {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  threadId  String
-  messageId String
-
-  title       String
-  description String?                  @db.Text
-  dueDate     DateTime
-  priority    CategorizePriorityLevel  @default(HIGH)
-  status      CategorizeDeadlineStatus @default(PENDING)
-  notifiedAt  DateTime?
-
-  emailAccountId String
-  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
-
-  notifications CategorizeNotification[]
-
-  @@index([emailAccountId, status, dueDate])
-  @@index([emailAccountId, threadId])
-}
-
-/// In-app and push notification records for high-priority items and deadline reminders.
-model CategorizeNotification {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  type    CategorizeNotificationType
-  title   String
-  message String                     @db.Text
-  read    Boolean                    @default(false)
-
-  threadId  String?
-  messageId String?
-
-  emailAccountId String
-  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
-
-  deadlineAlertId String?
-  deadlineAlert   CategorizeDeadlineAlert? @relation(fields: [deadlineAlertId], references: [id], onDelete: SetNull)
-
-  @@index([emailAccountId, read, createdAt])
-  @@index([emailAccountId, type])
-}
-

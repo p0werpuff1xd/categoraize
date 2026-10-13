@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { Client } from "pg";
+import type { ThreadResponse } from "@/app/api/threads/[id]/route";
+import type { ReadComposeDraftResponse } from "@/app/api/user/drafts/route";
 import { getEmailAccountId } from "../account-test-helpers";
 import { isMicrosoftPlaywright } from "../mail-provider";
 import {
@@ -9,6 +11,8 @@ import {
   type InspectCommand,
 } from "@/utils/playwright/mail-inspect-command";
 
+// A send goes out once its 30-second undo window closes.
+export const UNDO_WINDOW_SEND_TIMEOUT_MS = 60_000;
 const DEFAULT_SPLIT_RULE_ID = "playwright-default-split-rule";
 const DEFAULT_SPLIT_ACTION_ID = "playwright-default-split-action";
 const DEFAULT_SPLIT_LABEL_ID = "Label_project";
@@ -23,6 +27,33 @@ export async function openMail(page: Page) {
   await expect(conversations).toBeVisible({ timeout: 60_000 });
 
   return { conversations, emailAccountId };
+}
+
+// These specs share an emulator account, while each case starts with fresh
+// device storage. Mailbox drafts from earlier cases would be independent drafts.
+export async function clearWorkflowMailboxDrafts(page: Page) {
+  const emailAccountId = await getEmailAccountId(page);
+  const headers = { "X-Email-Account-ID": emailAccountId };
+  const response = await page.request.get(
+    "/api/threads/thr_playwright_reply?includeDrafts=true",
+    { headers },
+  );
+  expect(response.ok(), await response.text()).toBe(true);
+  const { thread }: ThreadResponse = await response.json();
+  for (const message of thread.messages) {
+    if (!message.labelIds?.includes("DRAFT")) continue;
+    const reference = await page.request.get(
+      `/api/user/drafts?messageId=${encodeURIComponent(message.id)}`,
+      { headers },
+    );
+    expect(reference.ok(), await reference.text()).toBe(true);
+    const { draftId }: ReadComposeDraftResponse = await reference.json();
+    const discarded = await page.request.delete(
+      `/api/user/drafts/${encodeURIComponent(draftId)}`,
+      { headers },
+    );
+    expect(discarded.ok(), await discarded.text()).toBe(true);
+  }
 }
 
 export async function expectThreadReaderBody(
@@ -84,7 +115,7 @@ export async function waitForComposeOutboxSend(
           kind: "reply",
           threadId: "compose:new-message",
         }),
-      { timeout: 20_000 },
+      { timeout: UNDO_WINDOW_SEND_TIMEOUT_MS },
     )
     .toMatchObject({ status: "succeeded" });
 }
@@ -118,6 +149,58 @@ export async function readLatestMailMutation(
     if (String(error).includes("Execution context was destroyed")) return;
     throw error;
   }
+}
+
+/**
+ * Samples the reader on every animation frame while a reply leaves its
+ * composer, so a check can see the frames a screenshot would miss.
+ */
+export async function watchReplyHandoff(page: Page, replyText: string) {
+  const rowsBefore = await page.locator("li[data-thread-message-id]").count();
+  await page.evaluate((text) => {
+    const frames: ReplyHandoffFrame[] = [];
+    const state = window as unknown as ReplyHandoffWindow;
+    state.__replyHandoff = { frames, raf: 0 };
+    const sample = () => {
+      frames.push({
+        composer: Array.from(
+          document.querySelectorAll('[contenteditable="true"]'),
+        ).some((element) => element.textContent?.includes(text)),
+        rows: document.querySelectorAll("li[data-thread-message-id]").length,
+      });
+      state.__replyHandoff.raf = requestAnimationFrame(sample);
+    };
+    sample();
+  }, replyText);
+  return {
+    rowsBefore,
+    stop: () =>
+      page.evaluate(() => {
+        const state = window as unknown as ReplyHandoffWindow;
+        cancelAnimationFrame(state.__replyHandoff.raf);
+        return state.__replyHandoff.frames;
+      }),
+  };
+}
+
+/**
+ * Every frame shows the reply once, either still in its composer or as a new
+ * message, and the composer never comes back once the message has replaced it.
+ */
+export function expectSeamlessReplyHandoff(
+  frames: ReplyHandoffFrame[],
+  rowsBefore: number,
+) {
+  const firstClosed = frames.findIndex((frame) => !frame.composer);
+  expect(firstClosed).toBeGreaterThanOrEqual(0);
+  expect(
+    frames.filter((frame) => !frame.composer && frame.rows <= rowsBefore),
+  ).toEqual([]);
+  expect(frames.filter((frame) => frame.rows > rowsBefore + 1)).toEqual([]);
+  expect(frames.slice(firstClosed).filter((frame) => frame.composer)).toEqual(
+    [],
+  );
+  expect(frames.at(-1)?.rows).toBe(rowsBefore + 1);
 }
 
 export async function requestMailSync(page: Page) {
@@ -271,7 +354,7 @@ async function insertOutlookInboxReply(
   return message.id;
 }
 
-async function readProviderAccessToken() {
+export async function readProviderAccessToken() {
   const email = process.env.PLAYWRIGHT_TEST_EMAIL;
   if (!email) throw new Error("PLAYWRIGHT_TEST_EMAIL is missing");
   const token = await withClient(async (client) => {
@@ -287,3 +370,9 @@ async function readProviderAccessToken() {
   if (!token) throw new Error("Could not read the Playwright provider token");
   return token;
 }
+
+type ReplyHandoffFrame = { composer: boolean; rows: number };
+
+type ReplyHandoffWindow = {
+  __replyHandoff: { frames: ReplyHandoffFrame[]; raf: number };
+};

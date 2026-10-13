@@ -52,17 +52,22 @@ export const preparedOperationSchema = z.object({
       kind: z.literal("send"),
       frozenDraftId: z.string().min(1),
       frozenDraftRevision: z.number().int().nonnegative(),
+      from: z.string().max(4096).optional(),
       to: z.array(z.string().max(4096)).max(100),
       cc: z.array(z.string().max(4096)).max(100),
       bcc: z.array(z.string().max(4096)).max(100),
       subject: z.string().max(16_384),
       html: z.string().max(1_000_000),
       quotedHtml: z.string().max(1_000_000),
-      attachmentIds: z.array(z.string().min(1).max(128)).max(20),
       providerDraftId: z.string().min(1).max(256).optional(),
       replyToMessageId: z.string().max(256).nullable(),
       replyToConversationId: z.string().max(256).nullable(),
       queuedAtMs: z.number().int().nonnegative(),
+      /**
+       * When the server should deliver it. Setting it hands the send to the
+       * server right away, so the undo period survives the client going away.
+       */
+      sendAtMs: z.number().int().nonnegative().optional(),
     }),
   ]),
 });
@@ -93,10 +98,6 @@ export const PENDING_EFFECT_STATUSES = [
   "uncertain",
   "needs_attention",
 ] as const;
-
-export function canCancelOperation(status: OperationStatus): boolean {
-  return status === "preparing" || status === "queued";
-}
 
 /** Undo/throttle delays stay below this; connectivity holds are much longer. */
 export const DEFERRED_DISPATCH_MIN_HOLD_MS = 60 * 60 * 1000;

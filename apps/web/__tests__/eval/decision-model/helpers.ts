@@ -6,22 +6,23 @@ import {
 import { shouldRunEvalTests } from "@/__tests__/eval/models";
 import type { createEvalReporter } from "@/__tests__/eval/reporter";
 import { env } from "@/env";
+import { createDecisionModelConfig } from "@/utils/decision-model/decision-model";
 import { createScopedLogger } from "@/utils/logger";
 
+const evalDecisionModelConfig = createDecisionModelConfig(
+  env.DEFAULT_DECISION_MODEL ?? "typesafe:jev-latest",
+);
 export const shouldRunDecisionModelEvals =
-  shouldRunEvalTests() && !!env.TYPESAFE_API_KEY && !!env.OPENROUTER_API_KEY;
+  shouldRunEvalTests() && !!evalDecisionModelConfig && !!env.OPENROUTER_API_KEY;
 export const DECISION_MODEL_EVAL_TIMEOUT = 60_000;
 export const decisionModelEvalLogger = createScopedLogger(
   "eval-decision-model-comparison",
 );
 export const lunaEmailAccount = getEmailAccountForModel(
-  EVAL_MODEL_CATALOG["gpt-5.6-luna"],
+  EVAL_MODEL_CATALOG["gpt-6-luna"],
 );
-export const decisionModelConfig = {
-  provider: "typesafe" as const,
-  model: "jev-latest",
-  apiKey: env.TYPESAFE_API_KEY ?? "",
-};
+// Only read when shouldRunDecisionModelEvals is true.
+export const decisionModelConfig = evalDecisionModelConfig!;
 
 export async function compareDecision<T>({
   testName,
@@ -38,11 +39,17 @@ export async function compareDecision<T>({
 }) {
   const [jev, luna] = await Promise.all([runJev(), runLuna()]);
 
-  recordResult({ reporter, testName, model: "JEV", actual: jev, expected });
   recordResult({
     reporter,
     testName,
-    model: "GPT-5.6 Luna",
+    model: decisionModelConfig.modelId,
+    actual: jev,
+    expected,
+  });
+  recordResult({
+    reporter,
+    testName,
+    model: "GPT-6 Luna",
     actual: luna,
     expected,
   });

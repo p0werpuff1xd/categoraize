@@ -200,14 +200,18 @@ const parsedEnv = createEnv({
     VOICE_LIVE_MODEL: z.string().optional(),
     VOICE_LIVE_VOICE: z.string().optional(),
 
-    UPSTASH_REDIS_URL: z
-      .string()
-      .optional()
-      .transform((value) => value || process.env.KV_REST_API_URL),
-    UPSTASH_REDIS_TOKEN: z
-      .string()
-      .optional()
-      .transform((value) => value || process.env.KV_REST_API_TOKEN),
+    // HTTP Redis speaks the Upstash REST protocol, including your own
+    // serverless-redis-http proxy. Older self-hosted installs and Vercel KV
+    // still set the legacy names.
+    REDIS_HTTP_URL: z.preprocess(
+      (value) => redisHttpEnv(value, ["UPSTASH_REDIS_URL", "KV_REST_API_URL"]),
+      z.string().optional(),
+    ),
+    REDIS_HTTP_TOKEN: z.preprocess(
+      (value) =>
+        redisHttpEnv(value, ["UPSTASH_REDIS_TOKEN", "KV_REST_API_TOKEN"]),
+      z.string().optional(),
+    ),
     REDIS_URL: z
       .string()
       .optional()
@@ -272,9 +276,22 @@ const parsedEnv = createEnv({
     APPLE_IAP_PRIVATE_KEY: z.string().min(1).optional(),
     APPLE_IAP_BUNDLE_ID: z.string().min(1).optional(),
     APPLE_IAP_APPLE_ID: z.coerce.number().int().positive().optional(),
+    // Accepts locally signed StoreKit JWS. Ignored when NODE_ENV is production.
+    APPLE_IAP_LOCAL_TESTING: booleanString,
     SUPERWALL_APP_STORE_CONNECT_FORWARD_URL: z.string().url().optional(),
 
+    // APNs token auth for native iOS push. Leave unset to keep Expo-only delivery.
+    // The same credentials send silent mailbox-change pushes.
+    APNS_KEY_ID: z.string().min(1).optional(),
+    APNS_TEAM_ID: z.string().min(1).optional(),
+    APNS_PRIVATE_KEY: z.string().min(1).optional(),
+    APNS_TOPIC: z.string().min(1).optional(),
+    APNS_ENVIRONMENT: z.enum(["sandbox", "production"]).optional(),
+    // `fake` records sends in memory instead of contacting Apple. Emulator only.
+    APNS_TRANSPORT: z.enum(["apns", "fake"]).optional(),
+
     TINYBIRD_TOKEN: z.string().optional(),
+    TINYBIRD_DELETE_TOKEN: z.string().optional(),
     TINYBIRD_BASE_URL: z.string().default("https://api.us-east.tinybird.co/"),
 
     API_KEY_SALT: z.string().optional(),
@@ -285,6 +302,7 @@ const parsedEnv = createEnv({
     POSTHOG_FEEDBACK_SURVEY_QUESTION_ID: z.string().optional(),
     POSTHOG_LLM_EVALS_APPROVED_EMAILS: z.string().optional(),
     FEEDBACK_WEBHOOK_URL: z.string().url().optional(),
+    SALES_INQUIRY_WEBHOOK_URL: z.string().url().optional(),
 
     RECALL_API_KEY: z.string().optional(),
     RECALL_WEBHOOK_SECRET: z.string().optional(),
@@ -307,6 +325,7 @@ const parsedEnv = createEnv({
     BLOG_SYNC_IMAGE_ALLOWED_HOSTS: z.string().optional(),
     SANITY_API_WRITE_TOKEN: z.string().min(1).optional(),
     LOOPS_API_SECRET: z.string().optional(),
+    LOOPS_WEBHOOK_SIGNING_SECRET: z.string().min(1).optional(),
     FB_CONVERSION_API_ACCESS_TOKEN: z.string().optional(),
     FB_PIXEL_ID: z.string().optional(),
     CONVERSION_ANALYTICS_SERVER_URL: z.string().optional(),
@@ -322,16 +341,20 @@ const parsedEnv = createEnv({
     // and allows http). Defaults to false. Only enable on a trusted,
     // single-tenant self-hosted deployment or against a local MCP emulator.
     MCP_ALLOW_PRIVATE_IPS: booleanString.optional().default(false),
+    COMPOSIO_API_KEY: z.string().optional(),
     INTERNAL_API_URL: z.string().optional(),
     INTERNAL_API_KEY: z.string(),
     WHITELIST_FROM: z.string().optional(),
     HEALTH_API_KEY: z.string().optional(),
     OAUTH_PROXY_URL: z.string().url().optional(),
     MCP_SERVER_ENABLED: booleanString.optional().default(false),
-    // Optional provider:model for structured decisions, e.g. typesafe:jev-latest
+    // Optional provider:model for structured decisions, e.g. openrouter:typesafe/jev-1.13
     DEFAULT_DECISION_MODEL: z
       .string()
-      .regex(/^typesafe:\S+$/, "Expected typesafe:<model>")
+      .regex(
+        /^(typesafe|openrouter|aigateway|openai):\S+$/,
+        "Expected <typesafe|openrouter|aigateway|openai>:<model>",
+      )
       .optional(),
     // Whether users who haven't chosen get the decision model; otherwise opt-in
     DEFAULT_DECISION_MODEL_ENABLED: booleanString.optional().default(false),
@@ -439,6 +462,7 @@ const parsedEnv = createEnv({
     NEXT_PUBLIC_SLACK_BOT_NAME: z.string().trim().min(1).default("Inbox Zero"),
     NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT: z.string().optional(),
     NEXT_PUBLIC_CONTACTS_ENABLED: booleanString.optional().default(false),
+    NEXT_PUBLIC_COOKIE_CONSENT_ENABLED: booleanString.optional().default(false),
     NEXT_PUBLIC_MAIL_ENGINE_TEST_INSPECT: booleanString
       .optional()
       .default(false),
@@ -553,6 +577,8 @@ const parsedEnv = createEnv({
     NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT:
       process.env.NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT,
     NEXT_PUBLIC_CONTACTS_ENABLED: process.env.NEXT_PUBLIC_CONTACTS_ENABLED,
+    NEXT_PUBLIC_COOKIE_CONSENT_ENABLED:
+      process.env.NEXT_PUBLIC_COOKIE_CONSENT_ENABLED,
     NEXT_PUBLIC_MAIL_ENGINE_TEST_INSPECT:
       process.env.NEXT_PUBLIC_MAIL_ENGINE_TEST_INSPECT,
     NEXT_PUBLIC_GMAIL_OTHER_CONTACTS_ENABLED:
@@ -626,10 +652,38 @@ if (
   );
 }
 
-if (process.env.DEFAULT_DECISION_MODEL && !process.env.TYPESAFE_API_KEY) {
+const decisionModelApiKeyNames: Record<string, string> = {
+  typesafe: "TYPESAFE_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  aigateway: "AI_GATEWAY_API_KEY",
+  openai: "OPENAI_API_KEY",
+};
+const decisionModelProvider =
+  process.env.DEFAULT_DECISION_MODEL?.split(":")[0] ?? "";
+const decisionModelApiKeyName = decisionModelApiKeyNames[decisionModelProvider];
+// TypeSafe is not an LLM provider, so LLM_API_KEY cannot stand in for its key.
+const acceptsLlmApiKey = decisionModelProvider !== "typesafe";
+if (
+  decisionModelApiKeyName &&
+  !process.env[decisionModelApiKeyName]?.trim() &&
+  !(acceptsLlmApiKey && process.env.LLM_API_KEY?.trim())
+) {
   throw new Error(
-    "TYPESAFE_API_KEY is required when DEFAULT_DECISION_MODEL is set.",
+    `${decisionModelApiKeyName}${acceptsLlmApiKey ? " or LLM_API_KEY" : ""} is required for DEFAULT_DECISION_MODEL=${process.env.DEFAULT_DECISION_MODEL}.`,
   );
 }
 
 export const env = parsedEnv;
+
+function redisHttpEnv(
+  value: unknown,
+  legacyNames: readonly string[],
+): string | undefined {
+  const primary = optionalEnvValue(value);
+  if (primary) return primary;
+
+  for (const name of legacyNames) {
+    const legacy = optionalEnvValue(process.env[name]);
+    if (legacy) return legacy;
+  }
+}

@@ -2,10 +2,18 @@ import type { LocalRevision } from "@inboxzero/mail-core/identities";
 import type { MessageMetadata } from "@inboxzero/mail-core/messages";
 import type {
   ConversationQuery,
+  MailboxCountsQuery,
+  MailboxCountsView,
   MailboxView,
+  MailPredicate,
+  WellKnownMailbox,
 } from "@inboxzero/mail-core/queries";
-import type { SqlTransaction } from "./driver";
-import { compilePredicate } from "./queries";
+import type { SqlTransaction, SqlValue } from "./driver";
+import {
+  compilePredicate,
+  type SearchSupport,
+  searchDrivenSource,
+} from "./queries";
 import {
   connectionStatus,
   jsonStringArray,
@@ -15,57 +23,49 @@ import {
   worstConnection,
 } from "./store-read-utils";
 
-export async function readMailboxViewFromSql(
+export function readMailboxViewFromSql(
   tx: SqlTransaction,
   query: ConversationQuery,
+  search: SearchSupport,
+): Promise<{ revision: LocalRevision; view: MailboxView }> {
+  return readMailboxPages(tx, query, 1, search);
+}
+
+export const MAX_MAILBOX_WINDOW_PAGES = 40;
+
+export function readMailboxWindowFromSql(
+  tx: SqlTransaction,
+  query: ConversationQuery,
+  pageCount: number,
+  search: SearchSupport,
+): Promise<{ revision: LocalRevision; view: MailboxView }> {
+  const pages = Math.min(
+    MAX_MAILBOX_WINDOW_PAGES,
+    Math.max(1, Math.trunc(pageCount)),
+  );
+  return readMailboxPages(tx, query, pages, search);
+}
+
+// Reads a window of pages with one ordered query and one count, rather than
+// re-running the filter and counts for every page.
+async function readMailboxPages(
+  tx: SqlTransaction,
+  query: ConversationQuery,
+  pages: number,
+  search: SearchSupport,
 ): Promise<{ revision: LocalRevision; view: MailboxView }> {
   const revision = await readRevision(tx);
-  const { rows, matching, unread } =
-    query.predicate.kind === "role" && query.predicate.role === "inbox"
-      ? await readIndexedRolePage(tx, query, query.predicate.role)
-      : await readFilteredPage(tx, query);
-  const page = rows.slice(0, query.pageSize);
-  const summaries = [];
-  for (const row of page) {
-    const latest = await tx.query(
-      `SELECT * FROM effective_messages
-       WHERE account_id = ? AND conversation_id = ?
-       ORDER BY received_at_ms DESC, message_id DESC LIMIT 1`,
-      [row.account_id, row.conversation_id],
-    );
-    const message = latest[0];
-    if (!message)
-      throw new Error("Conversation query has no effective message");
-    const members = await tx.query(
-      `SELECT from_address, to_json, label_ids_json, roles_json FROM effective_messages
-       WHERE account_id = ? AND conversation_id = ?
-       ORDER BY received_at_ms ASC, message_id ASC`,
-      [row.account_id, row.conversation_id],
-    );
-    summaries.push({
-      key: {
-        accountId: String(row.account_id),
-        conversationId: String(row.conversation_id),
-      },
-      subject: String(message.subject),
-      preview: String(message.preview),
-      from: String(message.from_address),
-      to: jsonStringArray(message.to_json).join(", "),
-      senders: members
-        .map((member) => String(member.from_address))
-        .filter(Boolean),
-      latestMessageAtMs: Number(row.latest),
-      unread: Number(row.unread) === 1,
-      starred: Number(row.starred) === 1,
-      labelIds: uniqueStrings(
-        members.flatMap((member) => jsonStringArray(member.label_ids_json)),
-      ),
-      roles: uniqueStrings(
-        members.flatMap((member) => jsonStringArray(member.roles_json)),
-      ) as MessageMetadata["roles"],
-      pendingOperationIds: jsonStringArray(message.pending_operation_ids_json),
-    });
-  }
+  const { conversations, nextPage } = await readConversationPages(
+    tx,
+    query,
+    pages,
+    search,
+  );
+  const { matching, unread } = await readCounts(
+    tx,
+    { ...query, search },
+    conversationIndexFor(query.predicate),
+  );
   const coverage = await readCoverage(tx, query.accountIds);
   const complete = coverage.every((item) => item.metadata === "complete");
   const accountConnections = await tx.query(
@@ -75,16 +75,13 @@ export async function readMailboxViewFromSql(
   return {
     revision,
     view: {
-      conversations: summaries,
+      conversations,
       counts: {
-        matchingConversations: Number(matching[0]?.n ?? 0),
-        unreadConversations: Number(unread[0]?.n ?? 0),
+        matchingConversations: matching,
+        unreadConversations: unread,
         extent: complete ? "complete_scope" : "local_coverage",
       },
-      nextPage:
-        rows.length > query.pageSize
-          ? `${page.at(-1)?.latest}\t${page.at(-1)?.account_id}\t${page.at(-1)?.conversation_id}`
-          : null,
+      nextPage,
       coverage,
       connection: worstConnection(
         accountConnections.map((row) => connectionStatus(row.connection)),
@@ -93,37 +90,122 @@ export async function readMailboxViewFromSql(
   };
 }
 
-export async function readMailboxWindowFromSql(
+export async function readMailboxCountsFromSql(
   tx: SqlTransaction,
-  query: ConversationQuery,
-  pageCount: number,
-): Promise<{ revision: LocalRevision; view: MailboxView }> {
-  const pages = Math.max(1, Math.trunc(pageCount));
-  return readMailboxViewFromSql(tx, {
-    ...query,
-    pageSize: query.pageSize * pages,
-  });
+  query: MailboxCountsQuery,
+  search: SearchSupport,
+): Promise<{ revision: LocalRevision; view: MailboxCountsView }> {
+  const revision = await readRevision(tx);
+  const counts: MailboxCountsView["counts"] = [];
+  for (const target of query.targets) {
+    const { matching, unread } = await readCounts(
+      tx,
+      { accountIds: query.accountIds, predicate: target.predicate, search },
+      conversationIndexFor(target.predicate),
+    );
+    counts.push({
+      id: target.id,
+      matchingConversations: matching,
+      unreadConversations: unread,
+    });
+  }
+  return { revision, view: { counts } };
 }
 
-async function readFilteredPage(tx: SqlTransaction, query: ConversationQuery) {
-  const compiled = compilePredicate(query.predicate);
-  const accountPlaceholders = query.accountIds.map(() => "?").join(",");
-  const where = `e.account_id IN (${accountPlaceholders}) AND ${compiled.sql}`;
-  const bindings = [...query.accountIds, ...compiled.bindings];
+async function readConversationPages(
+  tx: SqlTransaction,
+  query: ConversationQuery,
+  pages: number,
+  search: SearchSupport,
+) {
+  const window = { ...query, pageSize: query.pageSize * pages };
+  const index = conversationIndexFor(query.predicate);
+  const rows = index
+    ? await readIndexedRows(tx, window, index)
+    : await readFilteredRows(tx, { ...window, search });
+  const listed = rows.slice(0, window.pageSize);
+  const conversations = [];
+  for (let start = 0; start < listed.length; start += query.pageSize) {
+    conversations.push(
+      ...(await readConversationSummaries(
+        tx,
+        listed.slice(start, start + query.pageSize),
+      )),
+    );
+  }
+  const last = listed.at(-1);
+  return {
+    conversations,
+    nextPage:
+      rows.length > window.pageSize && last
+        ? `${last.latest}\t${last.account_id}\t${last.conversation_id}`
+        : null,
+  };
+}
+
+type CountScope = {
+  accountIds: string[];
+  predicate: MailPredicate;
+  search: SearchSupport;
+};
+
+type Counts = { matching: number; unread: number };
+
+function readCounts(
+  tx: SqlTransaction,
+  scope: CountScope,
+  index: ConversationIndex | null,
+): Promise<Counts> {
+  return index
+    ? readIndexedCounts(tx, scope, index)
+    : readFilteredCounts(tx, scope);
+}
+
+function filteredScope(scope: CountScope) {
+  const mailbox =
+    scope.predicate.kind === "mailbox" ? scope.predicate.mailbox : null;
+  const driven = searchDrivenSource(scope.predicate, scope.search);
+  const compiled =
+    mailbox === "archive" || mailbox === "all" || mailbox === "snoozed"
+      ? { sql: "1=1", bindings: [] as SqlValue[] }
+      : compilePredicate(driven?.rest ?? scope.predicate, scope.search);
+  const accountPlaceholders = scope.accountIds.map(() => "?").join(",");
+  const having = mailboxConversationHaving(mailbox);
+  return {
+    mailbox,
+    from: driven?.from ?? "effective_messages e",
+    where: `e.account_id IN (${accountPlaceholders}) AND ${compiled.sql}`,
+    having,
+    // In clause order: source, WHERE, HAVING.
+    bindings: [
+      ...(driven?.bindings ?? []),
+      ...scope.accountIds,
+      ...compiled.bindings,
+      ...having.bindings,
+    ],
+  };
+}
+
+async function readFilteredRows(
+  tx: SqlTransaction,
+  query: ConversationQuery & CountScope,
+) {
+  const { from, where, having, bindings } = filteredScope(query);
   const cursor = query.after ? parseMailboxCursor(query.after) : null;
   const cursorSql = cursor
     ? `WHERE latest < ?
        OR (latest = ? AND account_id > ?)
        OR (latest = ? AND account_id = ? AND conversation_id > ?)`
     : "";
-  const rows = await tx.query(
+  return tx.query(
     `WITH grouped AS (
        SELECT e.account_id, e.conversation_id, MAX(e.received_at_ms) AS latest,
               MAX(CASE WHEN e.read = 0 THEN 1 ELSE 0 END) AS unread,
               MAX(e.starred) AS starred
-       FROM effective_messages e
+       FROM ${from}
        WHERE ${where}
        GROUP BY e.account_id, e.conversation_id
+       ${having.sql ? `HAVING ${having.sql}` : ""}
      )
      SELECT * FROM grouped
      ${cursorSql}
@@ -144,29 +226,100 @@ async function readFilteredPage(tx: SqlTransaction, query: ConversationQuery) {
       query.pageSize + 1,
     ],
   );
-  const matching = await tx.query(
-    `SELECT COUNT(*) AS n FROM (
-       SELECT 1 FROM effective_messages e WHERE ${where} GROUP BY e.account_id, e.conversation_id
-     )`,
-    bindings,
-  );
-  const unread = await tx.query(
-    `SELECT COUNT(*) AS n FROM (
-       SELECT 1 FROM effective_messages e
-       WHERE ${where} AND e.read = 0
-       GROUP BY e.account_id, e.conversation_id
-     )`,
-    bindings,
-  );
-  return { rows, matching, unread };
 }
 
-async function readIndexedRolePage(
+async function readFilteredCounts(
+  tx: SqlTransaction,
+  scope: CountScope,
+): Promise<Counts> {
+  const { mailbox, from, where, having, bindings } = filteredScope(scope);
+  // A snoozed conversation counts as unread only through an unread message
+  // that is itself snoozed.
+  const snoozed = mailbox === "snoozed";
+  const [row] = await tx.query(
+    `SELECT COUNT(*) AS n, COALESCE(SUM(unread), 0) AS u FROM (
+       SELECT MAX(CASE WHEN e.read = 0${snoozed ? " AND IFNULL(e.snoozed_until_ms, 0) > ?" : ""} THEN 1 ELSE 0 END) AS unread
+       FROM ${from}
+       WHERE ${where}
+       GROUP BY e.account_id, e.conversation_id
+       ${having.sql ? `HAVING ${having.sql}` : ""}
+     )`,
+    [...(snoozed ? [Date.now()] : []), ...bindings],
+  );
+  return { matching: Number(row?.n ?? 0), unread: Number(row?.u ?? 0) };
+}
+
+function mailboxConversationHaving(mailbox: WellKnownMailbox | null): {
+  sql: string;
+  bindings: SqlValue[];
+} {
+  if (mailbox === "archive") {
+    return {
+      sql: "MAX(e.in_inbox) = 0 AND MAX(e.in_trash) = 0 AND MAX(e.in_spam) = 0",
+      bindings: [],
+    };
+  }
+  if (mailbox === "all") {
+    return {
+      sql: "MAX(e.in_trash) = 0 AND MAX(e.in_spam) = 0",
+      bindings: [],
+    };
+  }
+  if (mailbox === "snoozed") {
+    return {
+      sql: "MAX(IFNULL(e.snoozed_until_ms, 0)) > ?",
+      bindings: [Date.now()],
+    };
+  }
+  return { sql: "", bindings: [] };
+}
+
+type ConversationIndex = {
+  source: string;
+  sourceBindings: SqlValue[];
+};
+
+// Single-role and single-membership views read trigger-maintained indexes
+// instead of scanning every message.
+function conversationIndexFor(
+  predicate: ConversationQuery["predicate"],
+): ConversationIndex | null {
+  if (predicate.kind === "role") return roleIndex(predicate.role);
+  if (predicate.kind === "mailbox" && predicate.mailbox === "inbox") {
+    return roleIndex("inbox");
+  }
+  if (predicate.kind === "membership") {
+    const account = predicate.accountId ? " AND account_id = ?" : "";
+    return {
+      source: `(SELECT account_id, conversation_id, MAX(received_at_ms) AS latest_at_ms,
+                       MAX(1 - read) AS unread, MAX(starred) AS starred
+                FROM effective_message_memberships
+                WHERE kind = ? AND membership_id = ?${account}
+                GROUP BY account_id, conversation_id)`,
+      sourceBindings: [
+        predicate.membership,
+        predicate.id,
+        ...(predicate.accountId ? [predicate.accountId] : []),
+      ],
+    };
+  }
+  return null;
+}
+
+function roleIndex(role: MessageMetadata["roles"][number]): ConversationIndex {
+  return {
+    source:
+      "(SELECT account_id, conversation_id, latest_at_ms, unread, starred FROM effective_role_conversations WHERE role = ?)",
+    sourceBindings: [role],
+  };
+}
+
+async function readIndexedRows(
   tx: SqlTransaction,
   query: ConversationQuery,
-  role: MessageMetadata["roles"][number],
+  index: ConversationIndex,
 ) {
-  const accountPlaceholders = query.accountIds.map(() => "?").join(",");
+  const { where, whereBindings } = indexedScope(query, index);
   const cursor = query.after ? parseMailboxCursor(query.after) : null;
   const cursorSql = cursor
     ? `AND (
@@ -175,16 +328,15 @@ async function readIndexedRolePage(
          OR (c.latest_at_ms = ? AND c.account_id = ? AND c.conversation_id > ?)
        )`
     : "";
-  const rows = await tx.query(
+  return tx.query(
     `SELECT c.account_id, c.conversation_id, c.latest_at_ms AS latest, c.unread, c.starred
-     FROM effective_role_conversations c
-     WHERE c.account_id IN (${accountPlaceholders}) AND c.role = ?
+     FROM ${index.source} c
+     WHERE ${where}
        ${cursorSql}
      ORDER BY c.latest_at_ms DESC, c.account_id ASC, c.conversation_id ASC
      LIMIT ?`,
     [
-      ...query.accountIds,
-      role,
+      ...whereBindings,
       ...(cursor
         ? [
             cursor.latest,
@@ -198,17 +350,31 @@ async function readIndexedRolePage(
       query.pageSize + 1,
     ],
   );
-  const matching = await tx.query(
-    `SELECT COUNT(*) AS n FROM effective_role_conversations
-     WHERE account_id IN (${accountPlaceholders}) AND role = ?`,
-    [...query.accountIds, role],
+}
+
+async function readIndexedCounts(
+  tx: SqlTransaction,
+  scope: CountScope,
+  index: ConversationIndex,
+): Promise<Counts> {
+  const { where, whereBindings } = indexedScope(scope, index);
+  const [row] = await tx.query(
+    `SELECT COUNT(*) AS n, COALESCE(SUM(c.unread = 1), 0) AS u
+     FROM ${index.source} c WHERE ${where}`,
+    whereBindings,
   );
-  const unread = await tx.query(
-    `SELECT COUNT(*) AS n FROM effective_role_conversations
-     WHERE account_id IN (${accountPlaceholders}) AND role = ? AND unread = 1`,
-    [...query.accountIds, role],
-  );
-  return { rows, matching, unread };
+  return { matching: Number(row?.n ?? 0), unread: Number(row?.u ?? 0) };
+}
+
+function indexedScope(
+  scope: { accountIds: string[] },
+  index: ConversationIndex,
+) {
+  const accountPlaceholders = scope.accountIds.map(() => "?").join(",");
+  return {
+    where: `c.account_id IN (${accountPlaceholders})`,
+    whereBindings: [...index.sourceBindings, ...scope.accountIds],
+  };
 }
 
 function parseMailboxCursor(value: string) {
@@ -218,4 +384,79 @@ function parseMailboxCursor(value: string) {
     return null;
   }
   return { latest: latestMs, accountId, conversationId };
+}
+
+async function readConversationSummaries(
+  tx: SqlTransaction,
+  page: Array<Record<string, SqlValue>>,
+) {
+  if (page.length === 0) return [];
+  const members = await tx.query(
+    `SELECT account_id, conversation_id, message_id, subject, preview, from_address, to_json,
+            received_at_ms, unread, starred, label_ids_json, roles_json, pending_operation_ids_json
+     FROM (
+       SELECT e.account_id, e.conversation_id, e.message_id, e.subject, e.preview, e.from_address,
+              e.to_json, e.received_at_ms, e.read AS unread, e.starred, e.label_ids_json, e.roles_json,
+              e.pending_operation_ids_json
+       FROM effective_messages e
+       WHERE ${page
+         .map(() => "(e.account_id = ? AND e.conversation_id = ?)")
+         .join(" OR ")}
+     )`,
+    page.flatMap((row) => [row.account_id, row.conversation_id]),
+  );
+  const grouped = new Map<string, typeof members>();
+  for (const member of members) {
+    const key = `${member.account_id}\0${member.conversation_id}`;
+    const list = grouped.get(key) ?? [];
+    list.push(member);
+    grouped.set(key, list);
+  }
+  return page.map((row) => {
+    const key = `${row.account_id}\0${row.conversation_id}`;
+    const conversationMembers = [...(grouped.get(key) ?? [])].sort(
+      (left, right) => {
+        const byTime =
+          Number(left.received_at_ms) - Number(right.received_at_ms);
+        if (byTime !== 0) return byTime;
+        return String(left.message_id).localeCompare(String(right.message_id));
+      },
+    );
+    const message = conversationMembers.at(-1);
+    if (!message)
+      throw new Error("Conversation query has no effective message");
+    // A draft must not rename the conversation, including after it moves to trash.
+    const subjectMessage =
+      [...conversationMembers].reverse().find((member) => {
+        const roles = jsonStringArray(member.roles_json);
+        return !roles.includes("draft") && !roles.includes("trash");
+      }) ?? message;
+    return {
+      key: {
+        accountId: String(row.account_id),
+        conversationId: String(row.conversation_id),
+      },
+      subject: String(subjectMessage.subject),
+      preview: String(message.preview),
+      from: String(message.from_address),
+      to: jsonStringArray(message.to_json).join(", "),
+      senders: conversationMembers
+        .map((member) => String(member.from_address))
+        .filter(Boolean),
+      latestMessageAtMs: Number(row.latest),
+      unread: Number(row.unread) === 1,
+      starred: Number(row.starred) === 1,
+      labelIds: uniqueStrings(
+        conversationMembers.flatMap((member) =>
+          jsonStringArray(member.label_ids_json),
+        ),
+      ),
+      roles: uniqueStrings(
+        conversationMembers.flatMap((member) =>
+          jsonStringArray(member.roles_json),
+        ),
+      ) as MessageMetadata["roles"],
+      pendingOperationIds: jsonStringArray(message.pending_operation_ids_json),
+    };
+  });
 }

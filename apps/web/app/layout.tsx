@@ -17,11 +17,16 @@ import { UTM } from "@/app/utm";
 import { startupImage } from "@/app/startup-image";
 import { Toaster } from "@/components/Toast";
 import {
+  CookieConsentBanner,
+  WithCookieConsent,
+} from "@/components/CookieConsent";
+import {
   BRAND_ICON_URL,
   BRAND_NAME,
   SUPPORT_EMAIL,
   toAbsoluteUrl,
 } from "@/utils/branding";
+import { isIndexingAllowed } from "@/utils/indexing";
 
 const aeonikFont = localFont({
   src: "../styles/aeonik-medium.woff",
@@ -38,6 +43,8 @@ const geist = Geist({
 const title = `${BRAND_NAME} | Automate and clean your inbox`;
 const description =
   "Your AI executive assistant to reach inbox zero fast. Automate emails, bulk unsubscribe, block cold emails, and analytics. Open-source";
+
+const indexingAllowed = isIndexingAllowed(env.NEXT_PUBLIC_BASE_URL);
 
 // JSON-LD structured data
 const jsonLd: WithContext<WebApplication> = {
@@ -120,8 +127,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
   // issues with robots.txt: https://github.com/vercel/next.js/issues/58615#issuecomment-1852457285
   robots: {
-    index: true,
-    follow: true,
+    index: indexingAllowed,
+    follow: indexingAllowed,
   },
   // pwa
   applicationName: BRAND_NAME,
@@ -185,16 +192,19 @@ export default async function RootLayout({
         <AxiomWebVitals />
         <UTM />
         <SpeedInsights />
-        {env.NEXT_PUBLIC_DUB_REFER_DOMAIN && (
-          <DubAnalytics
-            apiHost="/_proxy/dub"
-            scriptProps={{ src: "/_proxy/dub/script.js" }}
-            domainsConfig={{ refer: env.NEXT_PUBLIC_DUB_REFER_DOMAIN }}
-          />
-        )}
-        {env.NEXT_PUBLIC_GTM_ID ? (
-          <GoogleTagManager gtmId={env.NEXT_PUBLIC_GTM_ID} />
-        ) : null}
+        <WithCookieConsent>
+          {env.NEXT_PUBLIC_DUB_REFER_DOMAIN && (
+            <DubAnalytics
+              apiHost="/_proxy/dub"
+              scriptProps={{ src: "/_proxy/dub/script.js" }}
+              domainsConfig={{ refer: env.NEXT_PUBLIC_DUB_REFER_DOMAIN }}
+            />
+          )}
+          {env.NEXT_PUBLIC_GTM_ID ? (
+            <GoogleTagManager gtmId={env.NEXT_PUBLIC_GTM_ID} />
+          ) : null}
+        </WithCookieConsent>
+        <CookieConsentBanner />
       </body>
     </html>
   );

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { conversationQuerySchema, mailboxViewSchema } from "../queries";
+import {
+  conversationQuerySchema,
+  mailboxCountsQuerySchema,
+  mailboxViewSchema,
+} from "../queries";
 import {
   submitConversationCommandSchema,
   submitMetadataCommandSchema,
@@ -22,6 +26,12 @@ export const mailIpcRequestSchema = z.discriminatedUnion("method", [
     requestId: z.string().min(1).max(128),
     method: z.literal("observeMailbox"),
     payload: conversationQuerySchema,
+  }),
+  z.object({
+    protocolVersion: z.literal(MAIL_IPC_PROTOCOL_VERSION),
+    requestId: z.string().min(1).max(128),
+    method: z.literal("observeMailboxCounts"),
+    payload: mailboxCountsQuerySchema,
   }),
   z.object({
     protocolVersion: z.literal(MAIL_IPC_PROTOCOL_VERSION),
@@ -98,6 +108,12 @@ export const mailIpcRequestSchema = z.discriminatedUnion("method", [
   z.object({
     protocolVersion: z.literal(MAIL_IPC_PROTOCOL_VERSION),
     requestId: z.string().min(1).max(128),
+    method: z.literal("retainAccounts"),
+    payload: z.object({ accountIds: z.array(accountIdSchema) }),
+  }),
+  z.object({
+    protocolVersion: z.literal(MAIL_IPC_PROTOCOL_VERSION),
+    requestId: z.string().min(1).max(128),
     method: z.literal("inspect"),
     payload: z.object({}),
   }),
@@ -110,6 +126,12 @@ export const mailIpcRequestSchema = z.discriminatedUnion("method", [
       after: z.string().nullable(),
       pageSize: z.number().int().min(1).max(100),
     }),
+  }),
+  z.object({
+    protocolVersion: z.literal(MAIL_IPC_PROTOCOL_VERSION),
+    requestId: z.string().min(1).max(128),
+    method: z.literal("observeOperation"),
+    payload: operationKeySchema,
   }),
   z.object({
     protocolVersion: z.literal(MAIL_IPC_PROTOCOL_VERSION),

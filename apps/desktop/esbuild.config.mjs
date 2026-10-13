@@ -14,6 +14,11 @@ await esbuild.build({
   entryPoints: ["src/main.ts"],
   outfile: "dist/main.js",
   format: "esm",
+  define: {
+    "process.env.INBOX_ZERO_SENTRY_DSN": JSON.stringify(
+      process.env.INBOX_ZERO_SENTRY_DSN ?? "",
+    ),
+  },
   // electron-updater and fs-extra are CJS. esbuild rewrites their require("fs")
   // calls to a helper that throws in ESM unless require exists in this module.
   banner: { js: ESM_MAIN_REQUIRE_BANNER },
@@ -28,7 +33,7 @@ await esbuild.build({
 
 await esbuild.build({
   ...desktopEsbuildShared,
-  entryPoints: ["src/mail-engine/utility-child.ts"],
+  entryPoints: ["src/mail-engine/utility-child-entry.ts"],
   outfile: "dist/mail-engine-child.js",
   format: "esm",
 });

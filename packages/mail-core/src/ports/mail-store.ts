@@ -19,13 +19,18 @@ import type {
 } from "../identities";
 import type {
   OperationState,
+  OperationStatus,
   PreparedOperation,
   TargetOutcome,
 } from "../operations";
 import type {
+  ContactSuggestion,
+  ContactSuggestionQuery,
   ConversationQuery,
   Coverage,
   MailPredicate,
+  MailboxCountsQuery,
+  MailboxCountsView,
   MailboxView,
   QuerySnapshot,
 } from "../queries";
@@ -47,11 +52,24 @@ export type ConversationView = {
       | {
           status: "available";
           html: string | null;
+          /** Null when the message has HTML; derive text from `html`. */
           text: string | null;
           attachments: MessageAttachmentDescriptor[];
           isMeetingInvitation: boolean;
         };
     pendingOperationIds: string[];
+    /** The send operation that produced this message, once it is confirmed. */
+    sendOperationId?: string;
+  }>;
+  /**
+   * Sends from this device the provider hasn't confirmed yet, oldest first.
+   * Absent from desktop engines older than the web app.
+   */
+  outgoing?: Array<{
+    operationId: string;
+    status: OperationStatus;
+    metadata: MessageMetadata;
+    html: string;
   }>;
   nextPage: string | null;
   coverage: Coverage[];
@@ -231,6 +249,13 @@ export interface MailStore {
   }): Promise<
     { status: "committed"; revision: LocalRevision } | { status: "stale" }
   >;
+  /** Confirms locally a cancellation the server made for a held send. */
+  cancelHeldSend(
+    key: OperationKey,
+  ): Promise<
+    | { status: "cancelled"; revision: LocalRevision }
+    | { status: "too_late" | "not_found" }
+  >;
   cancelOperation(
     key: OperationKey,
   ): Promise<
@@ -315,6 +340,9 @@ export interface MailStore {
       conversationIds: string[];
     }>;
   }>;
+  indexContactBacklog(): Promise<{ remaining: boolean }>;
+  /** Indexes one short batch of stored bodies missing from local search. */
+  indexSearchBacklog(): Promise<{ remaining: boolean }>;
   inspect(input?: MailStoreInspectionInput): Promise<MailStoreInspection>;
   purgeAccount(accountId: string): Promise<LocalRevision>;
   readAccountSyncStates(): Promise<AccountSyncState[]>;
@@ -322,11 +350,23 @@ export interface MailStore {
     session: AccountSession;
     scopeId: string;
   }): Promise<BootstrapScan | null>;
+  readContactSuggestions(
+    query: ContactSuggestionQuery,
+  ): Promise<ContactSuggestion[]>;
   readConversation(
     key: ConversationKey,
     page: { after: string | null; pageSize: number },
   ): Promise<{ revision: LocalRevision; view: ConversationView }>;
   readDraft(key: DraftKey): Promise<DraftReadResult>;
+  /**
+   * A send already handed to the server to deliver at its `sendAtMs`, which
+   * only the server can still stop.
+   */
+  readHeldSend(key: OperationKey): Promise<PreparedOperation | null>;
+  readMailboxCounts(query: MailboxCountsQuery): Promise<{
+    revision: LocalRevision;
+    view: MailboxCountsView;
+  }>;
   readMailboxView(query: ConversationQuery): Promise<{
     revision: LocalRevision;
     view: MailboxView;
@@ -342,10 +382,11 @@ export interface MailStore {
     revision: LocalRevision;
     operation: OperationState | null;
   }>;
+  /** Resolves `true` when the stored connection state changed. */
   recordConnection(input: {
     accountId: string;
     connection: "ready" | "offline" | "blocked_auth";
-  }): Promise<void>;
+  }): Promise<boolean>;
   registerSyncScopes(input: {
     session: AccountSession;
     scopeIds: string[];
@@ -363,6 +404,7 @@ export interface MailStore {
           status: "confirmed";
           receiptId: string | null;
           observations: ProviderChange[];
+          bodies?: BodyObservation[];
           targets: TargetOutcome[];
         }
       | { status: "accepted"; receiptId: string; retryAfterMs: number }

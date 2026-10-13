@@ -317,10 +317,17 @@ const SHORTCUT_DEFINITIONS = [
   },
   {
     id: "moreActions",
-    keys: ["m"],
+    keys: ["."],
     scope: "mail",
     group: "Triage",
     label: "More actions",
+  },
+  {
+    id: "openTeamComments",
+    keys: ["m"],
+    scope: "mail",
+    group: "View",
+    label: "Comment",
   },
   {
     id: "undo",
@@ -328,6 +335,13 @@ const SHORTCUT_DEFINITIONS = [
     scope: "mail",
     group: "Triage",
     label: "Undo last action",
+  },
+  {
+    id: "translate",
+    keys: ["shift+t"],
+    scope: "mail",
+    group: "View",
+    label: "Translate / show original",
   },
   {
     id: "toggleLayout",
@@ -411,6 +425,15 @@ const SHORTCUT_DEFINITIONS = [
     scope: "mail",
     group: "Compose",
     label: "Attach files",
+    allowWhileTyping: true,
+    capture: true,
+  },
+  {
+    id: "popOutDraft",
+    keys: ["mod+shift+p"],
+    scope: "mail",
+    group: "Compose",
+    label: "Pop out draft",
     allowWhileTyping: true,
     capture: true,
   },

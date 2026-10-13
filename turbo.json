@@ -51,6 +51,13 @@
         "APPLE_IAP_PRIVATE_KEY",
         "APPLE_IAP_BUNDLE_ID",
         "APPLE_IAP_APPLE_ID",
+        "APPLE_IAP_LOCAL_TESTING",
+        "APNS_KEY_ID",
+        "APNS_TEAM_ID",
+        "APNS_PRIVATE_KEY",
+        "APNS_TOPIC",
+        "APNS_ENVIRONMENT",
+        "APNS_TRANSPORT",
         "ANDROID_APP_CERT_SHA256_FINGERPRINTS",
 
         "DEFAULT_LLMS",
@@ -118,6 +125,8 @@
         "CODEX_CLI_PATH",
         "PERPLEXITY_API_KEY",
 
+        "REDIS_HTTP_URL",
+        "REDIS_HTTP_TOKEN",
         "UPSTASH_REDIS_URL",
         "UPSTASH_REDIS_TOKEN",
         "KV_REST_API_URL",
@@ -148,6 +157,7 @@
         "LEMON_SQUEEZY_API_KEY",
 
         "TINYBIRD_TOKEN",
+        "TINYBIRD_DELETE_TOKEN",
         "TINYBIRD_BASE_URL",
 
         "POSTHOG_API_SECRET",
@@ -156,6 +166,7 @@
         "POSTHOG_FEEDBACK_SURVEY_QUESTION_ID",
         "POSTHOG_LLM_EVALS_APPROVED_EMAILS",
         "FEEDBACK_WEBHOOK_URL",
+        "SALES_INQUIRY_WEBHOOK_URL",
 
         "RECALL_API_KEY",
         "RECALL_WEBHOOK_SECRET",
@@ -168,6 +179,7 @@
         "NEXT_PUBLIC_IS_RESEND_CONFIGURED",
 
         "LOOPS_API_SECRET",
+        "LOOPS_WEBHOOK_SIGNING_SECRET",
 
         "CRON_SECRET",
         "BLOG_SYNC_WEBHOOK_SECRET",
@@ -179,6 +191,7 @@
         "WEBHOOK_URL",
         "MCP_SERVER_URL_OVERRIDES",
         "MCP_ALLOW_PRIVATE_IPS",
+        "COMPOSIO_API_KEY",
         "INTERNAL_API_URL",
         "INTERNAL_API_KEY",
         "WHITELIST_FROM",
@@ -255,6 +268,7 @@
         "NEXT_PUBLIC_SLACK_BOT_NAME",
         "NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT",
         "NEXT_PUBLIC_CONTACTS_ENABLED",
+        "NEXT_PUBLIC_COOKIE_CONSENT_ENABLED",
         "NEXT_PUBLIC_MAIL_ENGINE_TEST_INSPECT",
         "NEXT_PUBLIC_GMAIL_OTHER_CONTACTS_ENABLED",
         "NEXT_PUBLIC_EMAIL_SEND_ENABLED",
@@ -291,7 +305,7 @@
         "UNSUBSCRIBE_WORKER_URL",
         "UNSUBSCRIBE_WORKER_SECRET"
       ],
-      "outputs": [".next/**", "!.next/cache/**", "public/sw.js", "public/sw.js.map"]
+      "outputs": [".next/**", "!.next/cache/**", "public/sw.js", "public/sw.js.map", "generated/mcp-app/**"]
     },
     "build:ci": {
       "env": [
@@ -330,6 +344,13 @@
         "APPLE_IAP_PRIVATE_KEY",
         "APPLE_IAP_BUNDLE_ID",
         "APPLE_IAP_APPLE_ID",
+        "APPLE_IAP_LOCAL_TESTING",
+        "APNS_KEY_ID",
+        "APNS_TEAM_ID",
+        "APNS_PRIVATE_KEY",
+        "APNS_TOPIC",
+        "APNS_ENVIRONMENT",
+        "APNS_TRANSPORT",
         "ANDROID_APP_CERT_SHA256_FINGERPRINTS",
         "GOOGLE_PUBSUB_TOPIC_NAME",
         "EMAIL_ENCRYPT_SECRET",
@@ -387,6 +408,7 @@
         "NEXT_PUBLIC_SLACK_BOT_NAME",
         "NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT",
         "NEXT_PUBLIC_CONTACTS_ENABLED",
+        "NEXT_PUBLIC_COOKIE_CONSENT_ENABLED",
         "NEXT_PUBLIC_MAIL_ENGINE_TEST_INSPECT",
         "NEXT_PUBLIC_GMAIL_OTHER_CONTACTS_ENABLED",
         "NEXT_PUBLIC_EMAIL_SEND_ENABLED",
@@ -423,7 +445,7 @@
         "UNSUBSCRIBE_WORKER_URL",
         "UNSUBSCRIBE_WORKER_SECRET"
       ],
-      "outputs": [".next/**", "!.next/cache/**", "public/sw.js", "public/sw.js.map"]
+      "outputs": [".next/**", "!.next/cache/**", "public/sw.js", "public/sw.js.map", "generated/mcp-app/**"]
     },
     "test": {
       "env": ["RUN_AI_TESTS"]

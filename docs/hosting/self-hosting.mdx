@@ -80,14 +80,14 @@ Browser unsubscribe is also optional. Docker Compose and `pnpm dev` never start 
 
 **Note**: If you only use Microsoft OAuth, set `GOOGLE_CLIENT_ID=skipped` and `GOOGLE_CLIENT_SECRET=skipped`.
 
-**Note**: When both the web app and its database/Redis run in Docker, remove or comment out `DATABASE_URL`, `DIRECT_URL`, and `UPSTASH_REDIS_URL` copied from `.env.example`. Those example URLs use `localhost` for running the app on your host; Compose supplies internal Docker hostnames when they are unset. Keep explicit connection URLs when using external services.
+**Note**: When both the web app and its database/Redis run in Docker, remove or comment out `DATABASE_URL`, `DIRECT_URL`, and `REDIS_HTTP_URL` copied from `.env.example`. Those example URLs use `localhost` for running the app on your host; Compose supplies internal Docker hostnames when they are unset. Existing files that still set `UPSTASH_REDIS_URL` behave the same way. Keep explicit connection URLs when using external services.
 
 ### 3. Deploy
 
-Pull and start the services with your domain:
+Start the services with the command setup printed. From a cloned repo, you can also run:
 
 ```bash
-NEXT_PUBLIC_BASE_URL=https://yourdomain.com docker compose --profile all up -d
+NEXT_PUBLIC_BASE_URL=https://yourdomain.com docker compose --env-file apps/web/.env --profile all up -d
 ```
 
 The pre-built Docker image is hosted at `ghcr.io/elie222/inbox-zero:latest` and will be automatically pulled.
@@ -109,7 +109,7 @@ The `docker-compose.yml` supports different deployment modes using profiles:
 
 For external services, set the appropriate environment variables in `apps/web/.env`:
 - **External Postgres**: Set `DATABASE_URL` and `DIRECT_URL`
-- **External Redis**: Set `UPSTASH_REDIS_URL` and `UPSTASH_REDIS_TOKEN`
+- **External Redis**: Set `REDIS_HTTP_URL` and `REDIS_HTTP_TOKEN`. `UPSTASH_REDIS_URL` and `UPSTASH_REDIS_TOKEN` still work.
 
 ### 4. Check Logs
 

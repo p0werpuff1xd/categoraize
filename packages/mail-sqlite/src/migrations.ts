@@ -1,5 +1,11 @@
+import { migrateContactSuggestions } from "./contact-suggestions";
 import type { SqlTransaction } from "./driver";
-import { migrateConversationIndex } from "./conversation-index";
+import {
+  migrateConversationIndex,
+  migrateInboxUnreadExcludesArchive,
+  migrateMembershipIndex,
+} from "./conversation-index";
+import { migrateMessageSearchIndex } from "./message-search-index";
 
 export const MAILBOX_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -33,6 +39,7 @@ CREATE TABLE IF NOT EXISTS messages (
   from_address TEXT NOT NULL,
   to_json TEXT NOT NULL,
   cc_json TEXT NOT NULL,
+  bcc_json TEXT NOT NULL DEFAULT '[]',
   received_at_ms INTEGER NOT NULL,
   read INTEGER NOT NULL CHECK (read IN (0, 1)),
   starred INTEGER NOT NULL CHECK (starred IN (0, 1)),
@@ -47,6 +54,7 @@ CREATE TABLE IF NOT EXISTS messages (
   in_trash INTEGER NOT NULL CHECK (in_trash IN (0, 1)),
   in_spam INTEGER NOT NULL CHECK (in_spam IN (0, 1)),
   has_attachments INTEGER NOT NULL CHECK (has_attachments IN (0, 1)),
+  snoozed_until_ms INTEGER,
   deleted INTEGER NOT NULL DEFAULT 0 CHECK (deleted IN (0, 1)),
   PRIMARY KEY (account_id, message_id),
   FOREIGN KEY (account_id) REFERENCES accounts(account_id)
@@ -72,6 +80,8 @@ CREATE TABLE IF NOT EXISTS effective_messages (
   external_url TEXT,
   from_address TEXT NOT NULL,
   to_json TEXT NOT NULL,
+  cc_json TEXT NOT NULL DEFAULT '[]',
+  bcc_json TEXT NOT NULL DEFAULT '[]',
   received_at_ms INTEGER NOT NULL,
   read INTEGER NOT NULL,
   starred INTEGER NOT NULL,
@@ -86,6 +96,7 @@ CREATE TABLE IF NOT EXISTS effective_messages (
   in_trash INTEGER NOT NULL,
   in_spam INTEGER NOT NULL,
   has_attachments INTEGER NOT NULL,
+  snoozed_until_ms INTEGER,
   pending_operation_ids_json TEXT NOT NULL,
   PRIMARY KEY (account_id, message_id)
 );
@@ -111,6 +122,7 @@ CREATE TABLE IF NOT EXISTS operations (
   claimed_until_ms INTEGER,
   attempt_id TEXT,
   created_at_ms INTEGER NOT NULL,
+  sent_message_id TEXT,
   PRIMARY KEY (account_id, command_id)
 );
 
@@ -140,6 +152,7 @@ CREATE TABLE IF NOT EXISTS drafts (
   revision INTEGER NOT NULL,
   content_json TEXT NOT NULL,
   frozen INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (account_id, draft_id)
 );
 
@@ -210,6 +223,19 @@ CREATE TABLE IF NOT EXISTS conversation_completeness (
   PRIMARY KEY (account_id, conversation_id)
 );
 
+CREATE TABLE IF NOT EXISTS message_fts_keys (
+  account_id TEXT NOT NULL,
+  message_id TEXT NOT NULL,
+  fts_rowid INTEGER NOT NULL,
+  PRIMARY KEY (account_id, message_id)
+);
+
+-- Whether every message has a search row; a missing row means not yet.
+CREATE TABLE IF NOT EXISTS search_index_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  complete INTEGER NOT NULL CHECK (complete IN (0, 1))
+);
+
 CREATE TABLE IF NOT EXISTS assistant_entries (
   account_id TEXT NOT NULL,
   entry_id TEXT NOT NULL,
@@ -235,18 +261,8 @@ CREATE INDEX IF NOT EXISTS bootstrap_seen_lookup
   ON bootstrap_seen_messages(account_id, scope_id, message_id);
 CREATE INDEX IF NOT EXISTS bootstrap_existing_lookup
   ON bootstrap_existing_messages(account_id, scope_id, message_id);
-`;
-
-export const MAILBOX_FTS_SQL = `
-CREATE VIRTUAL TABLE IF NOT EXISTS message_fts USING fts5(
-  account_id UNINDEXED,
-  message_id UNINDEXED,
-  subject,
-  preview,
-  from_address,
-  body,
-  tokenize = 'unicode61'
-);
+CREATE INDEX IF NOT EXISTS message_fts_keys_rowid
+  ON message_fts_keys(fts_rowid);
 `;
 
 export async function migrateMailbox(
@@ -254,17 +270,6 @@ export async function migrateMailbox(
   epoch: string,
 ): Promise<void> {
   await tx.exec(MAILBOX_SCHEMA_SQL);
-  try {
-    await tx.exec("SAVEPOINT fts_create");
-    await tx.exec(MAILBOX_FTS_SQL);
-    await tx.exec("RELEASE fts_create");
-  } catch {
-    try {
-      await tx.exec("ROLLBACK TO fts_create");
-    } catch {
-      // savepoint missing
-    }
-  }
   const existing = await tx.query(
     "SELECT database_epoch FROM profile_state WHERE id = 1",
   );
@@ -344,5 +349,94 @@ export async function migrateMailbox(
   } catch {
     // column already exists on freshly created databases
   }
+  try {
+    await tx.exec("ALTER TABLE messages ADD COLUMN snoozed_until_ms INTEGER");
+  } catch {
+    // column already exists on freshly created databases
+  }
+  try {
+    await tx.exec(
+      "ALTER TABLE effective_messages ADD COLUMN snoozed_until_ms INTEGER",
+    );
+  } catch {
+    // column already exists on freshly created databases
+  }
+  try {
+    await tx.exec(
+      "ALTER TABLE drafts ADD COLUMN updated_at_ms INTEGER NOT NULL DEFAULT 0",
+    );
+  } catch {
+    // column already exists on freshly created databases
+  }
+  try {
+    await tx.exec("ALTER TABLE operations ADD COLUMN sent_message_id TEXT");
+  } catch {
+    // column already exists on freshly created databases
+  }
+  let addedEffectiveCc = false;
+  try {
+    await tx.exec(
+      "ALTER TABLE effective_messages ADD COLUMN cc_json TEXT NOT NULL DEFAULT '[]'",
+    );
+    addedEffectiveCc = true;
+  } catch {
+    // column already exists on freshly created databases
+  }
+  if (addedEffectiveCc) {
+    await tx.exec(`
+      UPDATE effective_messages
+      SET cc_json = COALESCE(
+        (SELECT m.cc_json FROM messages AS m
+         WHERE m.account_id = effective_messages.account_id
+           AND m.message_id = effective_messages.message_id),
+        '[]'
+      )
+    `);
+  }
+  try {
+    await tx.exec(
+      "ALTER TABLE messages ADD COLUMN bcc_json TEXT NOT NULL DEFAULT '[]'",
+    );
+  } catch {
+    // column already exists on freshly created databases
+  }
+  try {
+    await tx.exec(
+      "ALTER TABLE effective_messages ADD COLUMN bcc_json TEXT NOT NULL DEFAULT '[]'",
+    );
+  } catch {
+    // column already exists on freshly created databases
+  }
+  await tx.exec(`
+    CREATE INDEX IF NOT EXISTS operations_sent_message
+      ON operations(account_id, sent_message_id)
+      WHERE sent_message_id IS NOT NULL;
+  `);
+  // Attachment bytes now live on the mailbox draft, not on this device.
+  await tx.exec("DROP TABLE IF EXISTS draft_attachments");
   await migrateConversationIndex(tx);
+  await migrateMembershipIndex(tx);
+  await migrateInboxUnreadExcludesArchive(tx);
+  await migrateMessageSearchIndex(tx);
+  await migrateEmptyMeetingInvitationBodies(tx);
+  await migrateContactSuggestions(tx);
+}
+
+// Delta sync once stored a meeting invitation's flag without its body. Dropping
+// those rows lets the reader hydrate the body again.
+export async function migrateEmptyMeetingInvitationBodies(tx: SqlTransaction) {
+  const applied = await tx.query(
+    "SELECT 1 FROM schema_migrations WHERE id = 9",
+  );
+  if (applied.length) return;
+  await tx.exec(`
+    DELETE FROM message_content
+    WHERE is_meeting_invitation = 1
+      AND html IS NULL
+      AND text IS NULL
+      AND COALESCE(attachments_json, '[]') = '[]'
+  `);
+  await tx.execute(
+    "INSERT INTO schema_migrations(id, name) VALUES (9, '0009-empty-meeting-invitation-bodies')",
+  );
 }
