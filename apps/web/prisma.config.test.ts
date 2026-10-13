@@ -8,8 +8,11 @@ beforeEach(() => {
     "PREVIEW_DATABASE_URL_UNPOOLED",
     "PREVIEW_DATABASE_URL",
     "DIRECT_URL",
+    "POSTGRES_URL_NON_POOLING",
     "DATABASE_URL_UNPOOLED",
     "DATABASE_URL",
+    "POSTGRES_PRISMA_URL",
+    "POSTGRES_URL",
   ]) {
     vi.stubEnv(key, "");
   }
@@ -41,4 +44,17 @@ describe("migration database selection", () => {
     const { default: config } = await import("./prisma.config");
     expect(config.datasource?.url).toBe("postgresql://primary-direct/db");
   });
+
+  it("supports Supabase Vercel integration unpooled connection", async () => {
+    vi.stubEnv("POSTGRES_URL_NON_POOLING", "postgresql://supabase-direct/db");
+    const { default: config } = await import("./prisma.config");
+    expect(config.datasource?.url).toBe("postgresql://supabase-direct/db");
+  });
+
+  it("supports Supabase Vercel integration pooled connection", async () => {
+    vi.stubEnv("POSTGRES_PRISMA_URL", "postgresql://supabase-pooled/db");
+    const { default: config } = await import("./prisma.config");
+    expect(config.datasource?.url).toBe("postgresql://supabase-pooled/db");
+  });
 });
+
