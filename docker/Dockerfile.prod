@@ -40,6 +40,7 @@ COPY packages/tsconfig/package.json packages/tsconfig/package.json
 COPY apps/web/prisma/schema.prisma apps/web/prisma/schema.prisma
 # Copy postinstall script
 COPY clone-marketing.sh clone-marketing.sh
+COPY clone-marketing.mjs clone-marketing.mjs
 COPY scripts/pnpm-install-without-desktop.sh scripts/pnpm-install-without-desktop.sh
 
 # Install deps with a hoisted node_modules layout so Turbopack resolves packages

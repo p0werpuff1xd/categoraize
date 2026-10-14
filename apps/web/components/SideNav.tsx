@@ -97,15 +97,11 @@ export const useNavigation = () => {
 
   const manageItems: NavItem[] = useMemo(
     () => [
-      ...(isDesktopApp
-        ? [
-            {
-              name: "Inbox",
-              href: prefixPath(currentEmailAccountId, "/mail"),
-              icon: InboxIcon,
-            },
-          ]
-        : []),
+      {
+        name: "Inbox",
+        href: prefixPath(currentEmailAccountId, "/mail"),
+        icon: InboxIcon,
+      },
       {
         name: "Chat",
         href: prefixPath(currentEmailAccountId, "/assistant"),
@@ -131,7 +127,7 @@ export const useNavigation = () => {
           ]
         : []),
     ],
-    [currentEmailAccountId, isDesktopApp, showMeetingRecorder],
+    [currentEmailAccountId, showMeetingRecorder],
   );
 
   const cleanupItems: NavItem[] = useMemo(
