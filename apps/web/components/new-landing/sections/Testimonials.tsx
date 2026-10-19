@@ -64,7 +64,7 @@ const yoniTestimonial: Testimonial = {
 };
 
 const slimTestimonial: Testimonial = {
-  body: "I came across Inbox Zero while actively looking to hire a VA to manage my emails but after trying the tool, it turned out to be a complete game changer.",
+  body: "I came across Categoraize while actively looking to hire a VA to manage my emails but after trying the tool, it turned out to be a complete game changer.",
   author: {
     name: "Slim Labassi",
     handle: "Boomgen",
@@ -82,7 +82,7 @@ const willTestimonial: Testimonial = {
 };
 
 const valentineTestimonial: Testimonial = {
-  body: "I'm an executive who was drowning in hundreds of daily emails and heavily dependent on my EA for email management. What I love most about Inbox Zero is how it seamlessly replaced that entire function—the smart automation, prioritization, and organization features work like having a dedicated email assistant built right into my workflow.",
+  body: "I'm an executive who was drowning in hundreds of daily emails and heavily dependent on my EA for email management. What I love most about Categoraize is how it seamlessly replaced that entire function—the smart automation, prioritization, and organization features work like having a dedicated email assistant built right into my workflow.",
   author: {
     name: "Valentine Nwachukwu",
     handle: "Zaden Technologies",

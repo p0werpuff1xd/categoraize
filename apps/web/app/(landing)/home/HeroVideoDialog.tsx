@@ -18,7 +18,7 @@ const HERO_VIDEO_ID = "YeTrweHxCIM5tcBMXlvRbmDuPqL028lJrmJ3F6ZgwnDY";
 export function HeroVideoDialog({
   playbackId = HERO_VIDEO_ID,
   thumbnailTime,
-  title = "Inbox Zero product video",
+  title = "Categoraize product video",
 }: {
   playbackId?: string;
   thumbnailTime?: number;

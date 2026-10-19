@@ -317,7 +317,7 @@ export function MeetingDetail({
               <AlertDialogTitle>Delete meeting notes?</AlertDialogTitle>
               <AlertDialogDescription>
                 The summary and transcript will be permanently deleted from
-                Inbox Zero. Recap emails already sent and follow-up drafts in
+                Categoraize. Recap emails already sent and follow-up drafts in
                 your mailbox will remain.
               </AlertDialogDescription>
             </AlertDialogHeader>

@@ -520,7 +520,7 @@ describe("Models", () => {
         apiKey: "test-ai-gateway-key",
         headers: {
           "http-referer": "https://www.getinboxzero.com",
-          "x-title": "Inbox Zero",
+          "x-title": "Categoraize",
         },
       });
     });
