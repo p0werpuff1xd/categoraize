@@ -40,13 +40,14 @@ async function main() {
   const { values } = parseArgs({
     options: {
       port: { type: "string", default: "3000" },
+      host: { type: "string", default: "localhost" },
       backend: { type: "string", default: "auto" },
       help: { type: "boolean", short: "h" },
     },
   });
   if (values.help) {
     console.log(
-      "Usage: pnpm local:start [--port 3000] [--backend auto|native|docker]\n\nRequires Node.js 24, pnpm, and either Docker Compose or native PostgreSQL and Redis.\nOn macOS: brew install postgresql@16 redis\nData is preserved in .context/local-dev or the checkout's Docker volume.\nPress Ctrl-C to stop the app and the services started by this command.",
+      "Usage: pnpm local:start [--port 3000] [--host localhost] [--backend auto|native|docker]\n\nRequires Node.js 24, pnpm, and either Docker Compose or native PostgreSQL and Redis.\nOn macOS: brew install postgresql@16 redis\nData is preserved in .context/local-dev or the checkout's Docker volume.\nPress Ctrl-C to stop the app and the services started by this command.",
     );
     return;
   }
@@ -57,8 +58,11 @@ async function main() {
       "Local development currently supports macOS and Linux. On Windows, run this command inside WSL.",
     );
   const appPort = Number(values.port);
+  const appHost = values.host;
   if (!Number.isInteger(appPort) || appPort < 1 || appPort > 65_535)
     throw new Error("--port must be an integer between 1 and 65535");
+  if (!appHost || /[^a-zA-Z0-9.:-]/.test(appHost))
+    throw new Error("--host must be a hostname or IP address");
   if (!["auto", "native", "docker"].includes(values.backend))
     throw new Error("--backend must be auto, native, or docker");
   await assertAppPortFree(appPort);
@@ -129,6 +133,7 @@ async function main() {
     ] = await Promise.all(Array.from({ length: 8 }, () => availablePort()));
     const env = createLocalEnvironment({
       appPort,
+      appHost,
       databasePort,
       redisPort,
       redisHttpPort,
@@ -141,6 +146,8 @@ async function main() {
     });
     // Give this launcher its own Next output and lock, separate from pnpm dev and Playwright.
     env.PLAYWRIGHT_RUN_ID = "local-dev";
+    env.NODE_OPTIONS =
+      `${env.NODE_OPTIONS ?? ""} --max_old_space_size=16384`.trim();
     env.RESEND_API_KEY = "local-email-key";
     env.RESEND_BASE_URL = `http://127.0.0.1:${emailPort}`;
     env.RESEND_FROM_EMAIL = "Inbox Zero <signin@example.com>";
@@ -322,9 +329,10 @@ async function main() {
       "next",
       "dev",
       "--hostname",
-      "127.0.0.1",
+      "0.0.0.0",
       "--port",
       String(appPort),
+      "--webpack",
     ]);
     await processes.ready(
       "Next.js",
