@@ -73,7 +73,7 @@ export function MeetingRecorderOnboarding({
       imageSrc="/images/illustrations/calling-help.svg"
       imageAlt="Meeting notetaker"
       title="Never write meeting notes again"
-      description="Inbox Zero joins your calls, takes the notes, and drafts the follow-up email."
+      description="Categoraize joins your calls, takes the notes, and drafts the follow-up email."
       features={features}
     >
       {hasCalendarConnected ? (

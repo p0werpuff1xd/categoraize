@@ -13,7 +13,7 @@ export default function AppSignInErrorPage() {
     <BasicLayout>
       <ErrorPage
         title="App sign-in didn't finish"
-        description="Return to the app and start sign-in again. If you're using Inbox Zero Desktop and this keeps happening, install the latest version."
+        description="Return to the app and start sign-in again. If you're using Categoraize Desktop and this keeps happening, install the latest version."
         button={
           <Button asChild>
             <Link href="/desktop">Get the latest desktop app</Link>

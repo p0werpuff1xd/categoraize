@@ -152,7 +152,7 @@ describe("getSafeRedirectUrl", () => {
     ).toBe("/login");
   });
 
-  it("opens the Inbox Zero app callback only when explicitly allowed", () => {
+  it("opens the Categoraize app callback only when explicitly allowed", () => {
     expect(
       getSafeRedirectUrl(
         "inboxzero://auth-callback?state=ADUZf5bSBOBSBzj58yThh17uiqgEg1PmsNzu-s4cMMA&code=xz5IkObSXqOpdCvBARrwRnqhOrxRQNX9qPeoT9G-jws",

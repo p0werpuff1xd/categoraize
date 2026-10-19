@@ -100,7 +100,7 @@ function ManageServiceWorker() {
           label: "Reload",
           onClick: activateWaitingWorker,
         },
-        description: "Reload Inbox Zero to use the latest version.",
+        description: "Reload Categoraize to use the latest version.",
         duration: Number.POSITIVE_INFINITY,
         id: DESKTOP_WEB_UPDATE_TOAST_ID,
       });

@@ -94,7 +94,7 @@ export function EndTrialButton({
                   </p>
                   {preview.trialEnd && (
                     <p>
-                      You do not need to do this to keep using Inbox Zero. Your
+                      You do not need to do this to keep using Categoraize. Your
                       trial already includes every paid feature and runs free
                       until {formatDateSimple(new Date(preview.trialEnd))}, when
                       the same charge happens automatically.

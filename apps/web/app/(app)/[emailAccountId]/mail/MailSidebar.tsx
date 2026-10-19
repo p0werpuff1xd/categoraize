@@ -272,7 +272,7 @@ export function MailSidebar({
           >
             <ArrowLeftIcon className="size-3.5 shrink-0" />
             <span className="flex-1 truncate" data-hide-on-desktop-mac>
-              Inbox Zero
+              Categoraize
             </span>
           </Link>
           <SidebarTrigger
