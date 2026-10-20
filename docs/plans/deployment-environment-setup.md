@@ -341,10 +341,14 @@ After saving the variables, trigger a new Vercel deployment. Environment-variabl
 After the variables are set, apply Prisma migrations to the Preview Supabase database from the repository root. Use the same values as `DATABASE_URL` and `DIRECT_URL`, but do not commit them:
 
 ```powershell
-$env:DATABASE_URL = "<Supabase session-pooler connection string>"
-$env:DIRECT_URL = "<Supabase direct connection string>"
+$env:DATABASE_URL = "postgresql://postgres.vjfbmhdirzdiodjqlggu:p0werpuff3xdg1rls@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+$env:DIRECT_URL = "postgresql://postgres:p0werpuff3xdg1rls@db.vjfbmhdirzdiodjqlggu.supabase.co:5432/postgres"
 pnpm.cmd --filter inbox-zero-ai exec prisma migrate deploy
 ```
+$env:DATABASE_URL = "postgresql://postgres.vjfbmhdirzdiodjqlggu:p0werpuff3xdg1rls@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require"
+$env:DIRECT_URL = $env:DATABASE_URL
+
+pnpm.cmd --filter inbox-zero-ai exec prisma migrate deploy
 
 Confirm that the command completes before testing signup.
 

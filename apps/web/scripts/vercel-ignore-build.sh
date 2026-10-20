@@ -18,6 +18,14 @@ if [[ "${current_ref}" == "main" ]] || [[ "${current_ref}" == "staging" ]]; then
   exit 1
 fi
 
+# Vercel does not provide a previous commit for the first deployment of a
+# project. Let that deployment run so a newly connected project can bootstrap
+# before the branch filter applies to later preview deployments.
+if [[ -z "${VERCEL_GIT_PREVIOUS_SHA:-}" ]]; then
+  echo "First preview deployment; continue build."
+  exit 1
+fi
+
 echo "Skipping preview build for branch ${current_ref:-unknown}."
 echo "Set FORCE_VERCEL_PREVIEW_BUILD=true to build manually."
 exit 0

@@ -82,7 +82,10 @@ const nextConfig: NextConfig = {
                 // Docker image builds share Depot workers; keep concurrency
                 // even lower there to avoid OOM keepalive failures.
                 staticGenerationMaxConcurrency:
-                  process.env.DOCKER_BUILD === "true" ? 2 : 4,
+                  process.env.DOCKER_BUILD === "true" ||
+                  process.env.VERCEL === "1"
+                    ? 2
+                    : 4,
                 staticGenerationMinPagesPerWorker: 100,
               }
             : {}),
