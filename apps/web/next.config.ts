@@ -82,10 +82,11 @@ const nextConfig: NextConfig = {
                 // Docker image builds share Depot workers; keep concurrency
                 // even lower there to avoid OOM keepalive failures.
                 staticGenerationMaxConcurrency:
-                  process.env.DOCKER_BUILD === "true" ||
                   process.env.VERCEL === "1"
-                    ? 2
-                    : 4,
+                    ? 1
+                    : process.env.DOCKER_BUILD === "true"
+                      ? 2
+                      : 4,
                 staticGenerationMinPagesPerWorker: 100,
               }
             : {}),
@@ -447,6 +448,7 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       "zod/v4/core": zodV4CorePath,
     };
+    if (process.env.VERCEL === "1") config.parallelism = 1;
     return config;
   },
 };
