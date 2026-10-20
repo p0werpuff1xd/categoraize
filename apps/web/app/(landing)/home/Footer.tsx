@@ -13,22 +13,6 @@ export const footerNavigation = {
       target: "_blank",
     },
     { name: "AI Email Assistant", href: "/ai-automation" },
-    { name: "Email Client", href: "/email-client" },
-    { name: "Mobile App", href: "/mobile-app" },
-    { name: "Desktop App", href: "/desktop" },
-    { name: "AI Chat for Slack & Telegram", href: "/ai-assistant-chat" },
-    { name: "Slack AI Assistant", href: "/slack-integration" },
-    { name: "Telegram AI Assistant", href: "/telegram-integration" },
-    { name: "Teams AI Assistant", href: "/teams-integration" },
-    { name: "Brief My Meeting", href: "/brief-my-meeting" },
-    { name: "AI Meeting Notetaker", href: "/ai-meeting-notetaker" },
-    { name: "Reply Zero", href: "/reply-zero-ai" },
-    { name: "Bulk Email Unsubscriber", href: "/bulk-email-unsubscriber" },
-    { name: "Clean your inbox", href: "/clean-inbox" },
-    { name: "Cold Email Blocker", href: "/block-cold-emails" },
-    { name: "Email Analytics", href: "/email-analytics" },
-    { name: "Auto Forward Emails", href: "/auto-forward-emails" },
-    { name: "Auto-File Attachments", href: "/auto-file-email-attachments" },
     { name: "Open Source", href: "/github", target: "_blank" },
   ],
   useCases: [
@@ -221,12 +205,7 @@ export function Footer() {
           </div>
           <p className="mt-6 text-center text-xs leading-5 text-gray-500">
             Powered by{" "}
-            <Link
-              href="https://getinboxzero.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-gray-900"
-            >
+            <Link href="/" className="hover:text-gray-900">
               Categoraize
             </Link>
           </p>
@@ -239,33 +218,12 @@ export function Footer() {
     <footer className="relative">
       <div className="mx-auto max-w-7xl overflow-hidden px-6 py-20 sm:py-24 lg:px-8">
         <nav aria-label="Footer">
-          <div className="mt-16 grid grid-cols-2 gap-8 lg:grid-cols-5 xl:col-span-2 xl:mt-0">
+          <div className="mt-16 grid grid-cols-2 gap-8 lg:grid-cols-3 xl:col-span-2 xl:mt-0">
             <div>
               <FooterList title="Product" items={footerNavigation.main} />
             </div>
             <div>
-              <FooterList title="Use Cases" items={footerNavigation.useCases} />
-
-              <div className="mt-6">
-                <FooterList
-                  title="Industries"
-                  items={footerNavigation.industries}
-                />
-              </div>
-
-              <div className="mt-6">
-                <FooterList title="Compare" items={footerNavigation.compare} />
-              </div>
-            </div>
-            <div>
               <FooterList title="Support" items={footerNavigation.support} />
-
-              <div className="mt-6">
-                <FooterList title="Free Tools" items={footerNavigation.tools} />
-              </div>
-            </div>
-            <div>
-              <FooterList title="Company" items={footerNavigation.company} />
             </div>
             <div>
               <FooterList title="Legal" items={footerNavigation.legal} />
