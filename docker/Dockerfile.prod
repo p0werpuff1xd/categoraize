@@ -55,8 +55,8 @@ COPY . .
 
  # Build app (Next.js standalone)
 ENV NODE_ENV=production
-# Increase V8 heap for the production build.
-ENV NODE_OPTIONS=--max_old_space_size=8192
+# Keep the production image build within small hosted builder memory limits.
+ENV NODE_OPTIONS=--max_old_space_size=4096
 # Typechecking is covered by the Build Check workflow. Skipping it here
 # keeps peak RAM down so Depot workers do not OOM during next build.
 ENV SKIP_TYPE_CHECK=true
