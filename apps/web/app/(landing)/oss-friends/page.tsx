@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionDescription, TypographyH3 } from "@/components/Typography";
-import { Footer } from "@/app/(landing)/home/Footer";
 import { FinalCTA } from "@/app/(landing)/home/FinalCTA";
 import { CardBasic } from "@/components/ui/card";
 import {
@@ -62,7 +61,6 @@ export default async function OSSFriendsPage() {
         </div>
 
         <FinalCTA />
-        <Footer />
       </>
     );
   } catch (error) {

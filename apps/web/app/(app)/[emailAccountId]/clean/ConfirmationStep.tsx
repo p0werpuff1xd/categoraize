@@ -3,26 +3,23 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { MutedText, TypographyH3 } from "@/components/Typography";
+import { TypographyH3 } from "@/components/Typography";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/Badge";
 import { cleanInboxAction } from "@/utils/actions/clean";
 import { toastError } from "@/components/Toast";
 import { CleanAction } from "@/generated/prisma/enums";
 import { PREVIEW_RUN_COUNT } from "@/app/(app)/[emailAccountId]/clean/consts";
-import { HistoryIcon, SettingsIcon } from "lucide-react";
 import { useAccount } from "@/providers/EmailAccountProvider";
 import { prefixPath } from "@/utils/path";
 
 export function ConfirmationStep({
-  showFooter,
   action,
   timeRange,
   instructions,
   skips,
   reuseSettings,
 }: {
-  showFooter: boolean;
   action: CleanAction;
   timeRange: number;
   instructions?: string;
@@ -120,39 +117,6 @@ export function ConfirmationStep({
           Start Cleaning
         </Button>
       </div>
-
-      {showFooter && (
-        <MutedText className="mt-6 flex items-center justify-center space-x-6">
-          <FooterLink
-            icon={HistoryIcon}
-            text="History"
-            href={prefixPath(emailAccountId, "/clean/history")}
-          />
-          <FooterLink
-            icon={SettingsIcon}
-            text="Edit settings"
-            href={prefixPath(emailAccountId, "/clean/onboarding")}
-          />
-        </MutedText>
-      )}
     </div>
   );
 }
-
-const FooterLink = ({
-  icon: Icon,
-  text,
-  href,
-}: {
-  icon: React.ElementType;
-  text: string;
-  href: string;
-}) => (
-  <Link
-    href={href}
-    className="flex items-center transition-colors hover:text-primary"
-  >
-    <Icon className="mr-1 h-4 w-4" />
-    <span>{text}</span>
-  </Link>
-);

@@ -1,5 +1,4 @@
 import { Header } from "@/components/new-landing/sections/Header";
-import { Footer } from "@/components/new-landing/sections/Footer";
 
 export function BlogHeader() {
   return (
@@ -16,12 +15,6 @@ export function BlogLayout(props: { children: React.ReactNode }) {
     <div className="bg-slate-50">
       <BlogHeader />
       <main className="isolate">{props.children}</main>
-      <div className="mt-20">
-        <Footer
-          variant="simple"
-          className="mx-auto w-full max-w-screen-xl px-6 lg:px-8"
-        />
-      </div>
     </div>
   );
 }
