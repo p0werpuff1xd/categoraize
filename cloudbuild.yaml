@@ -1,0 +1,23 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=docker/Dockerfile.prod
+      - --tag=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - categoraize
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --region=us-central1
+      - --platform=managed
+      - --quiet
