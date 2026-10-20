@@ -70,6 +70,8 @@ const parsedEnv = createEnv({
         process.env.POSTGRES_URL_NON_POOLING,
       z.string().url().optional(),
     ),
+    NLP_SERVICE_URL: z.string().url().optional(),
+    NLP_SERVICE_TOKEN: z.string().min(1).optional(),
 
     AUTH_SECRET: z.string().optional(),
     SCIM_CREDENTIAL_HASH_SECRET: z.string().min(32).optional(),
