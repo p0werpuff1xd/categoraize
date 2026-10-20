@@ -4,7 +4,15 @@ options:
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
+      - pull
+      - us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+    allowFailure: true
+
+  - name: gcr.io/cloud-builders/docker
+    args:
       - build
+      - --cache-from=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --build-arg=BUILDKIT_INLINE_CACHE=1
       - --file=docker/Dockerfile.prod
       - --tag=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
       - .
