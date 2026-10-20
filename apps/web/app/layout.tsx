@@ -6,6 +6,7 @@ import type { WebApplication, WithContext } from "schema-dts";
 import "../styles/globals.css";
 import { env } from "@/env";
 import { GlobalProviders } from "@/providers/GlobalProviders";
+import { PostHogProvider } from "@/providers/PostHogProvider";
 import { startupImage } from "@/app/startup-image";
 import { Toaster } from "@/components/Toast";
 import { CookieConsentBanner } from "@/components/CookieConsent";
@@ -168,10 +169,12 @@ export default async function RootLayout({
             __html: JSON.stringify(jsonLd),
           }}
         />
-        <GlobalProviders>
-          {children}
-          <Toaster />
-        </GlobalProviders>
+        <PostHogProvider>
+          <GlobalProviders>
+            {children}
+            <Toaster />
+          </GlobalProviders>
+        </PostHogProvider>
         <CookieConsentBanner />
       </body>
     </html>
