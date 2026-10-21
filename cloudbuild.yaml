@@ -5,22 +5,22 @@ steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - pull
-      - us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
     allowFailure: true
 
   - name: gcr.io/cloud-builders/docker
     args:
       - build
-      - --cache-from=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --cache-from=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
       - --build-arg=BUILDKIT_INLINE_CACHE=1
       - --file=docker/Dockerfile.prod
-      - --tag=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --tag=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
       - .
 
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
@@ -28,7 +28,7 @@ steps:
       - run
       - deploy
       - categoraize
-      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
-      - --region=us-central1
+      - --image=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --region=asia-southeast3
       - --platform=managed
       - --quiet
