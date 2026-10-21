@@ -2,6 +2,20 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud artifacts repositories describe categoraize \
+          --location=asia-southeast3 \
+          --project="$PROJECT_ID" >/dev/null 2>&1 || \
+        gcloud artifacts repositories create categoraize \
+          --repository-format=docker \
+          --location=asia-southeast3 \
+          --project="$PROJECT_ID" \
+          --description="Categoraize production containers"
+
   - name: gcr.io/cloud-builders/docker
     args:
       - pull
@@ -16,6 +30,8 @@ steps:
       - --file=docker/Dockerfile.prod
       - --tag=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
       - .
+    env:
+      - DOCKER_BUILDKIT=1
 
   - name: gcr.io/cloud-builders/docker
     args:
