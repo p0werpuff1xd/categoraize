@@ -121,7 +121,7 @@ RUN --mount=type=cache,id=categoraize-pnpm,target=/app/.pnpm-store \
 RUN --mount=type=cache,id=categoraize-pnpm,target=/app/.pnpm-store \
  --mount=type=cache,id=categoraize-next,target=/app/apps/web/.next/cache \
  cd /app/apps/web \
- && pnpm exec next build \
+ && pnpm exec next build --webpack \
  && pnpm exec serwist build serwist.config.mjs \
  && cd /app \
  && pnpm --filter inbox-zero-ai deploy --legacy --prod /tmp/apps/web \
