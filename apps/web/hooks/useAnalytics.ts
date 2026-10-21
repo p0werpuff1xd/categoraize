@@ -105,9 +105,6 @@ export const landingPageAnalytics = {
   getStartedClicked: (posthog: PostHog) => {
     posthog?.capture?.("Clicked Get Started");
   },
-  talkToSalesClicked: (posthog: PostHog) => {
-    posthog?.capture?.("Clicked talk to sales");
-  },
   logInClicked: (posthog: PostHog, position?: string) => {
     posthog?.capture?.("Clicked Log In", position ? { position } : undefined);
   },

@@ -385,41 +385,6 @@ const professionalTier: Tier = {
   mostPopular: false,
 };
 
-const enterpriseTier: Tier = {
-  name: "Enterprise",
-  tiers: {
-    monthly: "COPILOT_MONTHLY",
-    annually: "COPILOT_MONTHLY",
-  },
-  price: { monthly: 0, annually: 0 },
-  discount: { monthly: 0, annually: 0 },
-  description:
-    "For organizations with enterprise-grade security and compliance requirements.",
-  features: [
-    {
-      text: "Everything in Team, plus:",
-    },
-    {
-      text: "SSO login",
-    },
-    {
-      text: "SCIM user provisioning",
-    },
-    {
-      text: "On-premise deployment (optional)",
-    },
-    {
-      text: "Advanced security & SLA",
-    },
-    {
-      text: "Dedicated account manager & training",
-    },
-  ],
-  cta: "Speak to sales",
-  ctaLink: "https://www.getinboxzero.com/sales",
-  mostPopular: false,
-};
-
 export function getLemonSubscriptionTier({
   variantId,
 }: {
@@ -431,4 +396,3 @@ export function getLemonSubscriptionTier({
 }
 
 export const tiers: Tier[] = [starterTier, plusTier, professionalTier];
-export { enterpriseTier };

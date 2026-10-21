@@ -64,20 +64,6 @@ const pricingFaqs: {
     answerText:
       "Yes, if you don't think we provided you with value send us an email within 14 days of upgrading and we'll refund you.",
   },
-  {
-    question: "Need a custom plan for your enterprise?",
-    answer: (
-      <span>
-        <Anchor href="https://www.getinboxzero.com/sales">
-          Contact our sales team
-        </Anchor>{" "}
-        for custom pricing, SSO, SCIM, on-premise deployment, and dedicated
-        support.
-      </span>
-    ),
-    answerText:
-      "Contact our sales team for custom pricing, SSO, SCIM, on-premise deployment, and dedicated support.",
-  },
 ];
 
 const pricingFaqJsonLd = {

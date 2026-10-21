@@ -1,7 +1,5 @@
 import { useCallback, useState } from "react";
-import Link from "next/link";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import Pricing from "@/app/(app)/premium/Pricing";
 import { tiers } from "@/app/(app)/premium/config";
 
@@ -11,23 +9,6 @@ function PricingDialogHeader() {
   return (
     <div className="mb-4 text-center">
       <h2 className="font-title text-2xl text-gray-900">Upgrade to Premium</h2>
-    </div>
-  );
-}
-
-function EnterpriseFooter() {
-  return (
-    <div className="flex items-center justify-between rounded-3xl border border-gray-200 bg-white p-4">
-      <div>
-        <h3 className="font-semibold text-gray-900">Enterprise</h3>
-        <p className="text-sm text-gray-600">
-          SSO, SCIM, on-premise deployment, and dedicated support for large
-          teams.
-        </p>
-      </div>
-      <Button variant="outline" asChild>
-        <Link href="https://www.getinboxzero.com/sales">Speak to Sales</Link>
-      </Button>
     </div>
   );
 }
@@ -47,7 +28,6 @@ export function usePremiumModal() {
             displayTiers={modalTiers}
             className="px-0 pt-0 lg:px-0"
           />
-          <EnterpriseFooter />
         </DialogContent>
       </Dialog>
     );
