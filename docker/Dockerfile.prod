@@ -155,7 +155,7 @@ RUN chmod +x /app/docker/scripts/*.sh
 
 # Install Prisma CLI globally for migrations
 RUN --mount=type=cache,id=categoraize-npm,target=/root/.npm \
- npm install -g prisma@7.3.0
+ npm install -g prisma@7.10.0
 # Set NODE_PATH so prisma/config imports resolve correctly
 ENV NODE_PATH=/usr/local/lib/node_modules
 
