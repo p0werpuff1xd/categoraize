@@ -61,21 +61,7 @@ export default async function AuthenticationPage(props: {
 
         {!isSelfHosted ? (
           <MutedText className="px-8 pt-10 text-center">
-            By clicking continue, you agree to our{" "}
-            <Link
-              href="/terms"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/privacy"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Privacy Policy
-            </Link>
-            .
+            By clicking continue, you agree to our terms and privacy policy.
           </MutedText>
         ) : null}
       </div>
