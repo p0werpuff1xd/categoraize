@@ -216,12 +216,21 @@ const parsedEnv = createEnv({
     // serverless-redis-http proxy. Older self-hosted installs and Vercel KV
     // still set the legacy names.
     REDIS_HTTP_URL: z.preprocess(
-      (value) => redisHttpEnv(value, ["UPSTASH_REDIS_URL", "KV_REST_API_URL"]),
+      (value) =>
+        redisHttpEnv(value, [
+          "UPSTASH_REDIS_REST_URL",
+          "UPSTASH_REDIS_URL",
+          "KV_REST_API_URL",
+        ]),
       z.string().optional(),
     ),
     REDIS_HTTP_TOKEN: z.preprocess(
       (value) =>
-        redisHttpEnv(value, ["UPSTASH_REDIS_TOKEN", "KV_REST_API_TOKEN"]),
+        redisHttpEnv(value, [
+          "UPSTASH_REDIS_REST_TOKEN",
+          "UPSTASH_REDIS_TOKEN",
+          "KV_REST_API_TOKEN",
+        ]),
       z.string().optional(),
     ),
     REDIS_URL: z

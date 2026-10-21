@@ -145,6 +145,8 @@
 
         "REDIS_HTTP_URL",
         "REDIS_HTTP_TOKEN",
+        "UPSTASH_REDIS_REST_URL",
+        "UPSTASH_REDIS_REST_TOKEN",
         "UPSTASH_REDIS_URL",
         "UPSTASH_REDIS_TOKEN",
         "KV_REST_API_URL",
