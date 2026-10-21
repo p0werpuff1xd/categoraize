@@ -8,7 +8,6 @@ import {
   Paragraph,
 } from "@/components/new-landing/common/Typography";
 import { Button } from "@/components/new-landing/common/Button";
-import { BlogHeader } from "@/components/layouts/BlogLayout";
 import { getBrandTitle } from "@/utils/branding";
 
 export const metadata: Metadata = {
@@ -30,8 +29,6 @@ export default async function OSSFriendsPage() {
 
     return (
       <>
-        <BlogHeader />
-
         <div className="mx-auto mt-20 max-w-6xl pb-10">
           <div className="text-center">
             <PageHeading>Open Source Friends</PageHeading>
