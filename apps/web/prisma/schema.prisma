@@ -2880,8 +2880,8 @@ model LoopsEmailSource {
 
   // One unversioned row per workflow or campaign, so a name learned without an
   // email version cannot overwrite a version-specific row.
-  @@unique([loopId], map: "LoopsEmailSource_loopId_unversioned_key", where: { emailMessageId: null, loopId: { not: null } })
-  @@unique([campaignId], map: "LoopsEmailSource_campaignId_unversioned_key", where: { emailMessageId: null, campaignId: { not: null } })
+  // Prisma schema syntax cannot represent partial unique indexes. These
+  // constraints are created and maintained by the SQL migration instead.
   @@index([loopId])
   @@index([campaignId])
 }
