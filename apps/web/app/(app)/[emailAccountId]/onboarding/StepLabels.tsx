@@ -47,7 +47,8 @@ export function StepLabels({
             alt="Categorize your emails"
             width={1200}
             height={800}
-            className="rounded-xl border border-slate-200"
+            unoptimized
+            className="h-auto max-w-full rounded-xl border border-slate-200"
           />
         </div>
       </div>
