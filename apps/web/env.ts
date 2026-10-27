@@ -55,9 +55,7 @@ const parsedEnv = createEnv({
     INBOX_ZERO_ENV_FILE: z.string().optional(),
     DATABASE_URL: z.preprocess(
       (value) =>
-        value ??
-        process.env.POSTGRES_PRISMA_URL ??
-        process.env.POSTGRES_URL,
+        value ?? process.env.POSTGRES_PRISMA_URL ?? process.env.POSTGRES_URL,
       z.string().url(),
     ),
     DATABASE_URL_UNPOOLED: z.preprocess(
@@ -72,6 +70,8 @@ const parsedEnv = createEnv({
         process.env.POSTGRES_URL_NON_POOLING,
       z.string().url().optional(),
     ),
+    NLP_SERVICE_URL: z.string().url().optional(),
+    NLP_SERVICE_TOKEN: z.string().min(1).optional(),
 
     AUTH_SECRET: z.string().optional(),
     SCIM_CREDENTIAL_HASH_SECRET: z.string().min(32).optional(),
@@ -216,12 +216,21 @@ const parsedEnv = createEnv({
     // serverless-redis-http proxy. Older self-hosted installs and Vercel KV
     // still set the legacy names.
     REDIS_HTTP_URL: z.preprocess(
-      (value) => redisHttpEnv(value, ["UPSTASH_REDIS_URL", "KV_REST_API_URL"]),
+      (value) =>
+        redisHttpEnv(value, [
+          "UPSTASH_REDIS_REST_URL",
+          "UPSTASH_REDIS_URL",
+          "KV_REST_API_URL",
+        ]),
       z.string().optional(),
     ),
     REDIS_HTTP_TOKEN: z.preprocess(
       (value) =>
-        redisHttpEnv(value, ["UPSTASH_REDIS_TOKEN", "KV_REST_API_TOKEN"]),
+        redisHttpEnv(value, [
+          "UPSTASH_REDIS_REST_TOKEN",
+          "UPSTASH_REDIS_TOKEN",
+          "KV_REST_API_TOKEN",
+        ]),
       z.string().optional(),
     ),
     REDIS_URL: z
@@ -314,7 +323,6 @@ const parsedEnv = createEnv({
     POSTHOG_FEEDBACK_SURVEY_QUESTION_ID: z.string().optional(),
     POSTHOG_LLM_EVALS_APPROVED_EMAILS: z.string().optional(),
     FEEDBACK_WEBHOOK_URL: z.string().url().optional(),
-    SALES_INQUIRY_WEBHOOK_URL: z.string().url().optional(),
 
     RECALL_API_KEY: z.string().optional(),
     RECALL_WEBHOOK_SECRET: z.string().optional(),
@@ -330,7 +338,7 @@ const parsedEnv = createEnv({
     RESEND_FROM_EMAIL: z
       .string()
       .optional()
-      .default("Inbox Zero <updates@transactional.getinboxzero.com>"),
+      .default("Categoraize <updates@transactional.getinboxzero.com>"),
     CRON_SECRET: z.string().optional(),
     BLOG_SYNC_WEBHOOK_SECRET: z.string().min(1).optional(),
     BLOG_SYNC_SANITY_AUTHOR_ID: z.string().min(1).optional(),
@@ -468,10 +476,10 @@ const parsedEnv = createEnv({
     NEXT_PUBLIC_IMAGE_PROXY_USE_APP_ROUTE: booleanString
       .optional()
       .default(false),
-    NEXT_PUBLIC_BRAND_NAME: z.string().trim().min(1).default("Inbox Zero"),
+    NEXT_PUBLIC_BRAND_NAME: z.string().trim().min(1).default("Categoraize"),
     NEXT_PUBLIC_BRAND_LOGO_URL: z.string().optional(),
     NEXT_PUBLIC_BRAND_ICON_URL: z.string().optional().default("/icon.png"),
-    NEXT_PUBLIC_SLACK_BOT_NAME: z.string().trim().min(1).default("Inbox Zero"),
+    NEXT_PUBLIC_SLACK_BOT_NAME: z.string().trim().min(1).default("Categoraize"),
     NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT: z.string().optional(),
     NEXT_PUBLIC_CONTACTS_ENABLED: booleanString.optional().default(false),
     NEXT_PUBLIC_COOKIE_CONSENT_ENABLED: booleanString.optional().default(false),

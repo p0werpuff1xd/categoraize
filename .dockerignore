@@ -20,6 +20,16 @@ out
 coverage
 *.log
 
+# Files not needed to build or run the web container
+docs
+services/nlp
+tests
+models
+apps/web/**/__tests__
+apps/web/**/__mocks__
+apps/web/**/*.test.*
+apps/web/**/*.spec.*
+
 # OS/editor junk
 .DS_Store
 *.swp

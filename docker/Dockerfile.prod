@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 
 FROM node:24-alpine AS builder
 
@@ -47,7 +48,8 @@ COPY scripts/pnpm-install-without-desktop.sh scripts/pnpm-install-without-deskto
 # from the workspace instead of following pnpm store symlinks outside package
 # peer dependency boundaries. Skip @inboxzero/desktop so the image does not
 # download Electron.
-RUN chmod +x scripts/pnpm-install-without-desktop.sh \
+RUN --mount=type=cache,id=categoraize-pnpm,target=/app/.pnpm-store \
+ chmod +x scripts/pnpm-install-without-desktop.sh \
  && ./scripts/pnpm-install-without-desktop.sh --frozen-lockfile --prefer-offline --config.node-linker=hoisted
 
  # Copy the full repo
@@ -55,8 +57,8 @@ COPY . .
 
  # Build app (Next.js standalone)
 ENV NODE_ENV=production
-# Increase V8 heap for the production build.
-ENV NODE_OPTIONS=--max_old_space_size=8192
+# Keep the production image build within small hosted builder memory limits.
+ENV NODE_OPTIONS=--max_old_space_size=4096
 # Typechecking is covered by the Build Check workflow. Skipping it here
 # keeps peak RAM down so Depot workers do not OOM during next build.
 ENV SKIP_TYPE_CHECK=true
@@ -113,15 +115,17 @@ ENV DOCKER_BUILD="true"
 
 RUN rm -f /app/apps/web/.env && touch /app/apps/web/.env
 
-RUN npx prisma generate --schema=apps/web/prisma/schema.prisma
+RUN --mount=type=cache,id=categoraize-pnpm,target=/app/.pnpm-store \
+ npx prisma generate --schema=apps/web/prisma/schema.prisma
 
-RUN cd /app/apps/web \
- && pnpm exec next build \
+RUN --mount=type=cache,id=categoraize-pnpm,target=/app/.pnpm-store \
+ --mount=type=cache,id=categoraize-next,target=/app/apps/web/.next/cache \
+ cd /app/apps/web \
+ && pnpm exec next build --webpack \
  && pnpm exec serwist build serwist.config.mjs \
  && cd /app \
  && pnpm --filter inbox-zero-ai deploy --legacy --prod /tmp/apps/web \
- && pnpm --filter @inboxzero/worker deploy --legacy --prod /tmp/apps/worker \
- && rm -rf apps/web/.next/cache
+  && pnpm --filter @inboxzero/worker deploy --legacy --prod /tmp/apps/worker
 
 RUN rm -f /app/apps/web/.env /app/apps/web/.next/standalone/apps/web/.env
 
@@ -150,7 +154,8 @@ COPY docker/scripts /app/docker/scripts
 RUN chmod +x /app/docker/scripts/*.sh
 
 # Install Prisma CLI globally for migrations
-RUN npm install -g prisma@7.3.0
+RUN --mount=type=cache,id=categoraize-npm,target=/root/.npm \
+ npm install -g prisma@7.10.0
 # Set NODE_PATH so prisma/config imports resolve correctly
 ENV NODE_PATH=/usr/local/lib/node_modules
 

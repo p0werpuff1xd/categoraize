@@ -50,10 +50,11 @@ import { getAssistantChatProvider } from "./chat-provider-shared";
 import { LlmUseCase } from "@/utils/llms/use-cases";
 import { isIntegrationActionEnabledForUserId } from "@/utils/integration-action.server";
 import { trimStaleToolResults } from "@/utils/ai/assistant/trim-stale-tool-results";
+import { analyzeEmailTool, correctEmailCategoryTool } from "./nlp-tools";
 
 export const maxDuration = 800;
 // Increment when chat prompts, tools, or routing change so run quality remains attributable.
-export const ASSISTANT_CHAT_PIPELINE_VERSION = 14;
+export const ASSISTANT_CHAT_PIPELINE_VERSION = 15;
 const ASSISTANT_CHAT_TOOL_BUDGET_MS = {
   web: 720_000,
   messaging: 60_000,
@@ -291,6 +292,8 @@ export async function aiProcessAssistantChat({
     manageSenderCategory: manageSenderCategoryTool(toolOptions),
     searchInbox: searchInboxTool(toolOptions),
     readEmail: readEmailTool(toolOptions),
+    analyzeEmail: analyzeEmailTool(toolOptions),
+    correctEmailCategory: correctEmailCategoryTool(toolOptions),
     manageInbox: manageInboxTool(toolOptions),
     getUserRulesAndSettings: getUserRulesAndSettingsTool(toolOptions),
     getRuleExecutionForMessage: getRuleExecutionForMessageTool(toolOptions),
@@ -731,7 +734,7 @@ export function buildResolvedSystemPrompt({
 }) {
   const providerPolicy = getAssistantChatProvider(provider);
   const sections = [
-    "You are the Inbox Zero assistant. You help users understand their inbox, take inbox actions, update account features, and manage automation rules.",
+    "You are the Categoraize assistant. You help users understand their inbox, take inbox actions, update account features, and manage automation rules.",
     `Core responsibilities:
 1. Search and summarize inbox activity, especially what is new and what needs attention
 2. Take inbox actions such as archive, trash/delete, mark read, bulk archive by sender, and sender unsubscribe
@@ -741,6 +744,8 @@ export function buildResolvedSystemPrompt({
 - Use the minimum number of tools needed. Start with read-only context tools before write tools when current inbox, account, or rule state is needed.
 - When a request can be completed with available tools, call the tool instead of only describing what you would do.
 - For plain inbox search requests, call searchInbox directly. Do not call getAccountOverview unless the user is explicitly asking for account context.
+- When the user asks to analyze, categorize, or extract actions from a specific email, obtain its messageId with searchInbox or readEmail, then call analyzeEmail. Treat its SBERT, Passive-Aggressive, and BiLSTM-CRF results as separate evidence and report unavailable algorithms as unavailable.
+- When the user explicitly corrects an NLP category prediction, call correctEmailCategory after the analysis. This updates the personalized NLP model only; it does not label, archive, or otherwise modify the email.
 - For direct requests to create a new rule with enough condition and action details, call createRule directly when no current inbox, sender, or existing-rule state is needed. Use read-only tools first only when the request depends on current messages, sender identity, or an existing rule.
 - Do not use rule tools, settings tools, or knowledge tools for personal memory requests unless the user is explicitly editing automation, changing a supported assistant setting, or naming the knowledge base.
 - Do not call durable write tools for indirect references to retrieved content or assistant summaries. First propose the exact destination and content, then write only after the user confirms that concrete proposal.

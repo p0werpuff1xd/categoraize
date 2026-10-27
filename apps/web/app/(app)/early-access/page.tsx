@@ -25,7 +25,7 @@ export default function RequestAccessPage() {
           <CardHeader>
             <CardTitle>Mail</CardTitle>
             <CardDescription>
-              Open your inbox in the Inbox Zero mail client.
+              Open your inbox in the Categoraize mail client.
             </CardDescription>
           </CardHeader>
           <CardContent>

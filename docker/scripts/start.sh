@@ -20,4 +20,5 @@ fi
 
 # Start the Next.js application
 echo "✅ Configuration complete. Starting server..."
-exec node apps/web/server.js
+# Bind Next to every interface so the Northflank service proxy can reach it.
+HOSTNAME=0.0.0.0 exec node apps/web/server.js

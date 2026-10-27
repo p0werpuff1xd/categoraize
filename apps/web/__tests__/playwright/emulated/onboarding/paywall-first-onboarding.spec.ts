@@ -142,7 +142,7 @@ async function completeOnboardingFromWhoStep(page: Page) {
     .getByRole("button", { name: "11-100 people", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "How did you hear about Inbox Zero?" }),
+    page.getByRole("heading", { name: "How did you hear about Categoraize?" }),
   ).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "GitHub", exact: true }).click();
   await expect(

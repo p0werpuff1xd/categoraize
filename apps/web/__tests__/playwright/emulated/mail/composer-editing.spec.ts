@@ -132,7 +132,7 @@ test("keeps the collapsed signature when typing after clicking below it", async 
   await expect(toggle).toBeVisible();
   await toggle.click();
   const signature = editor.locator("[data-smartmail]");
-  await expect(signature).toContainText("Inbox Zero");
+  await expect(signature).toContainText("Categoraize");
   expect(
     await editor.evaluate((element) => {
       const signatureElement = element.querySelector("[data-smartmail]");
@@ -166,8 +166,8 @@ test("edits the signature and its links in place", async ({ page }) => {
   await dialog.getByRole("button", { name: "Show signature" }).click();
 
   const signature = editor.locator("[data-smartmail]");
-  const footerLink = signature.getByRole("link", { name: "Inbox Zero" });
-  await selectEditorText(editor, "Inbox Zero");
+  const footerLink = signature.getByRole("link", { name: "Categoraize" });
+  await selectEditorText(editor, "Categoraize");
   await editor.press("ControlOrMeta+k");
   const editLinkDialog = dialog.getByRole("dialog", { name: "Edit link" });
   await expect(editLinkDialog.getByLabel("Link address")).toHaveValue(/^http/);
@@ -182,7 +182,7 @@ test("edits the signature and its links in place", async ({ page }) => {
 
   await selectEditorText(editor, "Sent with");
   await page.keyboard.type("Written with");
-  await expect(signature).toContainText("Written with Inbox Zero");
+  await expect(signature).toContainText("Written with Categoraize");
   await expect(editor.locator(":scope > div").first()).toHaveText("Draft body");
 });
 

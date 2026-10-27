@@ -23,7 +23,7 @@ describe("shouldSkipAutomatedArchiveForSender", () => {
     expect(
       shouldSkipAutomatedArchiveForSender({
         actionType: ActionType.ARCHIVE,
-        from: "Inbox Zero <onboarding@getinboxzero.com>",
+        from: "Categoraize <onboarding@getinboxzero.com>",
       }),
     ).toBe(true);
   });
@@ -45,7 +45,7 @@ describe("shouldSkipAutomatedArchiveForSender", () => {
     expect(
       shouldSkipAutomatedArchiveForSender({
         actionType: ActionType.LABEL,
-        from: "Inbox Zero <onboarding@getinboxzero.com>",
+        from: "Categoraize <onboarding@getinboxzero.com>",
       }),
     ).toBe(false);
   });

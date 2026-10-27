@@ -12,7 +12,7 @@ export function buildShareText({
   yearlyEmails,
 }: ShareParams): string {
   const lists = senderCount === 1 ? "email list" : "email lists";
-  const base = `I just unsubscribed from ${senderCount} ${lists} with Inbox Zero`;
+  const base = `I just unsubscribed from ${senderCount} ${lists} with Categoraize`;
   if (yearlyEmails != null) {
     return `${base} — that's ~${yearlyEmails.toLocaleString("en-US")} fewer emails a year. ${link}`;
   }

@@ -13,7 +13,7 @@ const _prisma =
   global.prisma ||
   (new PrismaClient({
     adapter: new PrismaPg({
-      connectionString: env.PREVIEW_DATABASE_URL ?? env.DATABASE_URL,
+      connectionString: env.DATABASE_URL,
     }),
   })
     .$extends(encryptedTokens)

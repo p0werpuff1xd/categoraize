@@ -27,7 +27,6 @@ import {
   Badge,
   type BadgeVariant,
 } from "@/components/new-landing/common/Badge";
-import { Chat } from "@/components/new-landing/icons/Chat";
 import { type Tier, tiers } from "@/app/(app)/premium/config";
 import { Briefcase } from "@/components/new-landing/icons/Briefcase";
 import { landingPageAnalytics } from "@/hooks/useAnalytics";
@@ -146,43 +145,6 @@ export function Pricing() {
             </CardWrapper>
           ))}
         </div>
-        <CardWrapper className="mt-6 w-full">
-          <Card variant="extra-rounding">
-            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="text-gray-400">
-                  <Sparkle />
-                </div>
-                <div>
-                  <h3 className="font-title text-lg">Enterprise</h3>
-                  <Paragraph size="sm" className="mt-1">
-                    Need SSO, SCIM, on-premise deployment, or a dedicated
-                    account manager?
-                  </Paragraph>
-                </div>
-              </div>
-              <Button variant="secondary-two" size="lg" asChild>
-                <Link
-                  href="https://www.getinboxzero.com/sales"
-                  onClick={() =>
-                    landingPageAnalytics.pricingCtaClicked(posthog, {
-                      tier: "Enterprise",
-                      cta: "Speak to sales",
-                      frequency,
-                      defaultFrequency,
-                      frequencySource: chosenFrequency
-                        ? "user_selected"
-                        : "default",
-                    })
-                  }
-                >
-                  <Chat />
-                  <span className="relative z-10">Speak to sales</span>
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </CardWrapper>
       </SectionContent>
     </Section>
   );

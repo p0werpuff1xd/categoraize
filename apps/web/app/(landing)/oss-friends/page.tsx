@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionDescription, TypographyH3 } from "@/components/Typography";
-import { Footer } from "@/app/(landing)/home/Footer";
 import { FinalCTA } from "@/app/(landing)/home/FinalCTA";
 import { CardBasic } from "@/components/ui/card";
 import {
@@ -9,7 +8,6 @@ import {
   Paragraph,
 } from "@/components/new-landing/common/Typography";
 import { Button } from "@/components/new-landing/common/Button";
-import { BlogHeader } from "@/components/layouts/BlogLayout";
 import { getBrandTitle } from "@/utils/branding";
 
 export const metadata: Metadata = {
@@ -31,8 +29,6 @@ export default async function OSSFriendsPage() {
 
     return (
       <>
-        <BlogHeader />
-
         <div className="mx-auto mt-20 max-w-6xl pb-10">
           <div className="text-center">
             <PageHeading>Open Source Friends</PageHeading>
@@ -62,7 +58,6 @@ export default async function OSSFriendsPage() {
         </div>
 
         <FinalCTA />
-        <Footer />
       </>
     );
   } catch (error) {

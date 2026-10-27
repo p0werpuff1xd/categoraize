@@ -1,0 +1,50 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud artifacts repositories describe categoraize \
+          --location=asia-southeast3 \
+          --project="$PROJECT_ID" >/dev/null 2>&1 || \
+        gcloud artifacts repositories create categoraize \
+          --repository-format=docker \
+          --location=asia-southeast3 \
+          --project="$PROJECT_ID" \
+          --description="Categoraize production containers"
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - pull
+      - asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+    allowFailure: true
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --cache-from=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --build-arg=BUILDKIT_INLINE_CACHE=1
+      - --file=docker/Dockerfile.prod
+      - --tag=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - .
+    env:
+      - DOCKER_BUILDKIT=1
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - categoraize
+      - --image=asia-southeast3-docker.pkg.dev/$PROJECT_ID/categoraize/web:latest
+      - --region=asia-southeast3
+      - --platform=managed
+      - --quiet

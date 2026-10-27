@@ -29,7 +29,7 @@ vi.mock("@inboxzero/transactional-email", () => ({
 vi.mock("@/env", () => ({
   env: {
     NEXT_PUBLIC_BASE_URL: "https://example.com",
-    RESEND_FROM_EMAIL: "Inbox Zero <billing@example.com>",
+    RESEND_FROM_EMAIL: "Categoraize <billing@example.com>",
   },
 }));
 
@@ -79,7 +79,7 @@ describe("sendStripeInvoiceEmail", () => {
     await sendStripeInvoiceEmail({ invoiceId: "in_test", logger });
 
     expect(mockSendInvoiceEmail).toHaveBeenCalledWith({
-      from: "Inbox Zero <billing@example.com>",
+      from: "Categoraize <billing@example.com>",
       to: "billing@example.com",
       attachmentUrl: "https://stripe.example.com/invoice.pdf",
       idempotencyKey: "stripe-invoice-email/in_test",

@@ -134,7 +134,7 @@ describe("executeAct", () => {
         ...message,
         headers: {
           ...message.headers,
-          from: "Inbox Zero <onboarding@getinboxzero.com>",
+          from: "Categoraize <onboarding@getinboxzero.com>",
         },
       },
       emailAccount,

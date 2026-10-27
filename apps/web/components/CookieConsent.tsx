@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { env } from "@/env";
 import {
@@ -25,13 +24,7 @@ export function CookieConsentBanner() {
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           We use cookies to understand how people use {BRAND_NAME} and to
-          measure our marketing. You can change your choice at any time.{" "}
-          <Link
-            href="/privacy"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Privacy policy
-          </Link>
+          measure our marketing. You can change your choice at any time.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Button

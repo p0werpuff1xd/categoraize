@@ -218,7 +218,7 @@ export function ProactiveUpdatesSetting({
           <DialogHeader>
             <DialogTitle>Scheduled check-ins</DialogTitle>
             <DialogDescription>
-              Configure when Inbox Zero sends scheduled summaries to{" "}
+              Configure when Categoraize sends scheduled summaries to{" "}
               {getMessagingProviderName(channel.provider)}.
             </DialogDescription>
           </DialogHeader>

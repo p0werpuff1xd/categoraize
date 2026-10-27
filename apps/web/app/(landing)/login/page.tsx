@@ -17,12 +17,7 @@ import { WELCOME_PATH } from "@/utils/config";
 import { CrispChatLoggedOutVisible } from "@/components/CrispChat";
 import { MutedText } from "@/components/Typography";
 import { normalizeInternalPath } from "@/utils/path";
-import {
-  BRAND_NAME,
-  SUPPORT_EMAIL,
-  getBrandTitle,
-  getPossessiveBrandName,
-} from "@/utils/branding";
+import { BRAND_NAME, SUPPORT_EMAIL, getBrandTitle } from "@/utils/branding";
 
 export const metadata: Metadata = {
   title: getBrandTitle("Log in"),
@@ -66,71 +61,11 @@ export default async function AuthenticationPage(props: {
 
         {!isSelfHosted ? (
           <MutedText className="px-8 pt-10 text-center">
-            By clicking continue, you agree to our{" "}
-            <Link
-              href="/terms"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/privacy"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Privacy Policy
-            </Link>
-            .
+            By clicking continue, you agree to our terms and privacy policy.
           </MutedText>
         ) : null}
-
-        <LoginFooter
-          isSelfHosted={isSelfHosted}
-          selfHostedLoginFooterText={
-            env.NEXT_PUBLIC_SELF_HOSTED_LOGIN_FOOTER_TEXT || undefined
-          }
-        />
       </div>
     </div>
-  );
-}
-
-function LoginFooter({
-  isSelfHosted,
-  selfHostedLoginFooterText,
-}: {
-  isSelfHosted?: boolean;
-  selfHostedLoginFooterText?: string;
-}) {
-  if (isSelfHosted && selfHostedLoginFooterText !== undefined) {
-    const trimmedFooterText = selfHostedLoginFooterText.trim();
-    if (!trimmedFooterText || trimmedFooterText.toLowerCase() === "none") {
-      return null;
-    }
-
-    return (
-      <MutedText className="whitespace-pre-line px-4 pt-10 text-center">
-        {selfHostedLoginFooterText}
-      </MutedText>
-    );
-  }
-
-  return (
-    <MutedText
-      className={
-        isSelfHosted ? "px-4 pt-10 text-center" : "px-4 pt-4 text-center"
-      }
-    >
-      {getPossessiveBrandName()} use and transfer of information received from
-      Google APIs to any other app will adhere to{" "}
-      <a
-        href="https://developers.google.com/terms/api-services-user-data-policy"
-        className="underline underline-offset-4 hover:text-foreground"
-      >
-        Google API Services User Data
-      </a>{" "}
-      Policy, including the Limited Use requirements.
-    </MutedText>
   );
 }
 

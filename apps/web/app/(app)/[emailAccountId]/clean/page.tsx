@@ -22,7 +22,6 @@ export default async function CleanPage({
     <Card className="my-4 max-w-2xl p-6 sm:mx-4 md:mx-auto">
       <Suspense fallback={<Loading />}>
         <ConfirmationStep
-          showFooter
           action={lastJob.action}
           timeRange={lastJob.daysOld}
           instructions={lastJob.instructions ?? undefined}

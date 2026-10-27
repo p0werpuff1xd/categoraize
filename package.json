@@ -27,7 +27,8 @@
     "start:cli": "tsx packages/cli/src/main.ts start",
     "docker:local:build": "./docker/scripts/publish-ghcr.sh --local",
     "docker:local:push": "./docker/scripts/publish-ghcr.sh",
-    "docker:local:run": "./docker/scripts/run-local.sh"
+    "docker:local:run": "./docker/scripts/run-local.sh",
+    "deploy:cloud-run": "bash scripts/deploy-cloud-run.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.2",

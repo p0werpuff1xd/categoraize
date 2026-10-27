@@ -1,5 +1,6 @@
 export function createLocalEnvironment({
   appPort,
+  appHost,
   databasePort,
   redisPort,
   redisHttpPort,
@@ -11,6 +12,7 @@ export function createLocalEnvironment({
   inherited,
 }: {
   appPort: number;
+  appHost: string;
   databasePort: number;
   redisPort: number;
   redisHttpPort: number;
@@ -63,7 +65,7 @@ export function createLocalEnvironment({
     NODE_OPTIONS: "--max_old_space_size=6144",
     // Next otherwise loads the checkout's .env files, including real credentials.
     __NEXT_PROCESSED_ENV: "true",
-    NEXT_PUBLIC_BASE_URL: `http://localhost:${appPort}`,
+    NEXT_PUBLIC_BASE_URL: `http://${appHost}:${appPort}`,
     DATABASE_URL: databaseUrl.href,
     DATABASE_URL_UNPOOLED: databaseUrl.href,
     DIRECT_URL: databaseUrl.href,

@@ -5,13 +5,13 @@ import { getDraftSendLogSimilarityFields } from "./draft-similarity";
 describe("getDraftSendLogSimilarityFields", () => {
   it.each([
     "",
-    "Sent with Inbox Zero",
-    "Drafted by Inbox Zero.\n\nSent with Inbox Zero",
+    "Sent with Categoraize",
+    "Drafted by Categoraize.\n\nSent with Categoraize",
   ])("ignores branding changes in recorded scores: %s", (footer) => {
     const body = "Thanks for the update.";
     const sentText = `${body}\n\n${footer}`;
     const fields = getDraftSendLogSimilarityFields({
-      draftText: `${body}\n\nDrafted by Inbox Zero.`,
+      draftText: `${body}\n\nDrafted by Categoraize.`,
       sentMessage: createParsedMessage(sentText),
       sentText,
       draftExists: false,
