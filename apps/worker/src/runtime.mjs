@@ -4,6 +4,8 @@ import IORedis from "ioredis";
 const INTERNAL_API_KEY_HEADER = "x-api-key";
 const DEFAULT_CONCURRENCY = 1;
 const DEFAULT_QUEUES = [
+  { name: "categoraiize-category-embedding", concurrency: 1 },
+  { name: "categoraiize-processing", concurrency: 2 },
   { name: "automation-jobs", concurrency: 3 },
   { name: "digest-item-summarize", concurrency: 3 },
   { name: "email-summary-all", concurrency: 3 },
