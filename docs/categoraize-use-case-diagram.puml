@@ -1,0 +1,56 @@
+@startuml CategorAIze-Use-Case-Diagram
+
+title CategorAIze — UML Use Case Diagram
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+
+actor "Email User" as User
+actor Gmail
+actor "Google Calendar" as Calendar
+actor "FastAPI Intelligence\nService" as AI
+
+rectangle "CategorAIze Email Intelligence System" {
+  usecase "Connect and authorize\nGmail account" as UC1
+  usecase "Ingest and sanitize\nemail messages" as UC2
+  usecase "Classify email and\nassign category" as UC3
+  usecase "Extract deadlines\nand action items" as UC4
+  usecase "Score priority\nand urgency" as UC5
+  usecase "Search and triage\nsmart inbox" as UC6
+  usecase "Review and correct\nclassifications" as UC7
+  usecase "Confirm deadline\nor task reminder" as UC8
+  usecase "Draft contextual\nemail reply" as UC9
+  usecase "Apply labels, archive,\nor unsubscribe" as UC10
+}
+
+User --> UC1
+User --> UC6
+User --> UC9
+User --> UC7
+User --> UC8A B
+User --> UC10
+
+Gmail --> UC1
+Gmail --> UC2
+Gmail --> UC10
+
+Calendar --> UC8
+Calendar --> UC9
+
+AI --> UC3
+AI --> UC4
+AI --> UC5
+AI --> UC6
+
+UC2 ..> UC3 : <<include>>
+UC2 ..> UC4 : <<include>>
+UC3 ..> UC5 : <<include>>
+UC7 ..> UC6 : <<include>>
+
+note right of UC7
+  User feedback updates
+  adaptive category centroids.
+end note
+
+@enduml
