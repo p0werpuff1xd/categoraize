@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+actor "Email Account Owner" as Owner
+actor "Gmail Service" as Gmail
+actor "Google Calendar Service" as Calendar
+rectangle "CategorAIze" {
+  usecase "UC01: Connect Email Account" as UC01
+  usecase "UC02: Synchronize Email" as UC02
+  usecase "UC03: Manage Categories" as UC03
+  usecase "UC04: Review Email Analysis" as UC04
+  usecase "UC05: Correct Category Prediction" as UC05
+  usecase "UC06: Search Email" as UC06
+  usecase "UC07: Review Tasks and Deadlines" as UC07
+  usecase "UC08: Prepare Reply Draft" as UC08
+  usecase "UC09: Check Calendar Availability" as UC09
+  usecase "UC10: Send Approved Reply" as UC10
+  usecase "UC11: Clean Up Inbox" as UC11
+  usecase "UC12: Export Deadline to Calendar" as UC12
+}
+Owner -- UC01
+Owner -- UC02
+Owner -- UC03
+Owner -- UC04
+Owner -- UC05
+Owner -- UC06
+Owner -- UC07
+Owner -- UC08
+Owner -- UC09
+Owner -- UC10
+Owner -- UC11
+Owner -- UC12
+UC01 -- Gmail
+UC02 -- Gmail
+UC08 -- Gmail
+UC10 -- Gmail
+UC11 -- Gmail
+UC09 -- Calendar
+UC12 -- Calendar
+@enduml
