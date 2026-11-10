@@ -79,6 +79,22 @@ for (const outputDir of outputDirs) {
     "utf-8"
   );
 
+  // Copy Next.js manifests to outputDir (satisfies any runner expecting routes-manifest.json)
+  const nextDir = path.join(appsWebDir, ".next");
+  const manifests = [
+    "routes-manifest.json",
+    "prerender-manifest.json",
+    "build-manifest.json",
+    "app-build-manifest.json",
+    "required-server-files.json",
+  ];
+  for (const manifest of manifests) {
+    const src = path.join(nextDir, manifest);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, path.join(outputDir, manifest));
+    }
+  }
+
   // 3. Single Function (.vercel/output/functions/index.func)
   const funcDir = path.join(outputDir, "functions", "index.func");
   fs.mkdirSync(funcDir, { recursive: true });
