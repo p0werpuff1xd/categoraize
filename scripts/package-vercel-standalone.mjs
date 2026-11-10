@@ -7,7 +7,13 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 
 const appsWebDir = path.join(repoRoot, "apps", "web");
-const standaloneDir = path.join(appsWebDir, ".next", "standalone");
+let standaloneDir = path.join(appsWebDir, ".next", "standalone");
+if (!fs.existsSync(standaloneDir)) {
+  const rootStandalone = path.join(repoRoot, ".next", "standalone");
+  if (fs.existsSync(rootStandalone)) {
+    standaloneDir = rootStandalone;
+  }
+}
 const nextStaticDir = path.join(appsWebDir, ".next", "static");
 const publicDir = path.join(appsWebDir, "public");
 
@@ -21,6 +27,8 @@ console.log("[vercel-standalone] Packaging Next.js standalone build into Vercel 
 
 if (!fs.existsSync(standaloneDir)) {
   console.error(`[vercel-standalone] Error: Standalone directory not found at ${standaloneDir}`);
+  console.error(`[vercel-standalone] Checked apps/web: ${path.join(appsWebDir, ".next", "standalone")}`);
+  console.error(`[vercel-standalone] Checked repo root: ${path.join(repoRoot, ".next", "standalone")}`);
   console.error("[vercel-standalone] Ensure next.config.ts has output: 'standalone' enabled during the build.");
   process.exit(1);
 }

@@ -4,6 +4,8 @@ set -euo pipefail
 unset PRIVATE_BUILD_TOKEN
 export SKIP_TYPE_CHECK=true
 export STANDALONE_BUILD=true
+export VERCEL_STANDALONE=true
+export DOCKER_BUILD=true
 
 if [ "${VERCEL_ENV:-}" = "preview" ] && [ "${IS_OAUTH_PROXY_SERVER:-}" != "true" ]; then
   NEXT_PUBLIC_BASE_URL="https://${VERCEL_URL}" \

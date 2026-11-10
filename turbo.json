@@ -4,7 +4,11 @@
   "tasks": {
     "build": {
       "env": [
+        "VERCEL",
         "VERCEL_ENV",
+        "STANDALONE_BUILD",
+        "VERCEL_STANDALONE",
+        "DOCKER_BUILD",
         "VERCEL_URL",
         "VERCEL_REGION",
         "NODE_ENV",

@@ -246,7 +246,9 @@ const nextConfig: NextConfig = {
   output:
     process.env.DOCKER_BUILD === "true" ||
     process.env.STANDALONE_BUILD === "true" ||
-    process.env.VERCEL_STANDALONE === "true"
+    process.env.VERCEL_STANDALONE === "true" ||
+    process.env.VERCEL === "1" ||
+    process.env.VERCEL_ENV
       ? "standalone"
       : undefined,
   outputFileTracingIncludes: {
