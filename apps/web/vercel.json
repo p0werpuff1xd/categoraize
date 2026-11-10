@@ -1,91 +1,9 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd ../.. && bash scripts/vercel-build.sh",
   "installCommand": "cd ../.. && node scripts/install-private-build.mjs && unset PRIVATE_BUILD_TOKEN && bash clone-marketing.sh && corepack pnpm install --filter '!@inboxzero/desktop' --no-frozen-lockfile",
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
-  "functions": {
-    "app/api/follow-up-reminders/account/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "follow-up-reminders-account",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/ai/digest/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "ai-digest",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/automation-jobs/execute/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "automation-jobs-execute",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/meeting-recorder/transcript/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "meeting-recorder-transcript",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/meeting-recorder/process/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "meeting-recorder-process",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/resend/digest/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "resend-digest",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/resend/summary/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "resend-summary",
-          "retryAfterSeconds": 60,
-          "maxDeliveries": 5
-        }
-      ]
-    },
-    "app/api/stripe/invoice-email/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "stripe-invoice-email",
-          "retryAfterSeconds": 60
-        }
-      ]
-    },
-    "app/api/resend/inbox-health/queue/route.ts": {
-      "experimentalTriggers": [
-        {
-          "type": "queue/v2beta",
-          "topic": "resend-inbox-health",
-          "retryAfterSeconds": 60
-        }
-      ]
-    }
-  },
+  "outputDirectory": ".vercel/output",
   "rewrites": [
     {
       "source": "/tools",

@@ -243,7 +243,12 @@ const nextConfig: NextConfig = {
         pagesBufferLength: 2,
       }
     : undefined,
-  output: process.env.DOCKER_BUILD === "true" ? "standalone" : undefined,
+  output:
+    process.env.DOCKER_BUILD === "true" ||
+    process.env.STANDALONE_BUILD === "true" ||
+    process.env.VERCEL_STANDALONE === "true"
+      ? "standalone"
+      : undefined,
   outputFileTracingIncludes: {
     "/mcp": ["./generated/mcp-app/*"],
   },
