@@ -56,7 +56,7 @@ test("the upgrade page lets users continue free with the email app", async ({
 }, testInfo) => {
   const emailAccountId = await getEmailAccountId(page);
 
-  await page.goto("/welcome-upgrade");
+  await page.goto("/premium");
   await page
     .getByRole("button", { name: "Continue for free", exact: true })
     .click();

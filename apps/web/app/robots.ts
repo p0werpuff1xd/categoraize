@@ -16,7 +16,6 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/components",
     },
     sitemap: [
       `${env.NEXT_PUBLIC_BASE_URL}/sitemap.xml`,

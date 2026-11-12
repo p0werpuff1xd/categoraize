@@ -35,13 +35,13 @@ test("starts a trial from the post-onboarding upgrade page", async ({
     { timeout: 60_000 },
   );
 
-  await page.goto("/welcome-upgrade");
+  await page.goto("/premium");
   await expect(
     page.getByRole("heading", { name: "Start your 7-day FREE trial" }),
   ).toBeVisible({ timeout: 60_000 });
   await loadedSignedInUser;
 
-  await capturePlaywrightCheckpoint(page, test.info(), "welcome-upgrade");
+  await capturePlaywrightCheckpoint(page, test.info(), "premium");
 
   await payOnStripeCheckout(page, STARTER_TIER);
 

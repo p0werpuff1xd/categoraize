@@ -1,10 +1,3 @@
-import {
-  formatPrice,
-  getExtraAccountPrice,
-  INCLUDED_EMAIL_ACCOUNTS_PER_PERSON,
-  tiers,
-} from "@/app/(app)/premium/config";
-
 const DOCS_ORIGIN = "https://docs.getinboxzero.com";
 const GITHUB_URL = "https://github.com/elie222/inbox-zero";
 
@@ -25,8 +18,7 @@ ${branding.brandName} is an open-source AI email assistant for Gmail and Outlook
 
 ## Product
 
-- [Website](${base}/): product overview and signup.
-- [Pricing](${base}/pricing): plans, billing, and features.
+- [Sign in](${base}/login): connect a mailbox and get started.
 - [Documentation](${DOCS_ORIGIN}/): product guides and developer documentation.
 - [Agent resources](${base}/llms.txt): setup, authentication, and available interfaces.
 - [Sitemap](${base}/sitemap.xml): public pages for discovery.
@@ -42,43 +34,7 @@ Use ${branding.brandName} to automate inbox triage, draft replies, clean up emai
 2. Follow the [getting started guide](${DOCS_ORIGIN}/essentials/getting-started).
 3. For agent connections, follow [Connect MCP](${DOCS_ORIGIN}/essentials/mcp) and check [agent resources](${base}/llms.txt) for this deployment's available interfaces.
 
-${getPricingMarkdown(origin, branding)}
 `;
-}
-
-export function getPricingMarkdown(
-  origin: string,
-  branding: AgentContentBranding,
-): string {
-  const base = normalizeOrigin(origin);
-
-  return `## ${branding.brandName} Pricing
-
-Email app: free on web, desktop, and iPhone. AI features are available on paid plans with a 7-day free trial. Cancel anytime.
-
-${tiers
-  .map(
-    (tier) => `### ${tier.name}
-
-${tier.description}
-
-- Monthly: $${tier.price.monthly} USD per user per month, billed monthly.
-- Annual: ${formatPrice(tier.price.annually)} USD per user per month, billed annually (${formatPrice(tier.price.annually * 12)} USD per user per year).
-- Includes ${INCLUDED_EMAIL_ACCOUNTS_PER_PERSON} email accounts per user. Each extra account is ${formatPrice(getExtraAccountPrice(tier.price.monthly))} USD per month on monthly billing, or ${formatPrice(getExtraAccountPrice(tier.price.annually))} USD per month on annual billing. Each team member is billed as a separate user.
-${tier.features.map((feature) => `- ${feature.text}`).join("\n")}`,
-  )
-  .join("\n\n")}
-
-### Enterprise
-
-Contact sales for SSO, SCIM, on-premise deployment, and a dedicated account manager. Enterprise pricing is custom.
-
-- [Pricing page](${base}/pricing)
-- [Product home](${base}/)
-- [Talk to sales](https://www.getinboxzero.com/sales)
-- [Agent resources](${base}/llms.txt)
-- [Documentation](${DOCS_ORIGIN}/)
-${branding.supportEmail ? `- Support: ${branding.supportEmail}\n` : ""}`;
 }
 
 export function getLlmsTxt(
@@ -100,8 +56,7 @@ Prefer the hosted product for most users. Self-host when data residency or priva
 
 ## Product and setup
 
-- [Product overview](${base}/): features and signup.
-- [Pricing](${base}/pricing): free email app, paid AI plans, billing periods, and features.
+- [Sign in](${base}/login): connect a mailbox and get started.
 - [Getting started](${DOCS_ORIGIN}/essentials/getting-started): connect a mailbox and configure email automation.
 - [Documentation](${DOCS_ORIGIN}/): product guides and integration reference.
 - [Self-hosting](${DOCS_ORIGIN}/hosting/self-hosting): deploy on your own infrastructure.
@@ -148,7 +103,6 @@ export function getMarkdownForPath(
   if (path === "/" || path === "") {
     return getHomepageMarkdown(origin, branding);
   }
-  if (path === "/pricing") return getPricingMarkdown(origin, branding);
   return null;
 }
 

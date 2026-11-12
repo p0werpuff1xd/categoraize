@@ -19,7 +19,7 @@ import { claimAutomaticReload } from "@/utils/automatic-reload";
 import { SKIP_WAITING } from "@/utils/offline/mail-cache";
 
 const serwistState = vi.hoisted(() => ({
-  pathname: "/welcome-upgrade",
+  pathname: "/premium",
   serwist: undefined as { register: () => Promise<unknown> } | undefined,
 }));
 
@@ -46,7 +46,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.mocked(toast.info).mockClear();
   serwistState.serwist = undefined;
-  serwistState.pathname = "/welcome-upgrade";
+  serwistState.pathname = "/premium";
   vi.useRealTimers();
   sessionStorage.clear();
 });

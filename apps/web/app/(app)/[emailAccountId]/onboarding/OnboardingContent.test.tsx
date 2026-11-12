@@ -28,7 +28,7 @@ vi.mock("@/hooks/useOrganizationMembership", () => ({
 }));
 vi.mock("@/hooks/useRules", () => ({ useRules: () => ({ data: [] }) }));
 vi.mock("./useCompleteOnboarding", () => ({
-  useCompleteOnboarding: () => ({ destination: "welcome-upgrade" }),
+  useCompleteOnboarding: () => ({ destination: "premium" }),
 }));
 vi.mock("@/components/EmailStatsPreloader", () => ({
   EmailStatsPreloader: () => null,

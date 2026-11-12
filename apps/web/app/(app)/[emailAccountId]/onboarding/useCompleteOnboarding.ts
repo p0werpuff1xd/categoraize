@@ -16,7 +16,7 @@ import { usePremium } from "@/hooks/usePremium";
 import type { SignupIntent } from "@/generated/prisma/enums";
 
 // Marks onboarding complete and redirects to the app: the mail app for
-// email-app users, otherwise setup or the upgrade page for non-premium users.
+// email-app users, otherwise setup or the premium page for non-premium users.
 export function useCompleteOnboarding(signupIntent: SignupIntent | null) {
   const router = useRouter();
   const { emailAccountId } = useAccount();
@@ -68,8 +68,8 @@ export function useCompleteOnboarding(signupIntent: SignupIntent | null) {
     markOnboardingAsCompleted(ASSISTANT_ONBOARDING_COOKIE);
 
     router.push(
-      destination === "welcome-upgrade"
-        ? "/welcome-upgrade"
+      destination === "premium"
+        ? "/premium"
         : prefixPath(emailAccountId, `/${destination}`),
     );
     return true;
@@ -86,5 +86,5 @@ function getDestination({
   isPremium: boolean;
 }) {
   if (signupIntent === "MAIL_CLIENT") return "mail";
-  return isPremium ? "setup" : "welcome-upgrade";
+  return isPremium ? "setup" : "premium";
 }

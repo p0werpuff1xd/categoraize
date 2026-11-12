@@ -8,10 +8,10 @@ beforeEach(() => {
 });
 
 describe("proxy matcher", () => {
-  it("only runs for pages with a dedicated markdown representation", () => {
+  it("only runs for the root page markdown representation", () => {
     expect(matchesProxy("/")).toBe(true);
-    expect(matchesProxy("/pricing")).toBe(true);
-    expect(matchesProxy("/pricing/")).toBe(true);
+    expect(matchesProxy("/pricing")).toBe(false);
+    expect(matchesProxy("/pricing/")).toBe(false);
     expect(matchesProxy("/about")).toBe(false);
     expect(matchesProxy("/missing-page")).toBe(false);
     expect(matchesProxy("/api/v1/rules")).toBe(false);
@@ -36,7 +36,7 @@ describe("proxy content negotiation", () => {
 
   it("passes browser requests through and advertises negotiation", () => {
     const response = proxy(
-      new NextRequest("https://www.getinboxzero.com/pricing", {
+      new NextRequest("https://www.getinboxzero.com/", {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
     );

@@ -36,7 +36,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/pricing"],
+  matcher: ["/"],
 };
 
 function isNextInternalRequest(request: NextRequest): boolean {

@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { after } from "next/server";
 import { OnboardingForm } from "@/app/(landing)/welcome/form";
-import { SquaresPattern } from "@/app/(landing)/home/SquaresPattern";
 import { PageHeading, TypographyP } from "@/components/Typography";
 import { CardBasic } from "@/components/ui/card";
 import {
@@ -41,8 +40,6 @@ export default async function WelcomePage(props: {
 
   return (
     <div className="flex flex-col justify-center px-6 py-20 text-gray-900">
-      <SquaresPattern />
-
       <CardBasic className="mx-auto flex max-w-2xl flex-col justify-center space-y-6 p-10 duration-500 animate-in fade-in">
         <div className="flex flex-col text-center">
           <PageHeading>{`Welcome to ${BRAND_NAME}`}</PageHeading>

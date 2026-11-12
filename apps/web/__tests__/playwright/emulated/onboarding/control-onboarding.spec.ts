@@ -73,7 +73,7 @@ test("completes account setup and persists onboarding choices", async ({
   ).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-  await expect(page).toHaveURL(/\/welcome-upgrade(?:\?.*)?$/, {
+  await expect(page).toHaveURL(/\/premium(?:\?.*)?$/, {
     timeout: 60_000,
   });
   await expect(
@@ -93,7 +93,7 @@ test("completes account setup and persists onboarding choices", async ({
       .first(),
   ).toBeVisible();
   await page.screenshot({
-    path: testInfo.outputPath("welcome-upgrade.png"),
+    path: testInfo.outputPath("premium.png"),
     fullPage: true,
   });
 

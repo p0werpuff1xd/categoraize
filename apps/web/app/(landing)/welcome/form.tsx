@@ -78,7 +78,7 @@ export const OnboardingForm = (props: { questionIndex: number }) => {
         step: questionIndex + 1,
         stepKey: currentQuestion.key,
         totalSteps: survey.questions.length,
-        destination: isPremium ? "setup" : "welcome-upgrade",
+        destination: isPremium ? "setup" : "premium",
       });
       // Index-based `$survey_response` / `$survey_response_N` keys — legacy PostHog
       // format still supported. Migrating to ID-based keys needs question UUIDs from
@@ -135,7 +135,7 @@ export const OnboardingForm = (props: { questionIndex: number }) => {
         if (isPremium) {
           router.push("/setup");
         } else {
-          router.push("/welcome-upgrade");
+          router.push("/premium");
         }
       } else {
         router.push(`/welcome?${newSeachParams}`);
