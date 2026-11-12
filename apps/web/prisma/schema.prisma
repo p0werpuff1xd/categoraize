@@ -282,6 +282,10 @@ model EmailAccount {
   categorizeClassifications CategorizeClassification[]
   categorizeDeadlineAlerts  CategorizeDeadlineAlert[]
   categorizeNotifications   CategorizeNotification[]
+  categorizeExtractedSpans  CategorizeExtractedSpan[]
+  categorizeContacts        CategorizeContact[]
+  categorizeFeedbackEvents  CategorizeFeedbackEvent[]
+  categorizePriorityOverrides CategorizePriorityOverrideLog[]
 
   @@index([userId])
   @@index([lastSummaryEmailAt])
@@ -2993,20 +2997,21 @@ model CategorizeCategory {
   icon           String? // Icon identifier for UI display
   aiInstructions String?  @db.Text // Guidance criteria for the AI classification prompt
   priorityWeight Int      @default(1) // Priority multiplier/weight (1-5)
+  basePriority   Int      @default(3) // Editable P1-P5 base for the priority rules
   isDefault      Boolean  @default(false)
 
   emailAccountId String
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
 
   /// Rocchio centroid vector (384-dim MiniLM-L12-v2) — updated on user feedback via centroid adaptation
-  centroidEmbedding Unsupported("vector(384)")?  // pgvector: L2-normalised centroid in ℝ^384
+  centroidEmbedding Unsupported("vector(384)")? // pgvector: L2-normalised centroid in ℝ^384
 
-  originalEmbedding Unsupported("vector(384)")?
-  embeddingModel String @default("paraphrase-multilingual-MiniLM-L12-v2")
-  embeddingVersion String @default("v1")
-  classificationThreshold Float @default(0.35)
-  centroidVersion Int @default(0)
-  isActive Boolean @default(true)
+  originalEmbedding       Unsupported("vector(384)")?
+  embeddingModel          String                      @default("paraphrase-multilingual-MiniLM-L12-v2")
+  embeddingVersion        String                      @default("v1")
+  classificationThreshold Float                       @default(0.35)
+  centroidVersion         Int                         @default(0)
+  isActive                Boolean                     @default(true)
 
   classifications CategorizeClassification[]
 
@@ -3044,26 +3049,139 @@ model CategorizeClassification {
 
   /// Dense email embedding from paraphrase-multilingual-MiniLM-L12-v2 (384-dim)
   /// Used for cosine similarity search (<=>) via pgvector HNSW index
-  embedding        Unsupported("vector(384)")?  // pgvector: ℝ^384 — stored after FastAPI classification
-  detectedLang     String?  // e.g. "en", "tl", "taglish" from langdetect
-  actionDirective  String?  @db.Text  // Extracted imperative action item from email body
+  embedding       Unsupported("vector(384)")? // pgvector: ℝ^384 — stored after FastAPI classification
+  detectedLang    String? // e.g. "en", "tl", "taglish" from langdetect
+  actionDirective String?                     @db.Text // Extracted imperative action item from email body
 
-  processingStatus String @default("PENDING")
-  processingError String? @db.Text
-  processingKey String
-  rawPriorityScore Float?
-  deadlineFactor Float?
-  senderFactor Float?
-  calendarFactor Float?
-  priorityDampener Float @default(1.0)
-  priorityOverride String?
+  processingStatus       String  @default("PENDING")
+  processingError        String? @db.Text
+  processingKey          String
+  rawPriorityScore       Float?
+  deadlineFactor         Float?
+  senderFactor           Float?
+  calendarFactor         Float?
+  priorityDampener       Float   @default(1.0)
+  priorityOverride       String?
   priorityOverrideReason String? @db.Text
+
+  // Phase 2 contract (NLP service v0.2). Older V6 priority fields above are no longer written.
+  subject          String?
+  fromEmail        String?
+  fromName         String?
+  snippet          String?   @db.Text
+  bodyText         String?   @db.Text // Analyzed text (latest reply, max 8000 chars) for re-scoring and span highlights
+  receivedAt       DateTime?
+  rankedCategories Json? // [{id, similarity}] from Sentence-BERT, best first
+  suggestedLabel   Json? // Curated template suggestion when nothing matched; never auto-created
+  computedPriority Int       @default(3) // P1-P5 from the deterministic rules
+  manualPriority   Int? // User override; never feeds Rocchio
+  priorityFactors  Json? // {category_base, deadline, sender_role, calendar, vip_pin}
+  deadlineAt       DateTime? // Nearest validated deadline used by the priority rules
+  serviceVersion   String?
+
+  spans             CategorizeExtractedSpan[]
+  feedbackEvents    CategorizeFeedbackEvent[]
+  priorityOverrides CategorizePriorityOverrideLog[]
 
   @@unique([emailAccountId, threadId, messageId])
   @@unique([emailAccountId, processingKey])
   @@index([emailAccountId, priority])
   @@index([emailAccountId, categoryId])
   @@index([emailAccountId, createdAt])
+  @@index([emailAccountId, computedPriority])
+}
+
+enum CategorizeSpanLabel {
+  TASK
+  DATE
+}
+
+enum CategorizeContactRole {
+  DIRECT_REPORT
+  MANAGER
+  DIRECTOR_EXECUTIVE
+  EXTERNAL_VENDOR
+}
+
+/// TASK/DATE spans tagged in an email (regex baseline now, Bi-LSTM-CRF later).
+model CategorizeExtractedSpan {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  label       CategorizeSpanLabel
+  text        String
+  source      String // "subject" | "body"
+  start       Int
+  end         Int
+  resolvedAt  DateTime? // DATE only, timezone-aware instant
+  ambiguous   Boolean             @default(false)
+  isDeadline  Boolean             @default(false)
+  confirmed   Boolean             @default(false)
+  dismissedAt DateTime?
+  tagger      String              @default("regex")
+
+  classificationId String
+  classification   CategorizeClassification @relation(fields: [classificationId], references: [id], onDelete: Cascade)
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@index([classificationId])
+  @@index([emailAccountId, label, resolvedAt])
+}
+
+/// Sender roles and VIP list feeding the priority rules.
+model CategorizeContact {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email String
+  name  String?
+  role  CategorizeContactRole?
+  isVip Boolean                @default(false)
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([emailAccountId, email])
+}
+
+/// One category correction; the unique key blocks duplicate Rocchio updates.
+model CategorizeFeedbackEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  fromCategoryId String?
+  toCategoryId   String
+
+  classificationId String
+  classification   CategorizeClassification @relation(fields: [classificationId], references: [id], onDelete: Cascade)
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([classificationId, toCategoryId])
+  @@index([emailAccountId, createdAt])
+}
+
+/// Log of manual priority overrides (manualPriority null = reset to computed).
+model CategorizePriorityOverrideLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  sender           String
+  computedPriority Int
+  manualPriority   Int?
+
+  classificationId String
+  classification   CategorizeClassification @relation(fields: [classificationId], references: [id], onDelete: Cascade)
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@index([emailAccountId, sender, createdAt])
 }
 
 /// Time-sensitive deadlines and action items detected by AI from emails.
@@ -3118,4 +3236,3 @@ model CategorizeNotification {
   @@index([emailAccountId, read, createdAt])
   @@index([emailAccountId, type])
 }
-
