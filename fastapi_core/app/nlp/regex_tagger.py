@@ -88,11 +88,11 @@ _TASK_STOP_RE = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_FILLER_RE = re.compile(
-    r"(?:[\s,:\-]+|\s+(?:po|naman|lang|na|ha|please|asap|sa|on|ng)(?![\w-]))+$",
+    r"(?:[\s,:\-]+|\s+(?:po|naman|lang|na|ha|please|asap|sa|on|ng|for|to|by|at|in|of|until|before)(?![\w-]))+$",
     re.IGNORECASE,
 )
 _DEADLINE_MARKER_RE = re.compile(
-    r"\b(?:by|before|until|due|deadline|no\s+later\s+than|on\s+or\s+before|hanggang|bago|sa\s+or\s+bago)\b[\s:,]*(?:sa\s+|on\s+|the\s+)?$"
+    r"\b(?:by|before|until|due(?:\s+(?:date|on|by))?|deadline|no\s+later\s+than|on\s+or\s+before|hanggang|bago|sa\s+or\s+bago|takdang\s+petsa)\b[\s:,]*(?:sa\s+|on\s+|the\s+)?$"
 )
 
 

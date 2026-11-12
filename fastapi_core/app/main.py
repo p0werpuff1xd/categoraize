@@ -117,6 +117,10 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         [(category.id, category.centroid or description_vectors[category.id]) for category in request.categories],
     )
     chosen = choose_category(ranked, request.threshold)
+    if request.pinned_category_id is not None:
+        chosen = next((item for item in ranked if item.id == request.pinned_category_id), None)
+        if chosen is None:
+            raise HTTPException(status_code=422, detail="pinned_category_id is not in categories")
     suggestion = None if chosen else _suggest_label(email_vector, request)
     timings["classify"] = _elapsed_ms(step)
 

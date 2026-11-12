@@ -102,3 +102,18 @@ def test_correction_changes_later_classification(client, loaded_model):
     assert after_scores[right] > before_scores[right]
     assert after_scores[wrong] < before_scores[wrong]
     assert after["ranked"][0]["id"] == right
+
+
+def test_pinned_category_survives_reclassification(client):
+    payload = classify_payload(
+        subject="Midterm exam schedule",
+        body="The midterm exam for Data Structures will be on Thursday.",
+        pinned_category_id="cat-finance",
+    )
+    result = client.post("/api/v1/classify", json=payload, headers=AUTH).json()
+    assert result["category"]["id"] == "cat-finance"
+    assert result["ranked"][0]["id"] == "cat-academics"
+    assert result["suggested_label"] is None
+
+    unknown = classify_payload(subject="x", body="y", pinned_category_id="missing")
+    assert client.post("/api/v1/classify", json=unknown, headers=AUTH).status_code == 422

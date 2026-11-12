@@ -68,6 +68,9 @@ class ClassifyRequest(StrictModel):
     confirmed_deadlines: list[AwareDatetime] = Field(default_factory=list, max_length=20)
     now: AwareDatetime | None = None
     uncategorized_base_priority: int = Field(default=3, ge=1, le=5)
+    # A category the user already chose for this email: it stays the category and
+    # supplies the priority base, while ranking is still reported.
+    pinned_category_id: str | None = Field(default=None, max_length=200)
 
     @field_validator("timezone")
     @classmethod

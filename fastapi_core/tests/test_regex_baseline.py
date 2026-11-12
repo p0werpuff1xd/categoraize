@@ -92,3 +92,14 @@ def test_normalizer_glosses_taglish():
 )
 def test_language_id(text, language):
     assert detect_language(text) == language
+
+
+def test_task_does_not_end_on_a_dangling_preposition():
+    assert _spans("Please confirm your availability for this week.", "TASK") == ["Please confirm your availability"]
+
+
+def test_due_date_label_marks_a_deadline(client):
+    payload = classify_payload(body="Amount due: PHP 2,315.40. Due date: November 25.")
+    result = client.post("/api/v1/classify", json=payload, headers=AUTH).json()
+    dates = [span for span in result["spans"] if span["label"] == "DATE"]
+    assert dates and dates[0]["is_deadline"] is True
