@@ -132,12 +132,14 @@ for (const outputDir of outputDirs) {
   // Write index.js launcher
   const indexJsContent = `// Auto-generated Monolithic Next.js Serverless Function Adapter for Vercel Hobby
 const path = require("node:path");
-const NextServer = require("next/dist/server/next-server").default;
+const { createRequire } = require("node:module");
 
 const serverDir = path.join(__dirname, "apps", "web");
+const appRequire = createRequire(path.join(serverDir, "package.json"));
+const NextServer = appRequire("next/dist/server/next-server").default;
 let conf = {};
 try {
-  conf = require(path.join(serverDir, ".next", "required-server-files.json")).config || {};
+  conf = appRequire(path.join(serverDir, ".next", "required-server-files.json")).config || {};
 } catch (e) {
   console.warn("Could not load required-server-files.json:", e.message);
 }
