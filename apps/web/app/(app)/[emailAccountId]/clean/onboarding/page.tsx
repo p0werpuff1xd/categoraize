@@ -70,6 +70,7 @@ export default async function CleanPage(props: {
       case CleanStep.FINAL_CONFIRMATION:
         return (
           <ConfirmationStep
+            showFooter={false}
             action={searchParams.action ?? CleanAction.ARCHIVE}
             timeRange={
               searchParams.timeRange
