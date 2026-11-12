@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-export const updateCategoraiizeDeadline = z.object({
-  deadlineId: z.string().min(1),
-  dueDate: z.string().datetime().optional(),
+export const confirmCategoraizeDeadline = z.object({
+  spanId: z.string().min(1),
+  // The user may correct an ambiguous date while confirming it.
+  resolvedAt: z.string().datetime({ offset: true }).optional(),
+});
+
+export const dismissCategoraizeSpan = z.object({
+  spanId: z.string().min(1),
 });

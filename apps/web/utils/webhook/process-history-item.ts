@@ -31,6 +31,8 @@ import { logErrorWithDedupe } from "@/utils/log-error-with-dedupe";
 import { sendToReplyPushNotification } from "@/utils/to-reply-push";
 import { sendOtpPushNotification } from "@/utils/otp-push";
 import { internalDateToDate } from "@/utils/date";
+import { isCategoraizeEnabled } from "@/utils/categoraize/client";
+import { enqueueCategoraizeProcessing } from "@/utils/categoraize/queue";
 
 const MAX_WEBHOOK_MESSAGE_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -183,6 +185,18 @@ export async function processHistoryItem(
           : null,
       });
       return;
+    }
+
+    // CategorAIze runs on its own NLP service, so it does not depend on LLM (AI) access.
+    if (isCategoraizeEnabled()) {
+      try {
+        await enqueueCategoraizeProcessing({
+          payload: { emailAccountId, threadId: actualThreadId, messageId },
+          logger,
+        });
+      } catch (error) {
+        logger.warn("CategorAIze enqueue failed", { error });
+      }
     }
 
     try {

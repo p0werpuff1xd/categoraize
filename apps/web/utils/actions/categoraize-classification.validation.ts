@@ -1,15 +1,20 @@
 import { z } from "zod";
 
-export const reviewCategoraiizeClassification = z.object({
+export const correctCategoraizeCategory = z.object({
   classificationId: z.string().min(1),
-  categoryId: z.string().min(1).nullable(),
-  correction: z.string().trim().max(500).optional(),
-  feedback: z
-    .object({
-      emailVector: z.array(z.number()).length(384),
-      correctCentroid: z.array(z.number()).length(384),
-      incorrectCategoryId: z.string().min(1).optional(),
-      incorrectCentroid: z.array(z.number()).length(384).optional(),
-    })
-    .optional(),
+  categoryId: z.string().min(1),
+});
+
+export const setCategoraizeManualPriority = z.object({
+  classificationId: z.string().min(1),
+  // null resets to the computed priority
+  priority: z.number().int().min(1).max(5).nullable(),
+});
+
+export const classifyRecentCategoraizeEmails = z.object({
+  limit: z.number().int().min(1).max(100).default(25),
+});
+
+export const reclassifyStoredCategoraizeEmails = z.object({
+  limit: z.number().int().min(1).max(500).default(200),
 });

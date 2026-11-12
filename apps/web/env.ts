@@ -72,6 +72,9 @@ const parsedEnv = createEnv({
     ),
     NLP_SERVICE_URL: z.string().url().optional(),
     NLP_SERVICE_TOKEN: z.string().min(1).optional(),
+    CATEGORAIZE_ENABLED: booleanString.optional().default(false),
+    CATEGORAIZE_SERVICE_URL: z.string().url().optional(),
+    CATEGORAIZE_INTERNAL_KEY: z.string().min(1).optional(),
 
     AUTH_SECRET: z.string().optional(),
     SCIM_CREDENTIAL_HASH_SECRET: z.string().min(32).optional(),

@@ -1,82 +1,66 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import prisma from "@/utils/prisma";
 import { actionClient } from "@/utils/actions/safe-action";
 import { isDuplicateError } from "@/utils/prisma-helpers";
 import { SafeError } from "@/utils/error";
 import { prefixPath } from "@/utils/path";
-import { enqueueCategoraiizeCategoryEmbedding } from "@/utils/categorai/processing-queue";
+import { embedCategoryDescription } from "@/utils/categoraize/categories";
+import { reclassifyStoredEmail } from "@/utils/categoraize/process-email";
 import {
-  createCategoraiizeCategory,
-  deleteCategoraiizeCategory,
-  updateCategoraiizeCategory,
-} from "./categoraiize.validation";
+  createCategoraizeCategory,
+  createCategoryFromSuggestion,
+  deleteCategoraizeCategory,
+  updateCategoraizeCategory,
+  upsertCategoraizeContact,
+} from "./categoraize.validation";
 
-const categoriesPath = (emailAccountId: string) =>
-  prefixPath(emailAccountId, "/categoraiize/categories");
+const suggestedLabelSchema = z.object({
+  name: z.string().min(1),
+  description: z.string(),
+});
 
-export const createCategoraiizeCategoryAction = actionClient
-  .metadata({ name: "createCategoraiizeCategory" })
-  .inputSchema(createCategoraiizeCategory)
+export const createCategoraizeCategoryAction = actionClient
+  .metadata({ name: "createCategoraizeCategory" })
+  .inputSchema(createCategoraizeCategory)
   .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
-    try {
-      const category = await prisma.categorizeCategory.create({
-        data: {
-          emailAccountId,
-          name: parsedInput.name,
-          description: parsedInput.description,
-        },
-        select: { id: true },
-      });
+    const category = await createCategory({
+      emailAccountId,
+      name: parsedInput.name,
+      description: parsedInput.description ?? null,
+      basePriority: parsedInput.basePriority,
+    });
+    const embedded = await embedCategoryDescription({
+      emailAccountId,
+      category,
+      resetCentroid: true,
+      logger,
+    });
 
-      await enqueueCategoraiizeCategoryEmbedding({
-        payload: {
-          emailAccountId,
-          categoryId: category.id,
-          name: parsedInput.name,
-          description: parsedInput.description,
-        },
-        logger,
-      });
-
-      revalidatePath(categoriesPath(emailAccountId));
-      return { id: category.id };
-    } catch (error) {
-      if (isDuplicateError(error, "name")) {
-        throw new SafeError("A category with this name already exists");
-      }
-      throw error;
-    }
+    revalidateCategoraize(emailAccountId);
+    return { id: category.id, embedded };
   });
 
-export const updateCategoraiizeCategoryAction = actionClient
-  .metadata({ name: "updateCategoraiizeCategory" })
-  .inputSchema(updateCategoraiizeCategory)
+export const updateCategoraizeCategoryAction = actionClient
+  .metadata({ name: "updateCategoraizeCategory" })
+  .inputSchema(updateCategoraizeCategory)
   .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
     const { categoryId, ...data } = parsedInput;
-    const category = await prisma.categorizeCategory.findFirst({
+    const existing = await prisma.categorizeCategory.findFirst({
       where: { id: categoryId, emailAccountId },
-      select: { id: true },
+      select: { name: true, description: true },
     });
-    if (!category) throw new SafeError("Category not found");
+    if (!existing) throw new SafeError("Category not found");
 
+    let updated: { id: string; name: string; description: string | null };
     try {
-      const updatedCategory = await prisma.categorizeCategory.update({
-        where: { id: category.id },
+      updated = await prisma.categorizeCategory.update({
+        where: { id: categoryId },
         data,
         select: { id: true, name: true, description: true },
       });
-
-      await enqueueCategoraiizeCategoryEmbedding({
-        payload: {
-          emailAccountId,
-          categoryId: updatedCategory.id,
-          name: updatedCategory.name,
-          description: updatedCategory.description ?? undefined,
-        },
-        logger,
-      });
     } catch (error) {
       if (isDuplicateError(error, "name")) {
         throw new SafeError("A category with this name already exists");
@@ -84,17 +68,108 @@ export const updateCategoraiizeCategoryAction = actionClient
       throw error;
     }
 
-    revalidatePath(categoriesPath(emailAccountId));
+    const textChanged =
+      updated.name !== existing.name ||
+      (updated.description ?? "") !== (existing.description ?? "");
+    let embedded = false;
+    if (textChanged) {
+      // A new description defines a new category meaning, so the learned centroid restarts from it.
+      embedded = await embedCategoryDescription({
+        emailAccountId,
+        category: updated,
+        resetCentroid: true,
+        logger,
+      });
+    }
+
+    revalidateCategoraize(emailAccountId);
+    return { embedded };
   });
 
-export const deleteCategoraiizeCategoryAction = actionClient
-  .metadata({ name: "deleteCategoraiizeCategory" })
-  .inputSchema(deleteCategoraiizeCategory)
+export const deleteCategoraizeCategoryAction = actionClient
+  .metadata({ name: "deleteCategoraizeCategory" })
+  .inputSchema(deleteCategoraizeCategory)
   .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
     const result = await prisma.categorizeCategory.deleteMany({
       where: { id: parsedInput.categoryId, emailAccountId },
     });
     if (result.count === 0) throw new SafeError("Category not found");
 
-    revalidatePath(categoriesPath(emailAccountId));
+    revalidateCategoraize(emailAccountId);
   });
+
+/** Scenario 2: the user approves a suggested label, which then becomes a real category. */
+export const createCategoryFromSuggestionAction = actionClient
+  .metadata({ name: "createCategoryFromSuggestion" })
+  .inputSchema(createCategoryFromSuggestion)
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
+    const classification = await prisma.categorizeClassification.findFirst({
+      where: { id: parsedInput.classificationId, emailAccountId },
+      select: { suggestedLabel: true },
+    });
+    const suggestion = suggestedLabelSchema.safeParse(
+      classification?.suggestedLabel,
+    );
+    if (!suggestion.success) throw new SafeError("No suggested label");
+
+    const category = await createCategory({
+      emailAccountId,
+      name: suggestion.data.name,
+      description: suggestion.data.description,
+    });
+    await embedCategoryDescription({
+      emailAccountId,
+      category,
+      resetCentroid: true,
+      logger,
+    });
+    await reclassifyStoredEmail({
+      emailAccountId,
+      classificationId: parsedInput.classificationId,
+      logger,
+    });
+
+    revalidateCategoraize(emailAccountId);
+    return { id: category.id };
+  });
+
+export const upsertCategoraizeContactAction = actionClient
+  .metadata({ name: "upsertCategoraizeContact" })
+  .inputSchema(upsertCategoraizeContact)
+  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+    const { email, ...data } = parsedInput;
+    await prisma.categorizeContact.upsert({
+      where: { emailAccountId_email: { emailAccountId, email } },
+      create: { emailAccountId, email, ...data },
+      update: data,
+    });
+    revalidateCategoraize(emailAccountId);
+  });
+
+async function createCategory({
+  emailAccountId,
+  name,
+  description,
+  basePriority,
+}: {
+  emailAccountId: string;
+  name: string;
+  description: string | null;
+  basePriority?: number;
+}) {
+  try {
+    return await prisma.categorizeCategory.create({
+      data: { emailAccountId, name, description, basePriority },
+      select: { id: true, name: true, description: true },
+    });
+  } catch (error) {
+    if (isDuplicateError(error, "name")) {
+      throw new SafeError("A category with this name already exists");
+    }
+    throw error;
+  }
+}
+
+function revalidateCategoraize(emailAccountId: string) {
+  revalidatePath(prefixPath(emailAccountId, "/categoraize"), "layout");
+}
