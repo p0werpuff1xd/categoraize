@@ -46,16 +46,8 @@ export async function classifyAndStoreEmail({
   const fromEmail = extractEmailAddress(email.from).toLowerCase() || email.from;
   const fromName = extractNameFromEmail(email.from);
 
-  const [emailAccount, categories, contact, existing] = await Promise.all([
-    prisma.emailAccount.findUnique({
-      where: { id: emailAccountId },
-      select: { timezone: true },
-    }),
-    getCategoryVectors(emailAccountId),
-    prisma.categorizeContact.findUnique({
-      where: { emailAccountId_email: { emailAccountId, email: fromEmail } },
-      select: { role: true, isVip: true },
-    }),
+  const [context, existing] = await Promise.all([
+    loadClassifyContext(emailAccountId, fromEmail),
     prisma.categorizeClassification.findUnique({
       where: {
         emailAccountId_threadId_messageId: {
@@ -83,6 +75,7 @@ export async function classifyAndStoreEmail({
     }),
   ]);
 
+  const { categories } = context;
   // Spans the user confirmed or dismissed keep that decision across re-scoring.
   const reviewedSpans = existing?.spans ?? [];
   // A category the user corrected stays put; the service only re-ranks and re-scores.
@@ -96,24 +89,7 @@ export async function classifyAndStoreEmail({
     subject: email.subject,
     body: email.body,
     received_at: email.receivedAt.toISOString(),
-    timezone: emailAccount?.timezone || "UTC",
-    sender: {
-      email: fromEmail,
-      role: contact?.role ? ROLE_LABELS[contact.role] : null,
-      is_vip: contact?.isVip ?? false,
-    },
-    categories: categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      description: category.description ?? "",
-      base_priority: category.basePriority,
-      centroid: category.centroid,
-    })),
-    threshold: categories.length
-      ? Math.min(...categories.map((category) => category.threshold))
-      : undefined,
-    // Calendar busy periods arrive in Phase 6; until then no calendar boost is applied.
-    calendar_busy: null,
+    ...context.request,
     confirmed_deadlines: reviewedSpans
       .filter(
         (span) =>
@@ -223,6 +199,38 @@ export async function classifyAndStoreEmail({
   return { classificationId: classification.id, result };
 }
 
+/** Classify text without storing anything (the rules studio sandbox). */
+export async function previewCategoraizeEmail({
+  emailAccountId,
+  subject,
+  body,
+  from,
+}: {
+  emailAccountId: string;
+  subject: string;
+  body: string;
+  from: string;
+}) {
+  const fromEmail = extractEmailAddress(from).toLowerCase() || from;
+  const context = await loadClassifyContext(emailAccountId, fromEmail);
+  const result = await classifyEmail({
+    email_id: "sandbox",
+    subject,
+    body,
+    received_at: new Date().toISOString(),
+    ...context.request,
+  });
+  return {
+    result,
+    timezone: context.request.timezone,
+    categories: context.categories.map(({ id, name, basePriority }) => ({
+      id,
+      name,
+      basePriority,
+    })),
+  };
+}
+
 /** Re-score a stored email, e.g. after a deadline is confirmed or a centroid moved. */
 export async function reclassifyStoredEmail({
   emailAccountId,
@@ -262,6 +270,45 @@ export async function reclassifyStoredEmail({
       receivedAt: stored.receivedAt ?? stored.createdAt,
     },
   });
+}
+
+async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
+  const [emailAccount, categories, contact] = await Promise.all([
+    prisma.emailAccount.findUnique({
+      where: { id: emailAccountId },
+      select: { timezone: true },
+    }),
+    getCategoryVectors(emailAccountId),
+    fromEmail
+      ? prisma.categorizeContact.findUnique({
+          where: { emailAccountId_email: { emailAccountId, email: fromEmail } },
+          select: { role: true, isVip: true },
+        })
+      : null,
+  ]);
+
+  const request = {
+    timezone: emailAccount?.timezone || "UTC",
+    sender: {
+      email: fromEmail,
+      role: contact?.role ? ROLE_LABELS[contact.role] : null,
+      is_vip: contact?.isVip ?? false,
+    },
+    categories: categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      description: category.description ?? "",
+      base_priority: category.basePriority,
+      centroid: category.centroid,
+    })),
+    threshold: categories.length
+      ? Math.min(...categories.map((category) => category.threshold))
+      : undefined,
+    // Calendar busy periods arrive in Phase 6; until then no calendar boost is applied.
+    calendar_busy: null,
+  } satisfies Partial<CategoraizeClassifyRequest>;
+
+  return { categories, request };
 }
 
 const ROLE_LABELS: Record<CategorizeContactRole, CategoraizeContactRoleLabel> =

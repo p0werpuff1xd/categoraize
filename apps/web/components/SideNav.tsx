@@ -29,7 +29,9 @@ import {
   RatioIcon,
   SendIcon,
   SmartphoneIcon,
+  ListOrderedIcon,
   SparklesIcon,
+  TagsIcon,
   Users2Icon,
   ZapIcon,
 } from "lucide-react";
@@ -105,6 +107,18 @@ export const useNavigation = () => {
         label: msg`Chat`,
         href: prefixPath(currentEmailAccountId, "/assistant"),
         icon: MessageSquareIcon,
+      },
+      {
+        name: "Priority Inbox",
+        label: msg`Priority Inbox`,
+        href: prefixPath(currentEmailAccountId, "/categoraize/triage"),
+        icon: ListOrderedIcon,
+      },
+      {
+        name: "Label Studio",
+        label: msg`Label Studio`,
+        href: prefixPath(currentEmailAccountId, "/categoraize/rules"),
+        icon: TagsIcon,
       },
       {
         name: "Rules",

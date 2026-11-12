@@ -51,6 +51,7 @@ async function getData({
       fromEmail: true,
       fromName: true,
       snippet: true,
+      bodyText: true,
       receivedAt: true,
       categoryId: true,
       categoryName: true,
@@ -82,12 +83,50 @@ async function getData({
     },
   });
 
+  const [messages, contacts] = await Promise.all([
+    prisma.emailMessage.findMany({
+      where: {
+        emailAccountId,
+        messageId: { in: rows.map((row) => row.messageId) },
+      },
+      select: { messageId: true, read: true },
+    }),
+    prisma.categorizeContact.findMany({
+      where: {
+        emailAccountId,
+        email: {
+          in: rows.flatMap((row) => (row.fromEmail ? [row.fromEmail] : [])),
+        },
+      },
+      select: { email: true, role: true, isVip: true },
+    }),
+  ]);
+  const readByMessageId = new Map(
+    messages.map((message) => [message.messageId, message.read]),
+  );
+  const contactByEmail = new Map(
+    contacts.map((contact) => [contact.email, contact]),
+  );
+
+  const enriched = rows.map((row) => ({
+    ...row,
+    priority: row.manualPriority ?? row.computedPriority,
+    // Seeded demo mail has no Gmail message, so it counts as unread.
+    read: readByMessageId.get(row.messageId) ?? false,
+    sender: row.fromEmail ? (contactByEmail.get(row.fromEmail) ?? null) : null,
+  }));
+
+  const counts = [1, 2, 3, 4, 5].map((level) => {
+    const atLevel = enriched.filter((row) => row.priority === level);
+    return {
+      level,
+      total: atLevel.length,
+      unread: atLevel.filter((row) => !row.read).length,
+    };
+  });
+
   // Triage order: priority, then nearest validated deadline, then newest.
-  const classifications = rows
-    .map((row) => ({
-      ...row,
-      priority: row.manualPriority ?? row.computedPriority,
-    }))
+  const classifications = enriched
     .filter((row) => row.priority >= minPriority)
     .sort(
       (a, b) =>
@@ -97,7 +136,7 @@ async function getData({
     )
     .slice(0, limit);
 
-  return { classifications };
+  return { classifications, counts };
 }
 
 function compareDeadlines(a: Date | null, b: Date | null) {

@@ -16,6 +16,7 @@ import { categoryEmbeddingText } from "@/utils/categoraize/categories";
 import { categoraizeInputFromMessage } from "@/utils/categoraize/message-input";
 import {
   classifyAndStoreEmail,
+  previewCategoraizeEmail,
   reclassifyStoredEmail,
 } from "@/utils/categoraize/process-email";
 import {
@@ -24,8 +25,10 @@ import {
   setCategoryCentroid,
 } from "@/utils/categoraize/vectors";
 import {
+  acceptCategoraizeCategory,
   classifyRecentCategoraizeEmails,
   correctCategoraizeCategory,
+  previewCategoraizeClassification,
   reclassifyStoredCategoraizeEmails,
   setCategoraizeManualPriority,
 } from "./categoraize-classification.validation";
@@ -132,6 +135,23 @@ export const correctCategoraizeCategoryAction = actionClient
     return { learned: !alreadyLearned };
   });
 
+/** Accepting a prediction only marks it reviewed; Rocchio learns from corrections, not confirmations. */
+export const acceptCategoraizeCategoryAction = actionClient
+  .metadata({ name: "acceptCategoraizeCategory" })
+  .inputSchema(acceptCategoraizeCategory)
+  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+    const result = await prisma.categorizeClassification.updateMany({
+      where: {
+        id: parsedInput.classificationId,
+        emailAccountId,
+        categoryId: { not: null },
+      },
+      data: { isReviewedByUser: true },
+    });
+    if (result.count === 0) throw new SafeError("Nothing to accept");
+    revalidateCategoraize(emailAccountId);
+  });
+
 /** A manual override is stored beside the computed value and logged; it never feeds Rocchio. */
 export const setCategoraizeManualPriorityAction = actionClient
   .metadata({ name: "setCategoraizeManualPriority" })
@@ -223,6 +243,15 @@ export const reclassifyStoredCategoraizeEmailsAction = actionClient
 
     revalidateCategoraize(emailAccountId);
     return { reclassified };
+  });
+
+/** Rules studio sandbox: classify pasted text without storing it. */
+export const previewCategoraizeClassificationAction = actionClient
+  .metadata({ name: "previewCategoraizeClassification" })
+  .inputSchema(previewCategoraizeClassification)
+  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+    requireEnabled();
+    return previewCategoraizeEmail({ emailAccountId, ...parsedInput });
   });
 
 function requireEnabled() {

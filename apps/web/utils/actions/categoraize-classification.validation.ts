@@ -18,3 +18,13 @@ export const classifyRecentCategoraizeEmails = z.object({
 export const reclassifyStoredCategoraizeEmails = z.object({
   limit: z.number().int().min(1).max(500).default(200),
 });
+
+export const previewCategoraizeClassification = z.object({
+  subject: z.string().max(2000).default(""),
+  body: z.string().min(1, "Paste some email text").max(20_000),
+  from: z.string().max(320).default(""),
+});
+
+export const acceptCategoraizeCategory = z.object({
+  classificationId: z.string().min(1),
+});

@@ -1,0 +1,328 @@
+"use client";
+
+import { useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  type CategoraizePriorityFactors,
+  PriorityFactorBreakdown,
+  priorityLabel,
+} from "@/components/CategoraizePriority";
+import {
+  DeadlineStatus,
+  HighlightedText,
+  SpanLegend,
+  formatDeadline,
+} from "@/components/CategoraizeSpans";
+import { toastError, toastSuccess } from "@/components/Toast";
+import { useAccount } from "@/providers/EmailAccountProvider";
+import {
+  acceptCategoraizeCategoryAction,
+  correctCategoraizeCategoryAction,
+  setCategoraizeManualPriorityAction,
+} from "@/utils/actions/categoraize-classification";
+import { createCategoryFromSuggestionAction } from "@/utils/actions/categoraize";
+import {
+  confirmCategoraizeDeadlineAction,
+  dismissCategoraizeSpanAction,
+} from "@/utils/actions/categoraize-deadlines";
+import { getActionErrorMessage } from "@/utils/error";
+import type { CategoraizeCategoriesResponse } from "@/app/api/categorai/categories/route";
+import type { TriageEmail } from "./PriorityInbox";
+
+type Category = CategoraizeCategoriesResponse["categories"][number];
+
+export function TriageDetail({
+  email,
+  categories,
+  onChange,
+}: {
+  email: TriageEmail;
+  categories: Category[];
+  onChange: () => void;
+}) {
+  const { emailAccountId } = useAccount();
+  const [targetCategoryId, setTargetCategoryId] = useState<string>("");
+
+  const callbacks = (success: string) => ({
+    onSuccess: () => {
+      toastSuccess({ description: success });
+      onChange();
+    },
+    onError: ({
+      error,
+    }: {
+      error: Parameters<typeof getActionErrorMessage>[0];
+    }) => toastError({ description: getActionErrorMessage(error) }),
+  });
+
+  const accept = useAction(
+    acceptCategoraizeCategoryAction.bind(null, emailAccountId),
+    callbacks("Label accepted"),
+  );
+  const correct = useAction(
+    correctCategoraizeCategoryAction.bind(null, emailAccountId),
+    callbacks("Label corrected. The labels' centroids were updated."),
+  );
+  const override = useAction(
+    setCategoraizeManualPriorityAction.bind(null, emailAccountId),
+    callbacks("Priority updated"),
+  );
+  const createFromSuggestion = useAction(
+    createCategoryFromSuggestionAction.bind(null, emailAccountId),
+    callbacks("Label created"),
+  );
+  const confirmDeadline = useAction(
+    confirmCategoraizeDeadlineAction.bind(null, emailAccountId),
+    callbacks("Deadline confirmed"),
+  );
+  const dismissSpan = useAction(
+    dismissCategoraizeSpanAction.bind(null, emailAccountId),
+    callbacks("Dismissed"),
+  );
+
+  const suggestion = email.suggestedLabel as {
+    name: string;
+    similarity: number;
+  } | null;
+  const ranked = (email.rankedCategories ?? []) as Array<{
+    id: string;
+    similarity: number;
+  }>;
+  const nameById = new Map(categories.map(({ id, name }) => [id, name]));
+  const factors = email.priorityFactors as CategoraizePriorityFactors | null;
+  const dates = email.spans.filter((span) => span.label === "DATE");
+
+  return (
+    <div className="grid gap-6 border-t bg-muted/20 px-4 py-4 lg:grid-cols-2">
+      <div className="space-y-4">
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Email</h3>
+            <SpanLegend />
+          </div>
+          {email.subject && (
+            <HighlightedText
+              text={email.subject}
+              spans={email.spans.filter((span) => span.source === "subject")}
+              className="font-medium"
+            />
+          )}
+          <HighlightedText
+            text={email.bodyText ?? email.snippet ?? ""}
+            spans={
+              email.bodyText
+                ? email.spans.filter((span) => span.source === "body")
+                : []
+            }
+          />
+        </section>
+
+        {dates.length > 0 && (
+          <section className="space-y-2">
+            <h3 className="text-sm font-medium">Dates</h3>
+            <ul className="space-y-2 text-sm">
+              {dates.map((span) => (
+                <li key={span.id} className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">"{span.text}"</span>
+                  <span>
+                    →{" "}
+                    {span.resolvedAt
+                      ? formatDeadline(span.resolvedAt)
+                      : "could not resolve"}
+                  </span>
+                  <DeadlineStatus
+                    ambiguous={span.ambiguous}
+                    confirmed={span.confirmed}
+                    isDeadline={span.isDeadline}
+                  />
+                  {!span.confirmed && span.resolvedAt && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      loading={confirmDeadline.isExecuting}
+                      onClick={() =>
+                        confirmDeadline.execute({ spanId: span.id })
+                      }
+                    >
+                      Confirm deadline
+                    </Button>
+                  )}
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    loading={dismissSpan.isExecuting}
+                    onClick={() => dismissSpan.execute({ spanId: span.id })}
+                  >
+                    Not a deadline
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      <div className="space-y-5">
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium">Why this priority</h3>
+          {factors ? (
+            <PriorityFactorBreakdown
+              factors={factors}
+              level={email.priority}
+              computedLevel={email.computedPriority}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No breakdown stored.
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Select
+              value={email.manualPriority ? String(email.manualPriority) : ""}
+              onValueChange={(value) =>
+                override.execute({
+                  classificationId: email.id,
+                  priority: Number(value),
+                })
+              }
+            >
+              <SelectTrigger
+                className="h-8 w-[170px]"
+                aria-label="Override priority"
+              >
+                <SelectValue placeholder="Override priority" />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 4, 3, 2, 1].map((level) => (
+                  <SelectItem key={level} value={String(level)}>
+                    P{level} · {priorityLabel(level)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {email.manualPriority !== null && (
+              <Button
+                size="sm"
+                variant="ghost"
+                loading={override.isExecuting}
+                onClick={() =>
+                  override.execute({
+                    classificationId: email.id,
+                    priority: null,
+                  })
+                }
+              >
+                Reset to computed P{email.computedPriority}
+              </Button>
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium">Label</h3>
+          <p className="text-sm">
+            {email.categoryName ? (
+              <>
+                <b>{email.categoryName}</b> ({email.confidence.toFixed(2)}{" "}
+                similarity)
+                {email.isReviewedByUser ? " · reviewed" : ""}
+              </>
+            ) : (
+              "Uncategorized: no label passed the similarity threshold."
+            )}
+          </p>
+
+          {!email.categoryName && suggestion && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-2 text-sm">
+              <span>
+                Suggested new label: <b>{suggestion.name}</b> (
+                {suggestion.similarity.toFixed(2)})
+              </span>
+              <Button
+                size="xs"
+                loading={createFromSuggestion.isExecuting}
+                onClick={() =>
+                  createFromSuggestion.execute({ classificationId: email.id })
+                }
+              >
+                Create "{suggestion.name}"
+              </Button>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            {email.categoryName && !email.isReviewedByUser && (
+              <Button
+                size="sm"
+                variant="outline"
+                loading={accept.isExecuting}
+                onClick={() => accept.execute({ classificationId: email.id })}
+              >
+                Accept label
+              </Button>
+            )}
+            <Select
+              value={targetCategoryId}
+              onValueChange={setTargetCategoryId}
+            >
+              <SelectTrigger
+                className="h-8 w-[200px]"
+                aria-label="Move to label"
+              >
+                <SelectValue placeholder="Move to label…" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories
+                  .filter((category) => category.id !== email.categoryId)
+                  .map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              disabled={!targetCategoryId}
+              loading={correct.isExecuting}
+              onClick={() =>
+                correct.execute({
+                  classificationId: email.id,
+                  categoryId: targetCategoryId,
+                })
+              }
+            >
+              Correct label
+            </Button>
+          </div>
+
+          {ranked.length > 0 && (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground">
+                Similarity to every label
+              </summary>
+              <ul className="mt-1 space-y-0.5">
+                {ranked.map((item) => (
+                  <li key={item.id} className="flex justify-between gap-2">
+                    <span>{nameById.get(item.id) ?? "(deleted label)"}</span>
+                    <span className="font-mono tabular-nums">
+                      {item.similarity.toFixed(3)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
