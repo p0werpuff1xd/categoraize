@@ -1,74 +1,98 @@
 # Laboratory Activity 6: Use Case Diagram Development
 
 **Course:** Software Engineering 1  
-**Project:** CategorAIze — Intelligent Email Organization Assistant  
+**Project:** CategorAIze Email Intelligence System  
 **Coverage:** Parts 1, 2, and 3
 
 ## Part 1: Project Scope and Actor Identification
 
-### Project purpose and scope
+### Project scope
 
-CategorAIze helps email account owners organize and prioritize messages, understand email content, and act on tasks and deadlines. It supports English and Filipino/Taglish email analysis, user-defined categories, classification corrections, email search, reply preparation, inbox cleanup, and Google Calendar integration.
+This diagram follows the approved CategorAIze project scope in the team's activity worksheet: email account connection, categorization and prioritization, analysis and deadline review, notifications, email search and cleanup, reply drafting, and Google Calendar availability and deadline export. The scope models the Gmail integration named in the proposal. CategorAIze's web application, background processing, data store, and NLP capabilities are inside the system boundary.
 
-The system boundary includes the CategorAIze web application, its background processing, database, and internal NLP service. Gmail and Google Calendar are external services. This model follows the project's documented target workflows; it does not claim that every planned capability is already implemented or that the instructor has approved this scope.
-
-**In scope:** account connection, email synchronization, category management, analysis review, prediction feedback, search, task/deadline review, draft preparation, calendar availability, explicitly approved sending, inbox cleanup, and confirmed calendar export.
-
-**Out of scope:** deployment administration, model-training operations, billing, and inherited features unrelated to the core CategorAIze workflows. No administrator role is assumed because the selected workflows do not establish a separate administrator-facing service.
+Students, professionals, and other people who manage email use the same mailbox features and permissions in this project scope. They are represented by one **Email User** actor rather than separate actors. Organization administration, deployment administration, and other inherited application features are outside this approved project scope.
 
 ### Actor inventory
 
-| ID | Actor | Description | Main interaction with the system |
-| --- | --- | --- | --- |
-| A1 | Email Account Owner | Primary human actor who connects and manages their own mailbox. | Connects an account, reviews and organizes email, corrects predictions, searches messages, manages tasks, prepares replies, approves sending, cleans the inbox, and exports calendar events. |
-| A2 | Gmail Service | External email and OAuth service used by the selected project workflows. | Authorizes mailbox access, supplies messages and updates, stores drafts, sends approved replies, and applies requested mailbox changes. |
-| A3 | Google Calendar Service | External calendar service linked with the owner's consent. | Supplies availability and creates events after the owner confirms an export. |
-
-The NLP service and database are internal components, not actors. Email senders are not actors in this diagram because their messages reach CategorAIze through Gmail; they do not directly operate the selected system services.
+| Actor | Description | Main Interaction with the System |
+| --- | --- | --- |
+| Email User (Primary Actor) | A person, such as a student or professional, who connects and manages their own Gmail mailbox. | Connects the email account, creates custom categories, views categorized and prioritized messages, checks summaries and deadlines, views notifications, searches and cleans email, drafts replies, and corrects classifications. |
+| Gmail Service | External email and OAuth service used by the approved project workflows. | Authorizes mailbox access, supplies messages and updates, stores drafts, sends approved replies, and applies requested mailbox changes. |
+| Google Calendar Service | External calendar service connected with the user's consent. | Supplies availability and creates calendar events after the user confirms an export. |
 
 ## Part 2: Use Case Identification
 
 | **Actor** | **Use Case** | **Purpose** |
 | --------------- | ------------------ | -------------------------------------------------- |
-| Email Account Owner | Connect Email Account | Allows the owner to sign in and authorize CategorAIze to access Gmail. |
+| Email User | Connect Email Account | Allows the user to sign in and authorize CategorAIze to access Gmail. |
 | Gmail Service | Connect Email Account | Provides OAuth authorization and mailbox access. |
-| Email Account Owner | Synchronize Email | Allows the owner to retrieve new and updated messages for processing and review. |
+| Email User | Synchronize Email | Allows the user to retrieve new and updated messages for processing and review. |
 | Gmail Service | Synchronize Email | Supplies new and updated messages from the connected mailbox. |
-| Email Account Owner | Manage Categories | Allows the owner to create, edit, activate, or remove categories and set classification preferences. |
-| Email Account Owner | Review Email Analysis | Allows the owner to inspect category predictions, priority explanations, summaries, actions, and deadlines when available. |
-| Email Account Owner | Correct Category Prediction | Allows the owner to submit an explicit correction using an existing category to improve personalized predictions. |
-| Email Account Owner | Search Email | Allows the owner to find relevant messages using semantic search and available filters. |
-| Email Account Owner | Review Tasks and Deadlines | Allows the owner to review extracted actions, approaching deadlines, and dates that need attention. |
-| Email Account Owner | Prepare Reply Draft | Allows the owner to generate and edit a contextual reply before saving it as a Gmail draft. |
+| Email User | Manage Categories | Allows the user to create, edit, activate, or remove categories and set classification preferences. |
+| Email User | Review Email Analysis | Allows the user to inspect category predictions, priority explanations, summaries, suggested actions, and deadlines when available. |
+| Email User | Correct Email Classification | Allows the user to correct an email's category to improve future predictions. |
+| Email User | Search Email | Allows the user to find relevant messages using semantic search and available filters. |
+| Email User | Review Tasks and Deadlines | Allows the user to review extracted actions, approaching deadlines, and important dates. |
+| Email User | Prepare Reply Draft | Allows the user to generate and edit a contextual reply before saving it as a Gmail draft. |
 | Gmail Service | Prepare Reply Draft | Stores the reply in Gmail Drafts when requested. |
-| Email Account Owner | Check Calendar Availability | Allows the owner to consult calendar availability for scheduling or a reply. |
-| Google Calendar Service | Check Calendar Availability | Supplies the connected calendar's availability information. |
-| Email Account Owner | Send Approved Reply | Allows the owner to send a reviewed reply after explicitly confirming it. |
-| Gmail Service | Send Approved Reply | Sends the reply after receiving the owner's confirmed request. |
-| Email Account Owner | Clean Up Inbox | Allows the owner to archive selected messages, unsubscribe from unwanted mail, or configure cold-outreach blocking. |
+| Email User | Check Calendar Availability | Allows the user to check available dates and times for scheduling. |
+| Google Calendar Service | Check Calendar Availability | Provides availability information from the connected calendar. |
+| Email User | Send Approved Reply | Allows the user to send a reviewed reply after confirming it. |
+| Gmail Service | Send Approved Reply | Sends the reply after receiving the user's confirmed request. |
+| Email User | Clean Up Inbox | Allows the user to archive selected messages, unsubscribe from unwanted emails, or configure unwanted-email blocking. |
 | Gmail Service | Clean Up Inbox | Applies requested mailbox changes and supports unsubscribe actions. |
-| Email Account Owner | Export Deadline to Calendar | Allows the owner to confirm a reviewed deadline before creating a calendar event. |
-| Google Calendar Service | Export Deadline to Calendar | Creates the event after the owner confirms its details. |
-
-**General preconditions:** UC02–UC12 require an authenticated owner and a connected mailbox. Calendar operations additionally require a connected calendar and appropriate authorization. Analysis results must distinguish available outputs from unavailable model capabilities.
+| Email User | Export Deadline to Calendar | Allows the user to review and confirm an extracted deadline before creating a calendar event. |
+| Google Calendar Service | Export Deadline to Calendar | Creates a calendar event after the user confirms its details. |
+| Email User | View Email Notifications | Allows the user to view notifications about important messages and upcoming deadlines. |
 
 ## Part 3: UML Use Case Diagram Construction
 
-![CategorAIze UML use case diagram](use-case-diagram.png)
+![CategorAIze email intelligence UML use case diagram](use-case-diagram.png)
 
 ### Diagram explanation
 
-- The rectangle labeled **CategorAIze** is the system boundary.
-- All three actors are outside it, and all twelve use cases appear as ovals inside it.
-- Solid association lines indicate participation, not execution order or data flow. The email account owner participates in all twelve use cases, including email synchronization that may also run in the background after connection.
-- Gmail participates in UC01, UC02, UC08, UC10, and UC11. Google Calendar participates in UC09 and UC12.
-- No `<<include>>` or `<<extend>>` relationships are asserted. These services have their own user goals, and the selected scope does not establish a mandatory shared sub-use-case or an optional extension at a defined extension point. Authentication is documented as a precondition for protected operations.
-- The internal NLP service supports analysis and feedback within CategorAIze, so it is not drawn as an external actor.
+- The rectangle labeled **CategorAIze Email Intelligence System** is the system boundary.
+- Email User, Gmail Service, and Google Calendar Service are outside the boundary; the thirteen use cases are inside it.
+- Association lines connect each actor to the use cases they participate in.
+- **Correct Email Classification** `<<extend>>` **Review Email Analysis** because correcting a prediction is an optional action during analysis review.
+- **Export Deadline to Calendar** `<<extend>>` **Review Tasks and Deadlines** because exporting a reviewed deadline is an optional action during task review.
 
-### Project references
+## Part 4: Peer Review and Requirements Validation
 
-- [CategorAIze implementation plan](../plans/categoraiize-implementation-plan.md): target architecture and product workflows.
-- [NLP incremental implementation plan](../categoraize-nlp-incremental-implementation.md): verified feedback, service boundaries, and capability availability.
-- [NLP training phases](../categoraize-nlp-training-phases.md): classification, correction, and action/deadline extraction responsibilities.
+### Review checklist
 
-The consolidated PDF contains Parts 1–3. Peer review, revisions, and presentation are reserved for the later laboratory parts.
+| Checklist item | Result |
+| --- | --- |
+| System boundary is clearly labeled. | Met |
+| Actors are outside the system boundary. | Met |
+| Use cases are inside the system boundary. | Met |
+| Use case names describe meaningful system services. | Met |
+| Actors are connected to the appropriate use cases. | Met |
+| Diagram reflects the approved project scope. | Met |
+| Major user interactions are represented. | Met |
+| No obvious missing or contradictory interactions remain after revision. | Met |
+| Diagram is readable and properly organized after spacing revisions. | Met |
+
+### Peer feedback
+
+**Two strengths**
+
+1. The diagram is clear and well organized, with the system boundary, actors, and use cases properly labeled.
+2. It shows important functions, including email categorization, email analysis, and task and deadline management, as well as the Gmail and Google Calendar integrations.
+
+**Two recommendations**
+
+1. Improve spacing between use cases and association lines to make the diagram easier to read.
+2. Show that **Correct Email Classification** is an optional action during **Review Email Analysis**, and that **Export Deadline to Calendar** is an optional action during **Review Tasks and Deadlines**, using `<<extend>>` relationships.
+
+**Potentially missing use case**
+
+- **UC13: View Email Notifications** lets the user view notices about important messages and upcoming deadlines. This use case has been added to the revised diagram and inventory.
+
+## Part 5: Revision Notes
+
+1. **Improved spacing:** Reorganized the use cases and actor association lines to make the diagram clearer.
+2. **Added use case relationships:** Added `<<extend>>` from **Correct Email Classification** to **Review Email Analysis**, and from **Export Deadline to Calendar** to **Review Tasks and Deadlines**. Both extensions describe optional actions in the related review flow.
+3. **Added UC13, View Email Notifications:** Added the use case to represent notices about important emails and upcoming deadlines.
+
+The consolidated PDF contains Parts 1–5 completed to date. The team's 3–5-minute presentation is still to be prepared for the final submission.
