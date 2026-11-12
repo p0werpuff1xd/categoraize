@@ -14,6 +14,7 @@ export function createMailIpcClient(
 ): MailClient & { inspect(): Promise<unknown> } {
   const requestId = options.requestId ?? defaultRequestId;
   const handles = new Set<{ close(): void }>();
+  const live = new Set<LiveObservation>();
 
   function envelope(method: string, payload: unknown) {
     return {
@@ -39,6 +40,7 @@ export function createMailIpcClient(
     envelope,
     requestId,
     handles,
+    live,
     push: createPushRouter(options.push),
   };
 
@@ -60,6 +62,26 @@ export function createMailIpcClient(
     submitConversations: (payload) => call("submitConversations", payload),
     saveDraft: (payload) => call("saveDraft", payload),
     readDraft: (payload) => call("readDraft", payload),
+    async listDrafts(accountId) {
+      const response = (await invoke(
+        envelope("listDrafts", { accountId }),
+      )) as {
+        status?: string;
+        result?: unknown;
+        issues?: { path?: unknown[] }[];
+      };
+      // Desktop builds from before listDrafts reject the method itself as
+      // invalid. Their drafts still open with their threads, so the list just
+      // goes without marking them until the app updates.
+      const isUnknownMethod =
+        response?.status === "invalid" &&
+        !!response.issues?.some((issue) => issue.path?.[0] === "method");
+      if (isUnknownMethod) return [];
+      if (response?.status !== "ok") {
+        throw new Error("Mail engine listDrafts failed");
+      }
+      return response.result as never;
+    },
     submitSend: (payload) => call("submitSend", payload),
     cancelOperation: (payload) => call("cancelOperation", payload),
     requestSync: (accountIds) =>
@@ -97,7 +119,14 @@ type ObservationContext = {
   envelope: (method: string, payload: unknown) => unknown;
   requestId: () => string;
   handles: Set<{ close(): void }>;
+  live: Set<LiveObservation>;
   push: ReturnType<typeof createPushRouter>;
+};
+
+type LiveObservation = {
+  method: string;
+  requestKey: string | null;
+  snapshot: QuerySnapshot<unknown>;
 };
 
 function observeSnapshot<T>(
@@ -105,16 +134,37 @@ function observeSnapshot<T>(
   method: string,
   payload: () => unknown,
 ): RefreshableQueryHandle<T> {
-  let snapshot: QuerySnapshot<T> = {
-    status: "loading",
-    revision: null,
-    data: null,
-    refreshing: true,
-    error: null,
+  // An identical query already being observed, such as a conversation warmed
+  // ahead of opening, has the answer the host is about to send. Starting from
+  // it lets the new observer render without waiting for the round trip.
+  const initialKey = JSON.stringify(payload());
+  const seed = [...context.live].find(
+    (other) =>
+      other.method === method &&
+      other.requestKey === initialKey &&
+      other.snapshot.status === "ready",
+  );
+  const observation: LiveObservation = {
+    method,
+    requestKey: seed ? initialKey : null,
+    snapshot: seed?.snapshot ?? {
+      status: "loading",
+      revision: null,
+      data: null,
+      refreshing: true,
+      error: null,
+    },
   };
+  let snapshot = observation.snapshot as QuerySnapshot<T>;
   const listeners = new Set<() => void>();
   let closed = false;
-  let publishedPayload: string | null = null;
+  let publishedPayload = observation.requestKey;
+  const publish = (next: QuerySnapshot<T>) => {
+    snapshot = next;
+    observation.snapshot = next;
+    observation.requestKey = publishedPayload;
+    for (const listener of listeners) listener();
+  };
 
   // Engine recovery and resubscribes can resend the snapshot already held.
   // Republishing it would re-render every subscriber.
@@ -122,19 +172,17 @@ function observeSnapshot<T>(
     if (closed) return;
     if (requestKey === publishedPayload && sameSnapshot(snapshot, next)) return;
     publishedPayload = requestKey;
-    snapshot = next;
-    for (const listener of listeners) listener();
+    publish(next);
   };
   const fail = () => {
     if (closed) return;
-    snapshot = {
+    publish({
       status: "error",
       revision: snapshot.revision,
       data: snapshot.data,
       refreshing: false,
       error: { code: "unavailable", retryable: true },
-    };
-    for (const listener of listeners) listener();
+    });
   };
 
   const source = pushSource(context, method, payload, accept, fail);
@@ -153,9 +201,11 @@ function observeSnapshot<T>(
       listeners.clear();
       source.close();
       context.handles.delete(handle);
+      context.live.delete(observation);
     },
   };
   context.handles.add(handle);
+  context.live.add(observation);
   return handle;
 }
 

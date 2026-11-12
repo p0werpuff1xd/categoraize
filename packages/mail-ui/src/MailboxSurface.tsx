@@ -32,7 +32,7 @@ export type MailboxThreadListProps<T> = {
   getKey: (item: T) => string;
   getGroupLabel?: (item: T) => string | null;
   renderItem: (input: MailboxThreadListRenderInput<T>) => ReactNode;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   selectionEnabled?: boolean;
   focusedIndex: number;
   isSelected: (key: string) => boolean;
@@ -40,6 +40,8 @@ export type MailboxThreadListProps<T> = {
   onOpen: (index: number) => void;
   onToggleSelect: (index: number) => void;
   onSelectRangeTo: (index: number) => void;
+  /** Fires when the list moves off, or back to, its top. */
+  onScrolledChange?: (scrolled: boolean) => void;
   showLoadMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
@@ -57,12 +59,17 @@ export type MailboxThreadListProps<T> = {
   emptyStyle?: CSSProperties;
   loadingMoreIndicator?: ReactNode;
   loadMoreButton?: ReactNode;
+  /** The group label that gets no heading, since the newest mail needs none. */
+  todayGroupLabel?: string;
+  listLabel?: string;
 };
 
 export function MailboxThreadList<T>({
   items,
   getKey,
   getGroupLabel = () => null,
+  todayGroupLabel = "Today",
+  listLabel = "Conversations",
   renderItem,
   emptyMessage = "No emails in this view",
   selectionEnabled = true,
@@ -72,6 +79,7 @@ export function MailboxThreadList<T>({
   onOpen,
   onToggleSelect,
   onSelectRangeTo,
+  onScrolledChange,
   showLoadMore,
   isLoadingMore,
   onLoadMore,
@@ -97,6 +105,9 @@ export function MailboxThreadList<T>({
   const prefetchListKey = useRef(listKey);
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
+  const scrolledRef = useRef(false);
+  const onScrolledChangeRef = useRef(onScrolledChange);
+  onScrolledChangeRef.current = onScrolledChange;
 
   const focusedKey = items[focusedIndex]
     ? getKey(items[focusedIndex])
@@ -150,9 +161,26 @@ export function MailboxThreadList<T>({
     return () => observer.disconnect();
   }, [scrollRoot, showLoadMore, items.length]);
 
+  useEffect(
+    () => () => {
+      if (scrolledRef.current) onScrolledChangeRef.current?.(false);
+    },
+    [],
+  );
+
   return (
     <div className={className} style={style}>
-      <div className={scrollClassName} ref={setScrollRoot} style={scrollStyle}>
+      <div
+        className={scrollClassName}
+        onScroll={(event) => {
+          const scrolled = event.currentTarget.scrollTop > 0;
+          if (scrolled === scrolledRef.current) return;
+          scrolledRef.current = scrolled;
+          onScrolledChangeRef.current?.(scrolled);
+        }}
+        ref={setScrollRoot}
+        style={scrollStyle}
+      >
         {items.length === 0 && !showLoadMore ? (
           <div className={emptyClassName} style={emptyStyle}>
             {emptyMessage}
@@ -160,7 +188,7 @@ export function MailboxThreadList<T>({
         ) : (
           <>
             <div
-              aria-label="Conversations"
+              aria-label={listLabel}
               aria-multiselectable={selectionEnabled || undefined}
               className={listClassName}
               role="listbox"
@@ -172,7 +200,7 @@ export function MailboxThreadList<T>({
                   key={`${group.label ?? "ungrouped"}-${group.startIndex}`}
                   role="group"
                 >
-                  {group.label && group.label !== "Today" ? (
+                  {group.label && group.label !== todayGroupLabel ? (
                     <div aria-hidden className={groupHeaderClassName}>
                       {group.label}
                     </div>

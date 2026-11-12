@@ -1,3 +1,4 @@
+import { setupI18n } from "@lingui/core";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildSnoozeCommandPalette,
@@ -5,10 +6,13 @@ import {
   parseSnoozeDate,
 } from "./snooze-command-palette";
 
+const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+
 describe("buildSnoozeCommandPalette", () => {
   it("offers a short list of days and shows when each one lands", () => {
     const now = new Date(2026, 7, 18, 10);
     const commands = buildSnoozeCommandPalette({
+      i18n,
       now,
       onSnooze: vi.fn(),
       query: "",
@@ -26,7 +30,7 @@ describe("buildSnoozeCommandPalette", () => {
 
   it("drops presets that have passed or would land on the same day", () => {
     const presetIdsOn = (date: Date) =>
-      getSnoozePresets(date).map(({ id }) => id);
+      getSnoozePresets(date, i18n).map(({ id }) => id);
 
     // Thursday: tomorrow is already Friday
     expect(presetIdsOn(new Date(2026, 7, 20, 10))).toEqual([
@@ -51,9 +55,94 @@ describe("buildSnoozeCommandPalette", () => {
     ]);
   });
 
+  it.each([
+    "t",
+    "tom",
+    "Tomorrow",
+    " tomorrow ",
+  ])("offers tomorrow while typing %j", (query) => {
+    const onSnooze = vi.fn();
+    const commands = buildSnoozeCommandPalette({
+      i18n,
+      now: new Date(2026, 7, 18, 21),
+      onSnooze,
+      query,
+    });
+
+    expect(commands.length).toBeGreaterThan(0);
+    commands[0]?.action();
+    expect(onSnooze).toHaveBeenCalledWith(new Date(2026, 7, 19, 9));
+  });
+
+  it("matches words within preset labels", () => {
+    const now = new Date(2026, 7, 18, 10);
+    const onSnooze = vi.fn();
+    const commands = buildSnoozeCommandPalette({
+      i18n,
+      now,
+      onSnooze,
+      query: "week",
+    });
+
+    expect(commands.map(({ label }) => label)).toEqual([
+      "End of week",
+      "This weekend",
+      "Next week",
+    ]);
+    const weekendCommands = buildSnoozeCommandPalette({
+      i18n,
+      now,
+      onSnooze,
+      query: "weeken",
+    });
+    expect(weekendCommands).toHaveLength(1);
+    weekendCommands[0]?.action();
+    expect(onSnooze).toHaveBeenCalledWith(new Date(2026, 7, 22, 9));
+  });
+
+  it("uses the next Monday preset date for an exact next week query", () => {
+    const onSnooze = vi.fn();
+    const commands = buildSnoozeCommandPalette({
+      i18n,
+      now: new Date(2026, 7, 18, 10),
+      onSnooze,
+      query: " Next week ",
+    });
+
+    expect(commands).toHaveLength(1);
+    commands[0]?.action();
+    expect(onSnooze).toHaveBeenCalledWith(new Date(2026, 7, 24, 9));
+  });
+
+  it.each([
+    { day: 18, query: "next w", label: "Next week", until: 24 },
+    { day: 20, query: "end", label: "End of week", until: 21 },
+    { day: 21, query: "thi", label: "This weekend", until: 22 },
+    { day: 23, query: "next wee", label: "Next week", until: 24 },
+  ])("keeps the matching preset date for $query", ({
+    day,
+    query,
+    label,
+    until,
+  }) => {
+    const onSnooze = vi.fn();
+    const commands = buildSnoozeCommandPalette({
+      i18n,
+      now: new Date(2026, 7, day, 10),
+      onSnooze,
+      query,
+    });
+
+    const command = commands.find((command) => command.label === label);
+    expect(command).toBeDefined();
+    command?.action();
+    expect(onSnooze).toHaveBeenCalledWith(new Date(2026, 7, until, 9));
+  });
+
   it("turns natural language into one actionable result", () => {
     const onSnooze = vi.fn();
     const commands = buildSnoozeCommandPalette({
+      i18n,
       now: new Date(2026, 7, 15, 10),
       onSnooze,
       query: "tomorrow at 3pm",
@@ -68,6 +157,20 @@ describe("buildSnoozeCommandPalette", () => {
   it("defaults date-only input to 9am", () => {
     expect(parseSnoozeDate("next Friday", new Date(2026, 7, 15, 10))).toEqual(
       new Date(2026, 7, 21, 9),
+    );
+  });
+
+  it("reads dates in the app language and still accepts English", () => {
+    const now = new Date(2026, 7, 15, 10);
+
+    expect(parseSnoozeDate("viernes a las 15:00", now, "es")).toEqual(
+      new Date(2026, 7, 21, 15),
+    );
+    expect(parseSnoozeDate("next Friday", now, "es")).toEqual(
+      new Date(2026, 7, 21, 9),
+    );
+    expect(parseSnoozeDate("next Friday at 3pm", now, "es")).toEqual(
+      new Date(2026, 7, 21, 15),
     );
   });
 

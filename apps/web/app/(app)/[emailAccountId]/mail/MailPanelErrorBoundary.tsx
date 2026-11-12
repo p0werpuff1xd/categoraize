@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
   resetKey: string;
   title: string;
   onBack?: () => void;
+  onError?: () => void;
 };
 
 export class MailPanelErrorBoundary extends Component<
@@ -18,6 +20,10 @@ export class MailPanelErrorBoundary extends Component<
 
   static getDerivedStateFromError(error: Error) {
     return { error };
+  }
+
+  componentDidCatch() {
+    this.props.onError?.();
   }
 
   componentDidUpdate(previousProps: Props) {
@@ -32,11 +38,10 @@ export class MailPanelErrorBoundary extends Component<
     if (this.state.error) {
       return (
         <div className="min-h-0 min-w-0 flex-1 overflow-auto" role="alert">
-          <AppErrorBoundary
+          <MailPanelErrorFallback
             error={this.state.error}
             reset={this.reset}
             title={this.props.title}
-            description="Try again, or select another folder or conversation. If the problem continues, contact support with the reference below."
             onBack={this.props.onBack}
           />
         </div>
@@ -44,4 +49,27 @@ export class MailPanelErrorBoundary extends Component<
     }
     return this.props.children;
   }
+}
+
+function MailPanelErrorFallback({
+  error,
+  reset,
+  title,
+  onBack,
+}: {
+  error: Error;
+  reset: () => void;
+  title: string;
+  onBack?: () => void;
+}) {
+  const { t } = useLingui();
+  return (
+    <AppErrorBoundary
+      error={error}
+      reset={reset}
+      title={title}
+      description={t`Try again, or select another folder or conversation. If the problem continues, contact support with the reference below.`}
+      onBack={onBack}
+    />
+  );
 }

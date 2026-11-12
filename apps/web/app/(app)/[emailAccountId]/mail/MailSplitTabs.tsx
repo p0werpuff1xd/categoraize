@@ -1,5 +1,6 @@
 "use client";
 
+import { useLingui } from "@lingui/react/macro";
 import { memo, type ReactNode, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getMailCategories } from "@/app/(app)/[emailAccountId]/mail/MailSidebar";
@@ -21,6 +22,7 @@ import {
   createMailSplitAction,
   deleteMailSplitAction,
   reorderMailSplitsAction,
+  setMailSplitBundleAction,
   updateMailSplitAction,
 } from "@/utils/actions/mail-split";
 import { toggleRuleAction } from "@/utils/actions/rule";
@@ -52,6 +54,7 @@ export const MailSplitTabs = memo(function MailSplitTabs({
   portableLabelSplits,
   labelsByAccount,
   leading,
+  showDivider,
 }: {
   splits: (MailSplit & MailSplitTab)[];
   activeSplitId: string | null;
@@ -64,7 +67,10 @@ export const MailSplitTabs = memo(function MailSplitTabs({
   portableLabelSplits?: PortableLabelSplit[];
   labelsByAccount?: Record<string, EmailLabels>;
   leading?: ReactNode;
+  /** Shown once the list scrolls under the tabs. */
+  showDivider: boolean;
 }) {
+  const { t, i18n } = useLingui();
   const { emailAccountId, provider } = useAccount();
   const isGoogle = isGoogleProvider(provider);
   const isOutlook = isMicrosoftProvider(provider);
@@ -81,16 +87,24 @@ export const MailSplitTabs = memo(function MailSplitTabs({
   });
 
   const labelChoices = useMemo(
-    () =>
-      [
-        ...allLabels,
-        ...(isGoogle ? [{ id: GmailLabel.IMPORTANT, name: "Important" }] : []),
-      ].map((label) => ({
+    () => [
+      ...allLabels.map((label) => ({
         id: `label:${label.id}`,
         name: label.name,
         value: label.id,
       })),
-    [allLabels, isGoogle],
+      ...(isGoogle
+        ? [
+            {
+              id: `label:${GmailLabel.IMPORTANT}`,
+              name: "Important",
+              value: GmailLabel.IMPORTANT,
+              label: t`Important`,
+            },
+          ]
+        : []),
+    ],
+    [allLabels, isGoogle, t],
   );
   const categoryChoices = useMemo(
     () =>
@@ -98,8 +112,9 @@ export const MailSplitTabs = memo(function MailSplitTabs({
         id: `category:${category.type}`,
         name: category.name,
         value: category.type,
+        label: i18n._(category.label),
       })),
-    [isGoogle, isOutlook],
+    [i18n, isGoogle, isOutlook],
   );
 
   const savedSplits: ExistingSplit[] = useMemo(
@@ -183,16 +198,25 @@ export const MailSplitTabs = memo(function MailSplitTabs({
 
   const onReorder = useCallback(
     async (ids: string[]) => {
+      // With no split picked, the first tab is shown, so moving another tab to
+      // the front would otherwise switch the view.
+      if (activeSplitId) onSelectSplit(activeSplitId);
+      // Shown right away so a dropped tab doesn't jump back while saving.
+      if (settings) {
+        mutateSettings(
+          { ...settings, splits: orderSplits(settings.splits, ids) },
+          { revalidate: false },
+        );
+      }
       const result = await reorderMailSplitsAction(emailAccountId, { ids });
+      await mutateSettings();
       if (result?.serverError || result?.validationErrors) {
         toast.error(getActionErrorMessage(result));
-        await mutateSettings();
         return false;
       }
-      await mutateSettings();
       return true;
     },
-    [emailAccountId, mutateSettings],
+    [activeSplitId, emailAccountId, mutateSettings, onSelectSplit, settings],
   );
 
   const onDelete = useCallback(
@@ -209,6 +233,48 @@ export const MailSplitTabs = memo(function MailSplitTabs({
       return true;
     },
     [activeSplitId, emailAccountId, mutateSettings, onSelectSplit],
+  );
+
+  const onToggleBundle = useCallback(
+    async (splitId: string, bundleInInbox: boolean) => {
+      if (!settings) return;
+      const loadedSettings = settings;
+      await mutateSettings(
+        async (current) => {
+          const result = await setMailSplitBundleAction(emailAccountId, {
+            id: splitId,
+            bundleInInbox,
+          });
+          if (result?.serverError || result?.validationErrors)
+            throw new Error(getActionErrorMessage(result));
+          const base = current ?? loadedSettings;
+          return {
+            ...base,
+            splits: base.splits.map((split) =>
+              split.id === splitId ? { ...split, bundleInInbox } : split,
+            ),
+          };
+        },
+        {
+          optimisticData: (current) => {
+            const base = current ?? loadedSettings;
+            return {
+              ...base,
+              splits: base.splits.map((split) =>
+                split.id === splitId ? { ...split, bundleInInbox } : split,
+              ),
+            };
+          },
+          revalidate: true,
+          rollbackOnError: true,
+        },
+      ).catch((error) => {
+        toast.error(
+          error instanceof Error ? error.message : t`Couldn't save that`,
+        );
+      });
+    },
+    [emailAccountId, mutateSettings, settings, t],
   );
 
   const onToggleSystemType = useCallback(
@@ -230,12 +296,17 @@ export const MailSplitTabs = memo(function MailSplitTabs({
   return (
     <>
       <SplitTabs
+        className={showDivider ? "border-border" : undefined}
         splits={splits}
         countsById={countsById}
         leading={leading}
         activeSplitId={activeSplitId}
         onSelect={onSelectSplit}
         onDelete={onDelete}
+        onToggleBundle={
+          settings?.bundleInbox && !isAllAccounts ? onToggleBundle : undefined
+        }
+        onReorder={isAllAccounts ? undefined : onReorder}
         onEdit={
           isAllAccounts
             ? undefined
@@ -274,3 +345,12 @@ export const MailSplitTabs = memo(function MailSplitTabs({
     </>
   );
 });
+
+/** Puts the given splits in that order within the slots they already hold. */
+function orderSplits<T extends { id: string }>(splits: T[], ids: string[]) {
+  const byId = new Map(splits.map((split) => [split.id, split]));
+  const ordered = ids.flatMap((id) => byId.get(id) ?? []);
+  const moved = new Set(ordered.map((split) => split.id));
+  let next = 0;
+  return splits.map((split) => (moved.has(split.id) ? ordered[next++] : split));
+}

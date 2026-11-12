@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { withEmailProvider } from "@/utils/middleware";
 import type { EmailProvider } from "@/utils/email/types";
 import { threadsQuery } from "@/utils/threads/validation";
@@ -19,18 +20,23 @@ export const GET = withEmailProvider("threads/basic", async (request) => {
   const { emailAccountId } = request.auth;
 
   const { searchParams } = new URL(request.url);
-  const query = threadsQuery
+  // Object refinements make .pick() throw as of Zod 4.3. This route only
+  // reads these fields, so the inbox-wide refinements do not apply.
+  const query = z
+    .object(threadsQuery.shape)
     .pick({
       fromEmail: true,
       labelId: true,
       limit: true,
       nextPageToken: true,
+      type: true,
     })
     .parse({
       fromEmail: searchParams.get("fromEmail"),
       labelId: searchParams.get("labelId"),
       limit: searchParams.get("limit"),
       nextPageToken: searchParams.get("nextPageToken"),
+      type: searchParams.get("type"),
     });
 
   try {
@@ -45,10 +51,6 @@ export const GET = withEmailProvider("threads/basic", async (request) => {
       nextPageToken,
     });
   } catch (error) {
-    request.logger.error("Error fetching basic threads", {
-      error,
-      emailAccountId,
-    });
     if (
       isEmailProviderRateLimitError({
         error,
@@ -58,6 +60,10 @@ export const GET = withEmailProvider("threads/basic", async (request) => {
       throw new SafeError(EMAIL_PROVIDER_RATE_LIMIT_MESSAGE, 429);
     }
 
+    request.logger.error("Error fetching basic threads", {
+      error,
+      emailAccountId,
+    });
     return NextResponse.json(
       { error: "Failed to fetch threads" },
       { status: 500 },

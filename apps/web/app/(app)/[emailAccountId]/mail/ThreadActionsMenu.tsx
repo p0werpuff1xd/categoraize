@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   ArchiveIcon,
   ArrowBigUpIcon,
@@ -10,12 +12,15 @@ import {
   MailXIcon,
   MessageSquareIcon,
   MoreHorizontalIcon,
+  PrinterIcon,
   ShieldAlertIcon,
   StarIcon,
   StarOffIcon,
   Trash2Icon,
   TagIcon,
+  WandSparklesIcon,
 } from "lucide-react";
+import { RuleDialog } from "@/app/(app)/[emailAccountId]/assistant/RuleDialog";
 import { useSenderCommands } from "@/app/(app)/[emailAccountId]/mail/use-sender-commands";
 import { getEmailMessageCellActions } from "@/components/EmailMessageCellActions";
 import { Kbd } from "@/components/Kbd";
@@ -34,11 +39,15 @@ import {
   type ShortcutId,
 } from "@/lib/shortcuts/registry";
 import { useAccount } from "@/providers/EmailAccountProvider";
+import { ConditionType } from "@/utils/config";
+import { extractEmailAddress, extractNameFromEmail } from "@/utils/email";
 import { getOpenInMailboxLabel } from "@/utils/url";
 import type { ParsedMessage } from "@/utils/types";
 
 export type ThreadActionsMenuProps = {
   message: ParsedMessage | null;
+  /** The newest message someone else sent, whose sender a new rule targets. */
+  receivedMessage: ParsedMessage | null;
   isStarred: boolean;
   onToggleStar: () => void;
   onMarkSpam: () => void;
@@ -47,6 +56,7 @@ export type ThreadActionsMenuProps = {
   onMove?: () => void;
   onTranslate?: () => void;
   onComment?: () => void;
+  onPrint?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
@@ -56,6 +66,7 @@ export type ThreadActionsMenuProps = {
  */
 export function ThreadActionsMenu({
   message,
+  receivedMessage,
   isStarred,
   onToggleStar,
   onMarkSpam,
@@ -64,11 +75,17 @@ export function ThreadActionsMenu({
   onMove,
   onTranslate,
   onComment,
+  onPrint,
   open,
   onOpenChange,
 }: ThreadActionsMenuProps) {
+  const { t } = useLingui();
   const { provider, userEmail } = useAccount();
+  const [isRuleDialogOpen, setIsRuleDialogOpen] = useState(false);
+  const senderFrom = receivedMessage?.headers.from ?? "";
+  const senderEmail = extractEmailAddress(senderFrom);
   const {
+    canUnsubscribe,
     canManageAutoArchive,
     isUnsubscribeDisabled,
     unsubscribeLabel,
@@ -78,7 +95,7 @@ export function ThreadActionsMenu({
     onToggleAutoArchive,
     onUnsubscribe,
     PremiumModal,
-  } = useSenderCommands(message);
+  } = useSenderCommands(receivedMessage ?? message);
   const openUrl = message
     ? getEmailMessageCellActions({
         externalUrl: message.externalUrl,
@@ -91,14 +108,26 @@ export function ThreadActionsMenu({
 
   return (
     <>
-      <DropdownMenu onOpenChange={onOpenChange} open={open}>
-        <Tooltip shortcuts={["moreActions"]}>
-          <DropdownMenuTrigger asChild>
-            <Button aria-label="More actions" size="iconXs" variant="outline">
-              <MoreHorizontalIcon className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
+      {canUnsubscribe ? (
+        <Tooltip shortcuts={["unsubscribe"]}>
+          <Button
+            disabled={isUnsubscribeDisabled}
+            onClick={onUnsubscribe}
+            size="xs-2"
+            variant="outline"
+          >
+            <MailXIcon className="mr-1.5 size-3.5" />
+            <Trans>Unsubscribe</Trans>
+          </Button>
         </Tooltip>
+      ) : null}
+
+      <DropdownMenu onOpenChange={onOpenChange} open={open}>
+        <DropdownMenuTrigger asChild>
+          <Button aria-label={t`More actions`} size="iconXs" variant="ghost">
+            <MoreHorizontalIcon className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
 
         <DropdownMenuContent
           align="end"
@@ -108,7 +137,7 @@ export function ThreadActionsMenu({
           {onLabel && (
             <DropdownMenuItem onSelect={onLabel}>
               <TagIcon className="mr-2 size-4" />
-              Label
+              <Trans>Label</Trans>
               <MenuShortcut id="label" />
             </DropdownMenuItem>
           )}
@@ -116,7 +145,7 @@ export function ThreadActionsMenu({
           {onMove && (
             <DropdownMenuItem onSelect={onMove}>
               <FolderInputIcon className="mr-2 size-4" />
-              Move
+              <Trans>Move</Trans>
               <MenuShortcut id="move" />
             </DropdownMenuItem>
           )}
@@ -127,7 +156,7 @@ export function ThreadActionsMenu({
             ) : (
               <StarIcon className="mr-2 size-4" />
             )}
-            {isStarred ? "Unstar" : "Star"}
+            {isStarred ? <Trans>Unstar</Trans> : <Trans>Star</Trans>}
             <MenuShortcut id="star" />
           </DropdownMenuItem>
 
@@ -135,13 +164,13 @@ export function ThreadActionsMenu({
 
           <DropdownMenuItem onSelect={onDelete}>
             <Trash2Icon aria-hidden className="mr-2 size-4" />
-            Delete
+            <Trans>Delete</Trans>
             <MenuShortcut id="delete" />
           </DropdownMenuItem>
 
           <DropdownMenuItem onSelect={onMarkSpam}>
             <ShieldAlertIcon className="mr-2 size-4" />
-            Mark as spam
+            <Trans>Mark as spam</Trans>
             <MenuShortcut id="markSpam" />
           </DropdownMenuItem>
 
@@ -156,22 +185,16 @@ export function ThreadActionsMenu({
             </DropdownMenuItem>
           ) : null}
 
-          {(onTranslate || onComment || canManageAutoArchive) && (
-            <DropdownMenuSeparator />
-          )}
-
-          {onTranslate && (
-            <DropdownMenuItem onSelect={onTranslate}>
-              <LanguagesIcon className="mr-2 size-4" />
-              Translate
-              <MenuShortcut id="translate" />
-            </DropdownMenuItem>
-          )}
+          {(onTranslate ||
+            onComment ||
+            onPrint ||
+            canManageAutoArchive ||
+            senderEmail) && <DropdownMenuSeparator />}
 
           {onComment && (
             <DropdownMenuItem onSelect={onComment}>
               <MessageSquareIcon className="mr-2 size-4" />
-              Comment
+              <Trans>Comment</Trans>
               <MenuShortcut id="openTeamComments" />
             </DropdownMenuItem>
           )}
@@ -186,12 +209,36 @@ export function ThreadActionsMenu({
               ) : (
                 <ArchiveIcon className="mr-2 size-4" />
               )}
-              {isAutoArchived
-                ? "Disable auto archive"
-                : "Auto archive future emails"}
+              {isAutoArchived ? (
+                <Trans>Disable auto archive</Trans>
+              ) : (
+                <Trans>Auto archive future emails</Trans>
+              )}
               <MenuShortcut id="toggleAutoArchive" />
             </DropdownMenuItem>
           ) : null}
+
+          {senderEmail ? (
+            <DropdownMenuItem onSelect={() => setIsRuleDialogOpen(true)}>
+              <WandSparklesIcon className="mr-2 size-4" />
+              <Trans>Create rule for sender</Trans>
+            </DropdownMenuItem>
+          ) : null}
+
+          {onTranslate && (
+            <DropdownMenuItem onSelect={onTranslate}>
+              <LanguagesIcon className="mr-2 size-4" />
+              <Trans>Translate</Trans>
+              <MenuShortcut id="translate" />
+            </DropdownMenuItem>
+          )}
+
+          {onPrint && (
+            <DropdownMenuItem onSelect={onPrint}>
+              <PrinterIcon className="mr-2 size-4" />
+              <Trans>Print</Trans>
+            </DropdownMenuItem>
+          )}
 
           {openUrl ? <DropdownMenuSeparator /> : null}
 
@@ -199,7 +246,7 @@ export function ThreadActionsMenu({
             <DropdownMenuItem asChild>
               <a href={openUrl} rel="noopener noreferrer" target="_blank">
                 <ExternalLinkIcon className="mr-2 size-4" />
-                {getOpenInMailboxLabel(provider) ?? "Open in email provider"}
+                {getOpenInMailboxLabel(provider) ?? t`Open in email provider`}
                 <MenuShortcut id="openExternal" />
               </a>
             </DropdownMenuItem>
@@ -208,6 +255,17 @@ export function ThreadActionsMenu({
       </DropdownMenu>
 
       <PremiumModal />
+
+      {senderEmail ? (
+        <RuleDialog
+          isOpen={isRuleDialogOpen}
+          onClose={() => setIsRuleDialogOpen(false)}
+          initialRule={{
+            name: `Emails from ${extractNameFromEmail(senderFrom)}`,
+            conditions: [{ type: ConditionType.STATIC, from: senderEmail }],
+          }}
+        />
+      ) : null}
     </>
   );
 }

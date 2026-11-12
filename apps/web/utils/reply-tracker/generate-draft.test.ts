@@ -95,7 +95,7 @@ vi.mock("@/utils/ai/knowledge/extract-from-email-history", () => ({
 
 vi.mock("@/env", () => ({
   env: {
-    NEXT_PUBLIC_BRAND_NAME: "Categoraize",
+    NEXT_PUBLIC_BRAND_NAME: "Inbox Zero",
     NEXT_PUBLIC_DISABLE_REFERRAL_SIGNATURE: false,
   },
 }));
@@ -158,7 +158,6 @@ const createMockMessage = (): ParsedMessage =>
 const createMockClient = (): EmailProvider =>
   ({
     getThreadMessages: vi.fn(),
-    getPreviousConversationMessages: vi.fn().mockResolvedValue([]),
     getThreadsWithParticipant: vi.fn().mockResolvedValue([]),
     isSentMessage: vi.fn((message: ParsedMessage) =>
       message.labelIds?.includes("SENT"),
@@ -214,7 +213,7 @@ describe("fetchMessagesAndGenerateDraft - AI content escaping", () => {
 
     // Referral signature HTML should NOT be escaped - link should work
     expect(result).toContain(
-      '<a href="https://getinboxzero.com/?ref=TEST123">Categoraize</a>',
+      '<a href="https://getinboxzero.com/?ref=TEST123">Inbox Zero</a>',
     );
 
     // User signature HTML should NOT be escaped
@@ -411,7 +410,7 @@ describe("fetchMessagesAndGenerateDraft - AI content escaping", () => {
     );
 
     expect(result).toBe(
-      "Received the invoices. I will forward them for processing.\n\n<p>User Name<br>Team Lead</p>",
+      'Received the invoices. I will forward them for processing.\n\n<div class="gmail_signature" data-smartmail="gmail_signature"><p>User Name<br>Team Lead</p></div>',
     );
     expect(aiDraftReplyWithConfidence).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -441,7 +440,7 @@ describe("fetchMessagesAndGenerateDraft - AI content escaping", () => {
     );
 
     expect(result).toBe(
-      'What do you think about it?\n\nCheers!<br>Barbara\n\nDrafted by <a href="https://getinboxzero.com/?ref=TEST123">Categoraize</a>.',
+      'What do you think about it?\n\n<div class="gmail_signature" data-smartmail="gmail_signature">Cheers!<br>Barbara</div>\n\nDrafted by <a href="https://getinboxzero.com/?ref=TEST123">Inbox Zero</a>.',
     );
   });
 
@@ -554,7 +553,7 @@ describe("fetchMessagesAndGenerateDraft - thread ordering", () => {
     ]);
   });
 
-  it("does not summarize the current thread as historical email context", async () => {
+  it("summarizes the sender's other threads as historical email context", async () => {
     vi.mocked(aiDraftReplyWithConfidence).mockResolvedValue({
       reply: "Draft reply",
       confidence: DraftReplyConfidence.HIGH_CONFIDENCE,
@@ -572,9 +571,9 @@ describe("fetchMessagesAndGenerateDraft - thread ordering", () => {
 
     const client = createMockClient();
     vi.mocked(client.getThreadMessages).mockResolvedValue([currentMessage]);
-    vi.mocked(client.getPreviousConversationMessages).mockResolvedValue([
-      currentMessage,
-      olderMessage,
+    vi.mocked(client.getThreadsWithParticipant).mockResolvedValue([
+      { id: "thread-1", messages: [currentMessage], snippet: "" },
+      { id: "thread-previous", messages: [olderMessage], snippet: "" },
     ]);
 
     await fetchMessagesAndGenerateDraft(
@@ -585,6 +584,10 @@ describe("fetchMessagesAndGenerateDraft - thread ordering", () => {
       logger,
     );
 
+    expect(client.getThreadsWithParticipant).toHaveBeenCalledTimes(1);
+    expect(client.getThreadsWithParticipant).toHaveBeenCalledWith(
+      expect.objectContaining({ participantEmail: "sender@example.com" }),
+    );
     expect(aiExtractFromEmailHistory).toHaveBeenCalledWith(
       expect.objectContaining({
         historicalMessages: [
@@ -597,7 +600,39 @@ describe("fetchMessagesAndGenerateDraft - thread ordering", () => {
     );
   });
 
-  it("skips historical email extraction when only current-thread messages are returned", async () => {
+  it("does not treat the rest of the current thread as history when drafting for a test message", async () => {
+    vi.mocked(aiDraftReplyWithConfidence).mockResolvedValue({
+      reply: "Draft reply",
+      confidence: DraftReplyConfidence.HIGH_CONFIDENCE,
+    });
+
+    const testMessage = createMockMessage();
+    const earlierInSameThread: ParsedMessage = {
+      ...createMockMessage(),
+      id: "msg-0",
+      internalDate: "1703980800000",
+    };
+    const client = createMockClient();
+    vi.mocked(client.getThreadsWithParticipant).mockResolvedValue([
+      {
+        id: "thread-1",
+        messages: [earlierInSameThread, testMessage],
+        snippet: "",
+      },
+    ]);
+
+    await fetchMessagesAndGenerateDraft(
+      createMockEmailAccount(),
+      "thread-1",
+      client,
+      testMessage,
+      logger,
+    );
+
+    expect(aiExtractFromEmailHistory).not.toHaveBeenCalled();
+  });
+
+  it("skips historical email extraction when the sender has no other threads", async () => {
     vi.mocked(aiDraftReplyWithConfidence).mockResolvedValue({
       reply: "Draft reply",
       confidence: DraftReplyConfidence.HIGH_CONFIDENCE,
@@ -606,8 +641,8 @@ describe("fetchMessagesAndGenerateDraft - thread ordering", () => {
     const currentMessage = createMockMessage();
     const client = createMockClient();
     vi.mocked(client.getThreadMessages).mockResolvedValue([currentMessage]);
-    vi.mocked(client.getPreviousConversationMessages).mockResolvedValue([
-      currentMessage,
+    vi.mocked(client.getThreadsWithParticipant).mockResolvedValue([
+      { id: "thread-1", messages: [currentMessage], snippet: "" },
     ]);
 
     await fetchMessagesAndGenerateDraft(

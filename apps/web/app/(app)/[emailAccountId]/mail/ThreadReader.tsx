@@ -7,7 +7,9 @@ import {
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { AlertCircleIcon, Loader2Icon, MailIcon } from "lucide-react";
+import { latestShownMessage } from "@/app/(app)/[emailAccountId]/mail/latest-shown-message";
 import { ReaderToolbar } from "@/app/(app)/[emailAccountId]/mail/ReaderToolbar";
 import { MailReaderSurface } from "@inboxzero/mail-ui/MailReaderSurface";
 import { isThreadStarred } from "@/app/(app)/[emailAccountId]/mail/star-state";
@@ -28,6 +30,7 @@ import { useHiddenDraftMessageIds } from "@/hooks/useHiddenDraftMessageIds";
 import { extractEmailAddress, extractNameFromEmail } from "@/utils/email";
 import { PublisherDiscussion } from "@/components/team-comments/PublisherDiscussion";
 import type { OutgoingThreadMessage } from "@/utils/mail-engine/conversation-thread";
+import { getConversationSubject } from "@/utils/email/subject";
 
 const SenderContextPanel = dynamic(
   () =>
@@ -89,6 +92,7 @@ export type ThreadReaderProps = {
    */
   autoOpenReplyForMessageId?: string;
   autoOpenForwardForMessageId?: string;
+  showChat?: boolean;
   /** The ⋯ dropdown, i.e. `ThreadActionsMenu`, composed by the shell. */
   menu?: ReactNode;
   renderMessageMenu?: (message: ThreadMessage) => ReactNode;
@@ -118,8 +122,10 @@ export function ThreadReader({
   autoOpenReplyForMessageId,
   autoOpenForwardForMessageId,
   menu,
+  showChat = true,
   renderMessageMenu,
 }: ThreadReaderProps) {
+  const { t } = useLingui();
   const [senderContext, setSenderContext] = useState<{
     messageId: string;
     senderEmail: string;
@@ -154,15 +160,17 @@ export function ThreadReader({
           errorComponent={<ThreadReaderError error={error} onRetry={refetch} />}
           loadingComponent={
             <Loader2Icon
-              aria-label="Loading email"
+              aria-label={t`Loading email`}
               className="size-6 animate-spin text-muted-foreground"
             />
           }
         >
           <MailIcon className="size-6 text-muted-foreground" />
-          <div className="text-foreground text-sm">Nothing selected</div>
+          <div className="text-foreground text-sm">
+            <Trans>Nothing selected</Trans>
+          </div>
           <div className="text-muted-foreground text-xs">
-            Pick another view, or head back to the inbox.
+            <Trans>Pick another view, or head back to the inbox.</Trans>
           </div>
         </LoadingContent>
       </div>
@@ -187,6 +195,7 @@ export function ThreadReader({
       labelHref={labelHref}
       labels={labels}
       menu={menu}
+      showChat={showChat}
       onArchive={onArchive}
       onMoveToInbox={onMoveToInbox}
       onMarkRead={onMarkRead}
@@ -194,7 +203,11 @@ export function ThreadReader({
       onBackToInbox={onBackToInbox}
       onRemoveLabel={onRemoveLabel}
       subject={
-        translatedSubject ?? headerMessage?.headers.subject ?? "Conversation"
+        translatedSubject ??
+        getConversationSubject(
+          thread?.messages.length ? thread.messages : messages,
+        ) ??
+        t`Conversation`
       }
     />
   );
@@ -212,7 +225,11 @@ export function ThreadReader({
           onClick={onClick}
           variant="outline"
         >
-          {loading ? "Loading messages…" : "Load older messages"}
+          {loading ? (
+            <Trans>Loading messages…</Trans>
+          ) : (
+            <Trans>Load older messages</Trans>
+          )}
         </Button>
       )}
       sidePanel={
@@ -292,13 +309,13 @@ function ThreadReaderError({
     <>
       <AlertCircleIcon className="size-6 text-muted-foreground" />
       <div className="text-foreground text-sm">
-        Couldn't open this conversation
+        <Trans>Couldn't open this conversation</Trans>
       </div>
       <div className="text-muted-foreground text-xs">
         {getSWRFetchErrorMessage(error?.info)}
       </div>
       <Button className="mt-2" onClick={onRetry} size="sm" variant="outline">
-        Try again
+        <Trans>Try again</Trans>
       </Button>
     </>
   );
@@ -320,15 +337,4 @@ function useElementWidth() {
   }, []);
 
   return [ref, width] as const;
-}
-
-// A draft that a pending send stands in for isn't shown, so it doesn't title
-// the thread either.
-function latestShownMessage<T extends { id: string }>(
-  messages: T[],
-  hiddenDraftMessageIds: string[],
-) {
-  return messages.findLast(
-    (message) => !hiddenDraftMessageIds.includes(message.id),
-  );
 }

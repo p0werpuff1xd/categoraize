@@ -3,6 +3,7 @@ import type { AddToKnowledgeBaseTool } from "@/utils/ai/assistant/tools/rules/ad
 import type { CreateRuleTool } from "@/utils/ai/assistant/tools/rules/create-rule-tool";
 import type { GetLearnedPatternsTool } from "@/utils/ai/assistant/tools/rules/get-learned-patterns-tool";
 import type { GetRuleExecutionForMessageTool } from "@/utils/ai/assistant/tools/rules/get-rule-execution-for-message-tool";
+import type { TestRulesOnEmailTool } from "@/utils/ai/assistant/tools/rules/test-rules-on-email-tool";
 import type { GetUserRulesAndSettingsTool } from "@/utils/ai/assistant/tools/rules/get-user-rules-and-settings-tool";
 import type { UpdatePersonalInstructionsTool } from "@/utils/ai/assistant/tools/rules/update-personal-instructions-tool";
 import type { UpdateLearnedPatternsTool } from "@/utils/ai/assistant/tools/rules/update-learned-patterns-tool";
@@ -29,6 +30,8 @@ import type {
   SearchMemoriesTool,
 } from "@/utils/ai/assistant/chat-memory-tools";
 import type { GetCalendarEventsTool } from "@/utils/ai/assistant/chat-calendar-tools";
+import type { ControlMailScreenTool } from "@/utils/ai/assistant/chat-mail-screen-tool";
+import type { ManageSplitInboxTool } from "@/utils/ai/assistant/chat-split-inbox-tool";
 
 // export type DataPart = { type: "append-message"; message: string };
 
@@ -50,6 +53,7 @@ export type ChatTools = {
   getUserRulesAndSettings: GetUserRulesAndSettingsTool;
   getRuleExecutionForMessage: GetRuleExecutionForMessageTool;
   getLearnedPatterns: GetLearnedPatternsTool;
+  testRulesOnEmail: TestRulesOnEmailTool;
   createRule: CreateRuleTool;
   updateRule: UpdateRuleTool;
   deleteRule: DeleteRuleTool;
@@ -63,6 +67,8 @@ export type ChatTools = {
   forwardEmail: ForwardEmailTool;
   getCalendarEvents: GetCalendarEventsTool;
   readAttachment: ReadAttachmentTool;
+  controlMailScreen: ControlMailScreenTool;
+  manageSplitInbox: ManageSplitInboxTool;
 };
 
 // biome-ignore lint/complexity/noBannedTypes: ignore

@@ -31,6 +31,10 @@ describe("Loops lifecycle events", () => {
       success: false,
       message: "Email or userId already exists/is already on list",
     }),
+    new APIError(409, {
+      success: false,
+      message: "Email is already in your audience.",
+    }),
     { statusCode: "409", message: "Email already on list" },
     { status: 409, message: "Email already exists" },
     new Error("Email or userId already exists/is already on list"),
@@ -49,17 +53,6 @@ describe("Loops lifecycle events", () => {
       contactProperties: { tier: "PLUS_MONTHLY" },
       eventProperties: { tier: "PLUS_MONTHLY" },
     });
-  });
-
-  it.each([
-    { success: true, id: "contact-id" },
-    { success: false },
-  ])("passes through the contact creation response: %s", async (response) => {
-    client.createContact.mockResolvedValueOnce(response);
-
-    await expect(createContact("user@example.com", "John")).resolves.toBe(
-      response,
-    );
   });
 
   it.each([

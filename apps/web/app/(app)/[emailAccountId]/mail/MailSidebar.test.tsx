@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 
+import { msg } from "@lingui/core/macro";
 import React from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { TagIcon } from "lucide-react";
@@ -9,8 +10,13 @@ import { MailSidebar, type MailSidebarProps } from "./MailSidebar";
 (globalThis as { React?: typeof React }).React = React;
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: React.ComponentProps<"a">) => (
-    <a href={href} {...props}>
+  default: ({
+    children,
+    href,
+    onNavigate,
+    ...props
+  }: React.ComponentProps<"a"> & { onNavigate?: () => void }) => (
+    <a href={href} onClick={() => onNavigate?.()} {...props}>
       {children}
     </a>
   ),
@@ -38,8 +44,10 @@ function sidebar(overrides: Partial<MailSidebarProps> = {}) {
       categoryHeading="Categories"
       labelsHeading="Labels"
       labelSingular="label"
-      backToAppHref="/automation"
+      emailAccountId="account-1"
+      onNavigate={vi.fn()}
       onCompose={vi.fn()}
+      onOpenSettings={vi.fn()}
       onCreateLabel={vi.fn()}
       onEditMailboxItem={vi.fn()}
       onDeleteMailboxItem={vi.fn()}
@@ -55,7 +63,16 @@ function renderSidebar(overrides: Partial<MailSidebarProps> = {}) {
 }
 
 describe("MailSidebar", () => {
-  it("leaves the inbox out in the open and everything else behind Mail", () => {
+  it("reports a click on the row for the view that's already open", () => {
+    const onNavigate = vi.fn();
+    renderSidebar({ activeType: "inbox", onNavigate });
+
+    fireEvent.click(screen.getByText("Inbox"));
+
+    expect(onNavigate).toHaveBeenCalledOnce();
+  });
+
+  it("leaves the inbox out in the open and everything else behind More", () => {
     renderSidebar();
 
     expect(screen.getByText("Inbox").closest("a")?.getAttribute("href")).toBe(
@@ -63,7 +80,7 @@ describe("MailSidebar", () => {
     );
     expect(screen.queryByText("Sent")).toBeNull();
 
-    fireEvent.click(screen.getByText("Mail"));
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
 
     expect(
       [
@@ -88,7 +105,26 @@ describe("MailSidebar", () => {
     ]);
   });
 
-  it("opens the Mail group when one of its views is showing", () => {
+  it("links to Discussions with its unread count only for organization members", () => {
+    const { rerender } = renderSidebar();
+    expect(screen.queryByText("Discussions")).toBeNull();
+
+    rerender(sidebar({ team: { href: "/shared", unreadCount: 3 } }));
+    const row = screen.getByText("Discussions").closest("a");
+    expect(row?.getAttribute("href")).toBe("/shared");
+    expect(row?.textContent).toContain("3");
+  });
+
+  it("opens settings from the sidebar", () => {
+    const onOpenSettings = vi.fn();
+    renderSidebar({ onOpenSettings });
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+
+    expect(onOpenSettings).toHaveBeenCalledOnce();
+  });
+
+  it("opens the More group when one of its views is showing", () => {
     renderSidebar({ activeType: "trash" });
 
     expect(
@@ -104,7 +140,7 @@ describe("MailSidebar", () => {
     );
   });
 
-  it("leaves the Mail group out of the icon rail for other views", () => {
+  it("leaves the More group out of the icon rail for other views", () => {
     // Nothing in the rail can toggle the group, so a row only earns its space
     // there while its own view is open.
     renderSidebar({ activeType: "inbox", collapsed: true });
@@ -112,7 +148,7 @@ describe("MailSidebar", () => {
     expect(screen.queryByText("Trash")).toBeNull();
   });
 
-  it("closes the Mail group in the rail once its view is left behind", () => {
+  it("closes the More group in the rail once its view is left behind", () => {
     const { rerender } = renderSidebar({
       activeType: "trash",
       collapsed: true,
@@ -126,7 +162,7 @@ describe("MailSidebar", () => {
     expect(screen.queryByText("Trash")).toBeNull();
   });
 
-  it("keeps a chosen Mail group open across navigation when expanded", () => {
+  it("keeps a chosen More group open across navigation when expanded", () => {
     const { rerender } = renderSidebar({ activeType: "trash" });
 
     rerender(sidebar({ activeType: "inbox" }));
@@ -136,7 +172,12 @@ describe("MailSidebar", () => {
 
   it("closes the Categories group in the rail once its view is left behind", () => {
     const categories = [
-      { name: "Promotions", type: "CATEGORY_PROMOTIONS", Icon: TagIcon },
+      {
+        name: "Promotions",
+        label: msg`Promotions`,
+        type: "CATEGORY_PROMOTIONS",
+        Icon: TagIcon,
+      },
     ];
     const { rerender } = renderSidebar({
       activeType: "CATEGORY_PROMOTIONS",
@@ -162,7 +203,7 @@ describe("MailSidebar", () => {
   it("leaves the extra views out of the combined inbox", () => {
     renderSidebar({ unified: true });
 
-    expect(screen.queryByText("Mail")).toBeNull();
+    expect(screen.queryByRole("button", { name: "More" })).toBeNull();
     expect(screen.getByText("All inboxes")).toBeDefined();
   });
 });

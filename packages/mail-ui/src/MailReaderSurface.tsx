@@ -11,7 +11,6 @@ export type MailReaderToolbarButton = {
     | "mark_unread";
   ariaLabel: string;
   title?: string;
-  variant: "ghost" | "outline";
   icon?: ReactNode;
   label?: ReactNode;
   onClick: () => void;
@@ -40,6 +39,12 @@ export type MailReaderToolbarProps = {
     button: MailReaderToolbarButton,
     children: ReactElement,
   ) => ReactNode;
+  strings?: Partial<typeof DEFAULT_TOOLBAR_STRINGS>;
+};
+
+const DEFAULT_TOOLBAR_STRINGS = {
+  starredConversation: "Starred conversation",
+  threadActions: "Thread actions",
 };
 
 export function MailReaderToolbar({
@@ -57,7 +62,9 @@ export function MailReaderToolbar({
   icons,
   renderButton = defaultToolbarButton,
   renderActionTooltip = (_button, children) => children,
+  strings,
 }: MailReaderToolbarProps) {
+  const text = { ...DEFAULT_TOOLBAR_STRINGS, ...strings };
   const expansionAction = messageExpansion?.allExpanded
     ? "collapse_all"
     : "expand_all";
@@ -77,7 +84,6 @@ export function MailReaderToolbar({
           action: "back",
           ariaLabel: "Back to inbox",
           title: "Back to inbox",
-          variant: "ghost",
           icon: icons?.back,
           onClick: onBackToInbox,
         })}
@@ -88,10 +94,10 @@ export function MailReaderToolbar({
           <div className="flex min-w-0 items-center gap-2">
             {isStarred && (
               <span
-                aria-label="Starred conversation"
+                aria-label={text.starredConversation}
                 className="size-1.5 shrink-0 rounded-full bg-yellow-400"
                 role="img"
-                title="Starred conversation"
+                title={text.starredConversation}
               />
             )}
             <h1 className="font-title font-medium text-2xl text-foreground leading-tight tracking-tight">
@@ -103,7 +109,7 @@ export function MailReaderToolbar({
       </div>
 
       <div
-        aria-label="Thread actions"
+        aria-label={text.threadActions}
         className="ml-auto flex flex-wrap items-center gap-1.5"
         role="group"
       >
@@ -112,7 +118,6 @@ export function MailReaderToolbar({
               action: expansionAction,
               ariaLabel: expansionLabel,
               title: expansionLabel,
-              variant: "ghost",
               icon: icons?.[expansionAction],
               onClick: messageExpansion.onToggleAll,
             })
@@ -122,14 +127,12 @@ export function MailReaderToolbar({
             ? {
                 action: "move_to_inbox",
                 ariaLabel: "Move to inbox",
-                variant: "outline",
                 icon: icons?.move_to_inbox,
                 onClick: onMoveToInbox,
               }
             : {
                 action: "archive",
                 ariaLabel: "Archive",
-                variant: "outline",
                 icon: icons?.archive,
                 onClick: onArchive,
               },
@@ -137,7 +140,6 @@ export function MailReaderToolbar({
         {actionButton({
           action: readAction,
           ariaLabel: readLabel,
-          variant: "outline",
           icon: icons?.[readAction],
           onClick: isUnread ? onMarkRead : onMarkUnread,
         })}
@@ -181,8 +183,9 @@ export function MailReaderSurface({
   return (
     <div className="flex min-h-0 min-w-0 flex-1" ref={containerRef}>
       <div
-        className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-card"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-muted dark:bg-background"
         data-detail-selection-settled={detailSelectionSettled}
+        data-mail-reader=""
         data-testid="thread-reader"
       >
         <div className={readerMeasure({ layout })}>

@@ -1,17 +1,17 @@
 "use client";
 
+import { Plural, Trans } from "@lingui/react/macro";
 import Link from "next/link";
 import useSWR from "swr";
 import { LoadingContent } from "@/components/LoadingContent";
 import { Badge } from "@/components/ui/badge";
+import { SharedEmptyState } from "@/app/(app)/shared/SharedEmptyState";
 import type { TeamConversationsResponse } from "@/app/api/team-comments/conversations/route";
-import {
-  NoOrganization,
-  useSharedMemberId,
-} from "@/app/(app)/shared/SharedTabs";
+import { NoOrganization } from "@/app/(app)/shared/SharedTabs";
+import { useTeamMembership } from "@/components/team-comments/use-team-nav";
 
 export function SharedConversationList() {
-  const { memberId, memberships } = useSharedMemberId();
+  const { memberId, memberships } = useTeamMembership();
   const conversations = useSWR<TeamConversationsResponse>(
     memberId
       ? `/api/team-comments/conversations?memberId=${encodeURIComponent(memberId)}`
@@ -29,11 +29,7 @@ export function SharedConversationList() {
       {memberships.data && !memberId && <NoOrganization />}
       {memberId && (
         <div className="space-y-2">
-          {!conversations.data?.conversations.length && (
-            <p className="text-muted-foreground text-sm">
-              No shared conversations yet.
-            </p>
-          )}
+          {!conversations.data?.conversations.length && <SharedEmptyState />}
           {conversations.data?.conversations.map((conversation) => (
             <Link
               className="flex items-center justify-between gap-3 rounded-lg border bg-card p-4 hover:bg-accent"
@@ -42,14 +38,22 @@ export function SharedConversationList() {
             >
               <span>
                 <span className="block font-medium">
-                  Conversation shared by {conversation.publisher}
+                  <Trans>Conversation shared by {conversation.publisher}</Trans>
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {conversation.commentCount} comments ·{" "}
-                  {new Date(conversation.updatedAt).toLocaleString()}
+                  <Plural
+                    value={conversation.commentCount}
+                    one="# comment"
+                    other="# comments"
+                  />{" "}
+                  · {new Date(conversation.updatedAt).toLocaleString()}
                 </span>
               </span>
-              {conversation.unread && <Badge>Unread</Badge>}
+              {conversation.unread && (
+                <Badge>
+                  <Trans>Unread</Trans>
+                </Badge>
+              )}
             </Link>
           ))}
         </div>

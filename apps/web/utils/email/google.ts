@@ -8,7 +8,10 @@ import {
   getGmailMailChangesPage,
   hydrateGmailMailMessages,
 } from "@/utils/gmail/local-mail-sync";
-import { matchesSenderFilter } from "@/utils/split-inbox/sender-filter";
+import {
+  matchesRecipientFilter,
+  matchesSenderFilter,
+} from "@/utils/split-inbox/sender-filter";
 import type { gmail_v1 } from "@googleapis/gmail";
 import chunk from "lodash/chunk";
 import type { Attachment as MailAttachment } from "nodemailer/lib/mailer";
@@ -37,9 +40,13 @@ import {
   GmailLabel,
 } from "@/utils/gmail/label";
 import { labelVisibility, messageVisibility } from "@/utils/gmail/constants";
-import type { InboxZeroLabel } from "@/utils/label";
+import {
+  getGmailDefaultLabelColor,
+  type InboxZeroLabel,
+  type LabelColorName,
+} from "@/utils/label";
 import type { ThreadsQuery } from "@/utils/threads/validation";
-import { getMessageByRfc822Id } from "@/utils/gmail/message";
+import { getMessageByRfc822Id, getRawMessage } from "@/utils/gmail/message";
 import {
   buildMailMessage,
   draftEmail,
@@ -111,6 +118,7 @@ import type {
   SentMessagePage,
   BulkArchiveThread,
   BulkArchiveResult,
+  EmailLabelColor,
   EmailLabelUpdate,
   GetThreadOptions,
   DraftAttachmentUploadStart,
@@ -144,6 +152,7 @@ import { getGmailMailboxSyncPage } from "@/utils/gmail/mailbox-sync";
 import { isGoogleOauthEmulationEnabled } from "@/utils/gmail/oauth";
 
 const GMAIL_MESSAGE_WRITE_CONCURRENCY = 5;
+const SENDER_ARCHIVE_PAGE_SIZE = 500;
 
 export class GmailProvider implements EmailProvider {
   readonly name = "google";
@@ -302,6 +311,10 @@ export class GmailProvider implements EmailProvider {
   ): Promise<ParsedMessage> {
     const message = await getMessage(messageId, this.client, "full");
     return parseMessage(message, options);
+  }
+
+  async getMessageSource(messageId: string): Promise<Buffer> {
+    return getRawMessage(messageId, this.client);
   }
 
   async getMessageByRfc822MessageId(
@@ -651,70 +664,69 @@ export class GmailProvider implements EmailProvider {
     for (const sender of senders) {
       if (!sender) continue;
 
-      const publishedThreadIds = new Set<string>();
+      // Archiving removes messages from the `in:inbox` result set, so
+      // archiving while paging shifts later pages and skips messages.
+      // Finish listing first, then archive.
+      const messages: { id: string; threadId: string }[] = [];
       let nextPageToken: string | undefined;
+      try {
+        do {
+          const page = await getMessages(this.client, {
+            query: `from:${sender} in:inbox`,
+            maxResults: SENDER_ARCHIVE_PAGE_SIZE,
+            pageToken: nextPageToken,
+          });
+          messages.push(...page.messages);
+          nextPageToken = page.nextPageToken;
+        } while (nextPageToken);
+      } catch (error) {
+        log.error("Failed to list messages from sender", { sender, error });
+        if (!continueOnError) throw error;
+        // archive whatever was listed before the failure
+      }
 
-      do {
+      const publishedThreadIds = new Set<string>();
+
+      for (const batch of chunk(messages, SENDER_ARCHIVE_PAGE_SIZE)) {
         try {
-          const { messages, nextPageToken: token } = await getMessages(
-            this.client,
-            {
-              query: `from:${sender} in:inbox`,
-              maxResults: 500,
-              pageToken: nextPageToken,
-            },
-          );
+          const batchMessageIds = batch.map((msg) => msg.id);
+          await this.archiveMessagesBulk(batchMessageIds);
+          archivedMessagesCount += batchMessageIds.length;
 
-          const batchThreadIds = new Set(messages.map((msg) => msg.threadId));
-          const batchMessageIds = messages.map((msg) => msg.id);
+          const newThreadIds = Array.from(
+            new Set(batch.map((msg) => msg.threadId)),
+          ).filter((threadId) => !publishedThreadIds.has(threadId));
 
-          if (batchMessageIds.length > 0) {
-            await this.archiveMessagesBulk(batchMessageIds);
-            archivedMessagesCount += batchMessageIds.length;
+          const promises = [
+            updateEmailMessagesForSender({
+              sender,
+              messageIds: batchMessageIds,
+              emailAccountId,
+              action: "archive",
+            }),
+          ];
 
-            const newThreadIds = Array.from(batchThreadIds).filter(
-              (threadId) => !publishedThreadIds.has(threadId),
-            );
-
-            const promises = [
-              updateEmailMessagesForSender({
-                sender,
-                messageIds: batchMessageIds,
-                emailAccountId,
+          if (newThreadIds.length > 0) {
+            promises.push(
+              publishBulkActionToTinybird({
+                threadIds: newThreadIds,
                 action: "archive",
+                ownerEmail,
               }),
-            ];
-
-            if (newThreadIds.length > 0) {
-              promises.push(
-                publishBulkActionToTinybird({
-                  threadIds: newThreadIds,
-                  action: "archive",
-                  ownerEmail,
-                }),
-              );
-            }
-
-            await Promise.all(promises);
-
-            newThreadIds.forEach((threadId) =>
-              publishedThreadIds.add(threadId),
             );
           }
 
-          nextPageToken = token;
+          await Promise.all(promises);
+
+          newThreadIds.forEach((threadId) => publishedThreadIds.add(threadId));
         } catch (error) {
           log.error("Failed to archive messages from sender", {
             sender,
             error,
           });
-          if (!continueOnError) {
-            throw error;
-          }
-          // continue processing remaining pages
-          nextPageToken = undefined;
+          if (!continueOnError) throw error;
         }
-      } while (nextPageToken);
+      }
     }
 
     log.info("Completed bulk archive from senders");
@@ -838,8 +850,8 @@ export class GmailProvider implements EmailProvider {
     fromEmails: string[],
     ownerEmail: string,
     emailAccountId: string,
-  ): Promise<void> {
-    await this.archiveMessagesFromSenders(
+  ): Promise<number> {
+    return this.archiveMessagesFromSenders(
       fromEmails,
       ownerEmail,
       emailAccountId,
@@ -1175,6 +1187,8 @@ export class GmailProvider implements EmailProvider {
     options?: {
       replyTo?: string;
       from?: string;
+      cc?: string;
+      bcc?: string;
       attachments?: MailAttachment[];
     },
   ): Promise<{ messageId: string }> {
@@ -1279,16 +1293,6 @@ export class GmailProvider implements EmailProvider {
     );
   }
 
-  async getPreviousConversationMessages(
-    messageIds: string[],
-  ): Promise<ParsedMessage[]> {
-    return getMessagesBatch({
-      messageIds,
-      accessToken: getAccessTokenFromClient(this.client),
-      logger: this.logger,
-    });
-  }
-
   async removeThreadLabel(threadId: string, labelId: string): Promise<void> {
     await removeThreadLabel(this.client, threadId, labelId);
   }
@@ -1333,6 +1337,10 @@ export class GmailProvider implements EmailProvider {
       if (extractErrorInfo(error).status !== 404) throw error;
       this.logger.info("Label was already deleted", { labelId });
     }
+  }
+
+  getDefaultLabelColor(colorName: LabelColorName): EmailLabelColor {
+    return getGmailDefaultLabelColor(colorName);
   }
 
   async updateLabel(labelId: string, update: EmailLabelUpdate): Promise<void> {
@@ -1861,6 +1869,7 @@ export class GmailProvider implements EmailProvider {
     return this.withRateLimitTracking("get-threads-with-query", async () => {
       const {
         fromEmail,
+        toEmail,
         after,
         before,
         isUnread,
@@ -1875,6 +1884,13 @@ export class GmailProvider implements EmailProvider {
 
         if (fromEmail) {
           queryParts.push(`from:${fromEmail}`);
+        }
+
+        if (toEmail) {
+          // Gmail doesn't match "to:@domain", only the bare domain, which is
+          // looser, so domain matches are narrowed again below.
+          const recipient = toEmail.trim().replace(/^@/, "");
+          queryParts.push(`{to:${recipient} cc:${recipient}}`);
         }
 
         if (after) {
@@ -1942,8 +1958,12 @@ export class GmailProvider implements EmailProvider {
       const threads: EmailThread[] = [];
       const maxResults = options.maxResults || 50;
       const domainFilter = fromEmail?.trim().startsWith("@") ? fromEmail : null;
+      const recipientDomainFilter = toEmail?.trim().startsWith("@")
+        ? toEmail
+        : null;
+      const filtersLocally = Boolean(domainFilter || recipientDomainFilter);
       let nextPageToken = options.pageToken;
-      for (let page = 0; page < (domainFilter ? 5 : 1); page++) {
+      for (let page = 0; page < (filtersLocally ? 5 : 1); page++) {
         const result = await getThreadsWithNextPageToken({
           gmail: this.client,
           q: getQuery(),
@@ -1967,9 +1987,20 @@ export class GmailProvider implements EmailProvider {
         threads.push(
           ...hydrated.filter(
             (thread) =>
-              !domainFilter ||
+              !filtersLocally ||
               thread.messages.some((message) => {
-                if (!matchesSenderFilter(message.headers.from, domainFilter))
+                if (
+                  domainFilter &&
+                  !matchesSenderFilter(message.headers.from, domainFilter)
+                )
+                  return false;
+                if (
+                  recipientDomainFilter &&
+                  !matchesRecipientFilter(
+                    message.headers,
+                    recipientDomainFilter,
+                  )
+                )
                   return false;
                 const labels = message.labelIds ?? [];
                 if (resolvedLabelIds?.some((label) => !labels.includes(label)))

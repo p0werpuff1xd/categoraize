@@ -2,10 +2,6 @@ import type { MailIpcSnapshotEvent } from "@inboxzero/mail-core/protocol/mail-ip
 export type DesktopAuthProvider = "apple" | "google" | "microsoft";
 
 export const DESKTOP_WEB_UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
-export const DESKTOP_WEB_UPDATE_PROMPT_COOLDOWN_MS = 60 * 60 * 1000;
-export const DESKTOP_WEB_UPDATE_LAST_PROMPTED_KEY =
-  "inbox-zero:desktop-web-update-last-prompted-at";
-
 export type InboxZeroDesktopApi = {
   /** Tells the shell this page hydrated; without it the shell reloads the page. */
   signalReady?: () => void;
@@ -21,9 +17,21 @@ export type InboxZeroDesktopApi = {
   onMailEngineSnapshot?: (
     listener: (event: MailIpcSnapshotEvent) => void,
   ) => () => void;
+  onOpenSettings?: (listener: () => void) => () => void;
+  onUpdateStatus?: (
+    listener: (status: DesktopUpdateStatus) => void,
+  ) => () => void;
+  /** True while the app opens the local mailbox, including any migrations. */
+  onMailEngineOpening?: (listener: (opening: boolean) => void) => () => void;
+  installUpdate?: () => Promise<void>;
   wipeMailbox?: () => Promise<unknown>;
   getDesktopHealth?: () => Promise<DesktopHealth | null>;
 };
+
+export type DesktopUpdateStatus =
+  | { state: "downloading"; version: string; percent: number }
+  | { state: "ready"; version: string }
+  | null;
 
 type DesktopDurationSummary = {
   count: number;
@@ -44,6 +52,7 @@ export type DesktopHealth = {
       eventLoopDelayMs: DesktopDurationSummary | null;
       sqliteReadMs: DesktopDurationSummary | null;
       sqliteWriteMs: DesktopDurationSummary | null;
+      mailCommandMs?: DesktopDurationSummary | null;
     } | null;
   } | null;
   mailboxBytes: number;
@@ -78,26 +87,5 @@ export function shouldCheckForDesktopWebUpdate({
     lastCheckedAt === null ||
     now < lastCheckedAt ||
     now - lastCheckedAt >= DESKTOP_WEB_UPDATE_CHECK_INTERVAL_MS
-  );
-}
-
-export function shouldPromptDesktopWebUpdate({
-  isDesktopApp,
-  hasController,
-  hasWaitingWorker,
-  lastPromptedAt,
-  now,
-}: {
-  isDesktopApp: boolean;
-  hasController: boolean;
-  hasWaitingWorker: boolean;
-  lastPromptedAt: number | null;
-  now: number;
-}): boolean {
-  if (!isDesktopApp || !hasController || !hasWaitingWorker) return false;
-  return (
-    lastPromptedAt === null ||
-    now < lastPromptedAt ||
-    now - lastPromptedAt >= DESKTOP_WEB_UPDATE_PROMPT_COOLDOWN_MS
   );
 }

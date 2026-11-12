@@ -6,6 +6,10 @@ import {
   useRef,
   useState,
 } from "react";
+import type { MessageAttachmentDescriptor } from "@inboxzero/mail-core/messages";
+import type { MailUiHost } from "./host";
+import { prepareInlineImages } from "./prepare-inline-images";
+import { linkifyPlainText } from "./linkify";
 import { sanitizeMailHtml } from "./sanitize-html";
 
 const SANS_FONT_STACK = `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
@@ -19,10 +23,16 @@ export type MailPlainTextSegment =
 
 export type MailHtmlFrameCallbacks = {
   onForwardMessage?: () => void;
-  onReplyMessage?: () => void;
+  /** Gets the text selected in the message when the reply should quote it. */
+  onReplyMessage?: (quote?: string) => void;
   onNavigateMessage?: (direction: -1 | 1) => void;
   onFocusMessage?: () => void;
 };
+
+type MailHtmlFrameStrings = Partial<{
+  preview: string;
+  preparingPreview: string;
+}>;
 
 type MailHtmlDocument = {
   srcDoc: string;
@@ -33,32 +43,90 @@ export function MailMessageBody({
   html,
   text,
   messageId,
+  accountId,
+  attachments = [],
+  loadAttachment,
   isDarkMode = false,
   imageProxyBaseUrl = null,
   imageProxyOrigin = null,
   allowRemoteImages = false,
+  strings,
 }: {
   html?: string | null;
   text?: string | null;
   messageId: string;
+  accountId?: string;
+  attachments?: MessageAttachmentDescriptor[];
+  loadAttachment?: MailUiHost["loadAttachment"];
   isDarkMode?: boolean;
   imageProxyBaseUrl?: string | null;
   imageProxyOrigin?: string | null;
   allowRemoteImages?: boolean;
+  strings?: MailHtmlFrameStrings;
 }) {
+  const sanitizedHtml = useMemo(
+    () => (html ? sanitizeMailHtml(html) : ""),
+    [html],
+  );
+  const attachmentIds = JSON.stringify(
+    attachments.filter((attachment) => attachment.inline),
+  );
+  const sourceKey = JSON.stringify([
+    accountId,
+    messageId,
+    sanitizedHtml,
+    attachmentIds,
+  ]);
+  const [prepared, setPrepared] = useState<{
+    key: string;
+    html: string;
+  } | null>(null);
+  const renderHtml =
+    prepared?.key === sourceKey ? prepared.html : sanitizedHtml;
+
+  useEffect(() => {
+    if (!sanitizedHtml || !accountId || !loadAttachment) return;
+    const controller = new AbortController();
+    let objectUrls: string[] = [];
+    prepareInlineImages({
+      html: sanitizedHtml,
+      attachments: JSON.parse(attachmentIds),
+      loadAttachment: (attachmentId) =>
+        loadAttachment({ accountId, messageId, attachmentId }),
+      signal: controller.signal,
+    }).then((result) => {
+      if (controller.signal.aborted) {
+        for (const url of result.objectUrls) URL.revokeObjectURL(url);
+        return;
+      }
+      objectUrls = result.objectUrls;
+      setPrepared({ key: sourceKey, html: result.html });
+    });
+    return () => {
+      controller.abort();
+      for (const url of objectUrls) URL.revokeObjectURL(url);
+    };
+  }, [
+    accountId,
+    messageId,
+    sanitizedHtml,
+    attachmentIds,
+    sourceKey,
+    loadAttachment,
+  ]);
+
   const document = useMemo(() => {
-    if (!html) return null;
-    const sanitizedHtml = sanitizeMailHtml(html);
-    const applyDarkTheme = shouldApplyDarkMailTheme(sanitizedHtml, isDarkMode);
+    if (!renderHtml) return null;
+    const applyDarkTheme = shouldApplyDarkMailTheme(renderHtml, isDarkMode);
     const documentKey = getMailHtmlDocumentKey(
-      `${messageId}:${sanitizedHtml}`,
+      `${messageId}:${renderHtml}`,
       applyDarkTheme,
     );
     return {
       documentKey,
       isDarkMode: applyDarkTheme,
       srcDoc: buildMailHtmlDocument({
-        html: sanitizedHtml,
+        html: renderHtml,
         isDarkMode: applyDarkTheme,
         imageProxyBaseUrl,
         imageProxyOrigin,
@@ -68,7 +136,7 @@ export function MailMessageBody({
     };
   }, [
     allowRemoteImages,
-    html,
+    renderHtml,
     imageProxyBaseUrl,
     imageProxyOrigin,
     isDarkMode,
@@ -83,12 +151,13 @@ export function MailMessageBody({
           documentKey={document.documentKey}
           isDarkMode={document.isDarkMode}
           srcDoc={document.srcDoc}
+          strings={strings}
         />
       </div>
     );
   }
 
-  return <MailPlainTextBody segments={[{ type: "text", text: text ?? "" }]} />;
+  return <MailPlainTextBody segments={linkifyPlainText(text ?? "")} />;
 }
 
 export function MailPlainTextBody({
@@ -132,9 +201,11 @@ export function BufferedMailHtmlFrame({
   documentKey,
   isDarkMode,
   callbacks,
+  strings,
 }: MailHtmlDocument & {
   isDarkMode: boolean;
   callbacks: MailHtmlFrameCallbacks;
+  strings?: MailHtmlFrameStrings;
 }) {
   const [visibleDocument, setVisibleDocument] = useState<MailHtmlDocument>(
     () => ({
@@ -161,6 +232,7 @@ export function BufferedMailHtmlFrame({
           isDarkMode={isDarkMode}
           onReady={setVisibleDocument}
           callbacks={callbacks}
+          strings={strings}
         />
       ))}
     </div>
@@ -174,6 +246,7 @@ export function buildMailHtmlDocument({
   imageProxyOrigin,
   documentKey,
   allowRemoteImages = true,
+  remoteImagesPending = false,
 }: {
   html: string;
   isDarkMode: boolean;
@@ -181,6 +254,11 @@ export function buildMailHtmlDocument({
   imageProxyOrigin: string | null;
   documentKey: string;
   allowRemoteImages?: boolean;
+  /**
+   * The html has not been through the image proxy yet. Remote images are
+   * blocked and hidden until the proxied document replaces this one.
+   */
+  remoteImagesPending?: boolean;
 }) {
   const styleAttributeCount = (html.match(/style=/gi) || []).length;
   const hasHeavyStyling = isDesignedHtmlEmail(html);
@@ -191,6 +269,8 @@ export function buildMailHtmlDocument({
       html.includes("text-decoration") ||
       styleAttributeCount === 1);
 
+  // cid: images can only paint as broken until their attachment downloads
+  // and the html is rewritten to blob URLs, so they stay hidden until then.
   const defaultFontCss = hasHeavyStyling
     ? `
       :root {
@@ -204,6 +284,7 @@ export function buildMailHtmlDocument({
       }
       table { max-width: 100% !important; overflow-x: auto; }
       img { max-width: 100% !important; height: auto; }
+      img[src^="cid:" i] { visibility: hidden; }
   `
     : `
       :root {
@@ -223,6 +304,7 @@ export function buildMailHtmlDocument({
 
       table { max-width: 100% !important; overflow-x: auto; }
       img { max-width: 100% !important; height: auto; }
+      img[src^="cid:" i] { visibility: hidden; }
 
       body {
         font-family: ${SANS_FONT_STACK};
@@ -263,12 +345,14 @@ export function buildMailHtmlDocument({
       }
   `;
 
-  const imageSourceDirective =
-    imageProxyBaseUrl && imageProxyOrigin && html.includes(imageProxyBaseUrl)
-      ? imageProxyOrigin
-      : allowRemoteImages
-        ? "https:"
-        : "";
+  const imageSourceDirective = remoteImagesPending
+    ? ""
+    : getRemoteImageSourceDirective({
+        html,
+        imageProxyBaseUrl,
+        imageProxyOrigin,
+        allowRemoteImages,
+      });
   const localImageSourceDirective = html.includes("blob:")
     ? "data: blob:"
     : "data:";
@@ -302,10 +386,37 @@ export function buildMailHtmlDocument({
     isDarkMode,
     documentKey,
     contentSecurityPolicy,
-    defaultFontCss,
+    // Keeps the body's selection the active color while focus is in the
+    // host, so a conversation-wide selection reads as one.
+    defaultFontCss: `${defaultFontCss}\n::selection { background-color: Highlight; }${
+      remoteImagesPending ? PENDING_REMOTE_IMAGE_CSS : ""
+    }`,
     shouldDisableAuthoredDarkColorScheme: hasHeavyStyling,
   });
 }
+
+function getRemoteImageSourceDirective({
+  html,
+  imageProxyBaseUrl,
+  imageProxyOrigin,
+  allowRemoteImages,
+}: {
+  html: string;
+  imageProxyBaseUrl: string | null;
+  imageProxyOrigin: string | null;
+  allowRemoteImages: boolean;
+}) {
+  if (imageProxyBaseUrl && imageProxyOrigin && html.includes(imageProxyBaseUrl))
+    return imageProxyOrigin;
+  return allowRemoteImages ? "https:" : "";
+}
+
+// A blocked remote image would paint as broken until the proxied document
+// arrives; hiding it keeps its space without the broken-image icon.
+const PENDING_REMOTE_IMAGE_CSS = `
+      img:not([src^="data:" i]):not([src^="blob:" i]):not([src^="cid:" i]) {
+        visibility: hidden;
+      }`;
 
 export function shouldApplyDarkMailTheme(html: string, isDarkMode: boolean) {
   return isDarkMode && !isDesignedHtmlEmail(html);
@@ -327,12 +438,14 @@ function MailHtmlFrame({
   isDarkMode,
   onReady,
   callbacks,
+  strings,
 }: {
   document: MailHtmlDocument;
   pending: boolean;
   isDarkMode: boolean;
   onReady: (document: MailHtmlDocument) => void;
   callbacks: MailHtmlFrameCallbacks;
+  strings?: MailHtmlFrameStrings;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const height = useMailHtmlFrame(
@@ -349,7 +462,9 @@ function MailHtmlFrame({
     <iframe
       ref={iframeRef}
       srcDoc={document.srcDoc}
-      className="min-h-0 w-full"
+      // A selection in the host covering the frame would paint over it as one
+      // solid block; the body's own selection highlights its text instead.
+      className="min-h-0 w-full select-none"
       data-email-ready={height > 0}
       height={1}
       style={{
@@ -361,7 +476,9 @@ function MailHtmlFrame({
       }}
       aria-hidden={pending || undefined}
       title={
-        pending ? "Preparing email content preview" : "Email content preview"
+        pending
+          ? (strings?.preparingPreview ?? "Preparing email content preview")
+          : (strings?.preview ?? "Email content preview")
       }
       sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       referrerPolicy="no-referrer"
@@ -400,16 +517,7 @@ function useMailHtmlFrame(
         (event.key === "Enter" && Boolean(reply)) ||
         (key === "f" && Boolean(forward)) ||
         (isNavigationKey && Boolean(navigate));
-      if (
-        event.defaultPrevented ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.shiftKey ||
-        event.isComposing ||
-        observedDocument?.getSelection()?.isCollapsed === false
-      )
-        return;
+      if (event.defaultPrevented || event.isComposing) return;
       const target = event.target as HTMLElement | null;
       if (
         target?.closest?.(
@@ -417,7 +525,31 @@ function useMailHtmlFrame(
         )
       )
         return;
+      const isSelectAll =
+        (event.ctrlKey || event.metaKey) && key === "a" && !event.altKey;
+      // The host may select the whole conversation rather than this body.
+      if (isSelectAll) {
+        forwardShortcut(event);
+        return;
+      }
       if (event.key === "Enter" && target?.closest?.("a, button")) return;
+      const hasModifier =
+        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
+      const selection = observedDocument?.getSelection();
+      if (selection && !selection.isCollapsed) {
+        const quote = selection.toString().trim();
+        if (event.key === "Enter" && !hasModifier && reply && quote) {
+          event.preventDefault();
+          reply(quote);
+        }
+        return;
+      }
+      // Modified keys are host shortcuts (Shift+T, ?, Cmd+K); unbound ones keep
+      // their default. Shift+Arrow stays here to extend the text selection.
+      if (hasModifier) {
+        if (!isNavigationKey) forwardShortcut(event);
+        return;
+      }
       if (!handlesKey) {
         forwardShortcut(event);
         return;

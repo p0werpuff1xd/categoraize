@@ -1,4 +1,9 @@
 {
+  "mail-setup.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/MailSetupPanel.tsx",
+    "app/(app)/[emailAccountId]/mail/ListToolbar.tsx",
+    "utils/split-inbox/split-query.ts"
+  ],
   "account-selection.spec.ts": [
     "app/(app)/[emailAccountId]/mail/MailSidebar.tsx",
     "app/(app)/[emailAccountId]/mail/use-combined-mail-threads.ts"
@@ -6,6 +11,9 @@
   "archive-reconciliation.spec.ts": [
     "app/(app)/[emailAccountId]/mail/use-thread-actions.ts",
     "utils/mail-engine/MailEngineHost.tsx"
+  ],
+  "archive-feedback.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/use-optimistic-archive.ts"
   ],
   "assistant-catch-up.spec.ts": [
     "utils/mail-engine/create-browser-engine.ts",
@@ -38,6 +46,7 @@
   "command-palette.spec.ts": [
     "components/CommandK.tsx",
     "store/command-palette.ts",
+    "app/(app)/[emailAccountId]/mail/mail-command-palette.ts",
     "app/(app)/[emailAccountId]/mail/snooze-command-palette.ts",
     "app/(app)/[emailAccountId]/mail/ShortcutsDialog.tsx"
   ],
@@ -62,6 +71,11 @@
     "utils/gmail/resumable-draft-upload.ts",
     "utils/outlook/draft-attachments.ts"
   ],
+  "compose-send-warnings.spec.ts": [
+    "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx",
+    "app/(app)/[emailAccountId]/compose/send-warnings.ts",
+    "app/(app)/[emailAccountId]/compose/SendWarningsDialog.tsx"
+  ],
   "composer-editing.spec.ts": [
     "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx",
     "components/ShortcutTooltipContent.tsx"
@@ -76,6 +90,7 @@
   "contact-autocomplete.spec.ts": [
     "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx"
   ],
+  "desktop-update-toast.spec.ts": ["app/(app)/DesktopUpdateToast.tsx"],
   "draft-deletion.spec.ts": [
     "app/(app)/[emailAccountId]/mail/ThreadRow.tsx",
     "components/email-list/EmailMessage.tsx",
@@ -85,9 +100,21 @@
     "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx",
     "components/email-list/ThreadDeliveryStatus.tsx"
   ],
+  "local-draft-badge.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/ThreadRow.tsx",
+    "utils/mail-engine/reply-drafts.ts"
+  ],
+  "inline-image-send.spec.ts": [
+    "app/(app)/[emailAccountId]/compose/useComposeSend.ts",
+    "components/email-list/EmailContents.tsx",
+    "utils/email/inline-image-cache.ts",
+    "utils/email/outgoing-inline-images.ts"
+  ],
   "layout.spec.ts": [
     "app/(app)/[emailAccountId]/mail/ThreadList.tsx",
-    "app/(app)/[emailAccountId]/mail/ReaderToolbar.tsx"
+    "app/(app)/[emailAccountId]/mail/ReaderToolbar.tsx",
+    "app/(app)/[emailAccountId]/mail/MailListPanel.tsx",
+    "components/PanelResizeHandle.tsx"
   ],
   "mail-engine-inspect.spec.ts": [
     "utils/mail-engine/MailEngineHost.tsx",
@@ -95,6 +122,11 @@
     "utils/mail-engine/connection-notice.ts",
     "utils/mail-engine/coverage.ts",
     "app/(app)/[emailAccountId]/mail/use-engine-mail-threads.ts"
+  ],
+  "mail-engine-startup.spec.ts": [
+    "utils/mail-engine/MailEngineHost.tsx",
+    "utils/mail-engine/create-browser-engine.ts",
+    "utils/mail-engine/engine-worker.ts"
   ],
   "mail-queue.spec.ts": [
     "app/(app)/[emailAccountId]/debug/mail-queue/page.tsx",
@@ -112,6 +144,14 @@
     "components/email-list/EmailMessage.tsx",
     "hooks/useThreadPlans.ts",
     "utils/threads/load.ts"
+  ],
+  "message-tools.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/ThreadActionsMenu.tsx",
+    "app/(app)/[emailAccountId]/mail/MessageActionsMenu.tsx",
+    "app/(app)/[emailAccountId]/mail/MessageSourceDialog.tsx",
+    "app/(app)/[emailAccountId]/mail/print-messages.ts",
+    "app/(app)/[emailAccountId]/mail/message-source.ts",
+    "app/api/messages/source/route.ts"
   ],
   "message-overflow.spec.ts": ["components/email-list/EmailContents.tsx"],
   "navigation-and-views.spec.ts": [
@@ -133,11 +173,21 @@
     "app/(app)/[emailAccountId]/mail/BufferedThreadReader.tsx",
     "components/email-list/EmailContents.tsx"
   ],
+  "reader-unsubscribe.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/ThreadActionsMenu.tsx",
+    "app/(app)/[emailAccountId]/mail/use-unsubscribe-sender.ts"
+  ],
   "reader-visuals.spec.ts": [
     "app/(app)/[emailAccountId]/mail/ThreadReader.tsx",
     "components/email-list/EmailContents.tsx",
     "components/ShortcutTooltipContent.tsx",
     "components/ui/tooltip.tsx"
+  ],
+  "reply-typing-stability.spec.ts": [
+    "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx",
+    "app/(app)/[emailAccountId]/compose/useComposeDraft.ts",
+    "components/email-list/EmailThread.tsx",
+    "components/email-list/EmailMessage.tsx"
   ],
   "scheduled-replies.spec.ts": [
     "components/email-list/ThreadDeliveryStatus.tsx",
@@ -156,7 +206,10 @@
     "components/email-list/EmailMessage.tsx",
     "utils/parse/extract-reply.client.ts"
   ],
-  "split-tabs.spec.ts": ["app/(app)/[emailAccountId]/mail/SplitTabs.tsx"],
+  "split-tabs.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/SplitTabs.tsx",
+    "app/(app)/[emailAccountId]/mail/MailSplitTabs.tsx"
+  ],
   "starring.spec.ts": [
     "app/(app)/[emailAccountId]/mail/star-state.ts",
     "app/(app)/[emailAccountId]/mail/ThreadRow.tsx",
@@ -181,6 +234,9 @@
     "components/email-list/EmailThread.tsx",
     "app/(app)/[emailAccountId]/mail/ReaderToolbar.tsx"
   ],
+  "thread-select-all.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/thread-select-all.ts"
+  ],
   "thread-states.spec.ts": [
     "components/email-list/EmailThread.tsx",
     "components/email-list/ThreadDeliveryStatus.tsx",
@@ -199,5 +255,28 @@
     "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx",
     "app/api/user/send-as/route.ts",
     "utils/email/send-as.ts"
+  ],
+  "interaction-latency.spec.ts": [
+    "app/(app)/[emailAccountId]/compose/useComposeSend.ts",
+    "hooks/useProviderDraftAutosave.ts",
+    "components/email-list/EmailThread.tsx",
+    "components/email-list/EmailContents.tsx",
+    "utils/email/prepare-html.client.ts"
+  ],
+  "latency-compose.spec.ts": [
+    "app/(app)/[emailAccountId]/compose/useComposeSend.ts",
+    "app/(app)/[emailAccountId]/compose/ComposeEmailForm.tsx",
+    "components/email-list/ThreadDeliveryStatus.tsx"
+  ],
+  "latency-triage.spec.ts": [
+    "app/(app)/[emailAccountId]/mail/use-thread-actions.ts",
+    "app/(app)/[emailAccountId]/mail/use-optimistic-archive.ts",
+    "app/(app)/[emailAccountId]/mail/LabelPickerDialog.tsx",
+    "app/(app)/[emailAccountId]/mail/ThreadReader.tsx"
+  ],
+  "latency-reading.spec.ts": [
+    "hooks/useThread.ts",
+    "utils/mail-engine/conversation-thread.ts",
+    "components/email-list/EmailContents.tsx"
   ]
 }

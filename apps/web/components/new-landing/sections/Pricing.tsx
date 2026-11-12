@@ -27,10 +27,19 @@ import {
   Badge,
   type BadgeVariant,
 } from "@/components/new-landing/common/Badge";
-import { type Tier, tiers } from "@/app/(app)/premium/config";
+import { Chat } from "@/components/new-landing/icons/Chat";
+import {
+  formatPrice,
+  getExtraAccountPrice,
+  INCLUDED_EMAIL_ACCOUNTS_PER_PERSON,
+  type Tier,
+  tiers,
+} from "@/app/(app)/premium/config";
 import { Briefcase } from "@/components/new-landing/icons/Briefcase";
+import { Mail } from "@/components/new-landing/icons/Mail";
 import { landingPageAnalytics } from "@/hooks/useAnalytics";
 import { cn } from "@/utils";
+import { MAIL_CLIENT_SIGNUP_PATH } from "@/utils/config";
 
 type PricingTier = Tier & {
   badges?: {
@@ -51,7 +60,7 @@ type PricingTier = Tier & {
 const pricingTiers: PricingTier[] = [
   {
     ...tiers[0],
-    badges: [{ message: "Save 10%", annualOnly: true }],
+    badges: [annualSavingsBadge(tiers[0])],
     button: {
       variant: "secondary-two",
       content: "Try free for 7 days",
@@ -62,7 +71,7 @@ const pricingTiers: PricingTier[] = [
   {
     ...tiers[1],
     badges: [
-      { message: "Save 20%", annualOnly: true },
+      annualSavingsBadge(tiers[1]),
       { message: "Popular", variant: "green" },
     ],
     button: {
@@ -73,7 +82,7 @@ const pricingTiers: PricingTier[] = [
   },
   {
     ...tiers[2],
-    badges: [{ message: "Save 16%", annualOnly: true }],
+    badges: [annualSavingsBadge(tiers[2])],
     button: {
       variant: "secondary-two",
       content: "Try free for 7 days",
@@ -131,7 +140,7 @@ export function Pricing() {
             </Radio>
           ))}
         </RadioGroup>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid w-full grid-cols-1 lg:grid-cols-3 gap-6">
           {pricingTiers.map((tier, index) => (
             <CardWrapper key={tier.name}>
               <PricingCard
@@ -145,6 +154,83 @@ export function Pricing() {
             </CardWrapper>
           ))}
         </div>
+        <CardWrapper className="mt-6 w-full">
+          <Card variant="extra-rounding">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="text-gray-400">
+                  <Mail />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-title text-lg">Email app</h3>
+                    <Badge variant="blue">New</Badge>
+                  </div>
+                  <Paragraph size="sm" className="mt-1">
+                    A fast email app for Gmail and Outlook. Free on web,
+                    desktop, and iPhone.
+                  </Paragraph>
+                </div>
+              </div>
+              <Button size="lg" asChild>
+                <Link
+                  href={MAIL_CLIENT_SIGNUP_PATH}
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={() =>
+                    landingPageAnalytics.pricingCtaClicked(posthog, {
+                      tier: "Email app",
+                      cta: "Get started free",
+                      frequency,
+                      defaultFrequency,
+                      frequencySource: chosenFrequency
+                        ? "user_selected"
+                        : "default",
+                    })
+                  }
+                >
+                  <span className="relative z-10">Get started free</span>
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </CardWrapper>
+        <CardWrapper className="mt-6 w-full">
+          <Card variant="extra-rounding">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="text-gray-400">
+                  <Sparkle />
+                </div>
+                <div>
+                  <h3 className="font-title text-lg">Enterprise</h3>
+                  <Paragraph size="sm" className="mt-1">
+                    Need SSO, SCIM, on-premise deployment, or a dedicated
+                    account manager?
+                  </Paragraph>
+                </div>
+              </div>
+              <Button variant="secondary-two" size="lg" asChild>
+                <Link
+                  href="https://www.getinboxzero.com/sales"
+                  onClick={() =>
+                    landingPageAnalytics.pricingCtaClicked(posthog, {
+                      tier: "Enterprise",
+                      cta: "Speak to sales",
+                      frequency,
+                      defaultFrequency,
+                      frequencySource: chosenFrequency
+                        ? "user_selected"
+                        : "default",
+                    })
+                  }
+                >
+                  <Chat />
+                  <span className="relative z-10">Speak to sales</span>
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </CardWrapper>
       </SectionContent>
     </Section>
   );
@@ -197,7 +283,7 @@ function PricingCard({
             {price ? (
               <>
                 <div className="font-title text-[#242424] text-[1.7rem] md:text-[2.5rem] leading-tight">
-                  ${price}
+                  {formatPrice(price)}
                 </div>
                 <Paragraph size="xs" color="light" className="-translate-y-1">
                   /user /month
@@ -209,6 +295,13 @@ function PricingCard({
               </div>
             )}
           </div>
+          {!!price && (
+            <Paragraph size="xs" color="light" className="-mt-4">
+              {INCLUDED_EMAIL_ACCOUNTS_PER_PERSON} email accounts included, then{" "}
+              {formatPrice(getExtraAccountPrice(price))}/mo each
+              {isAnnual ? ", billed annually" : ""}
+            </Paragraph>
+          )}
           <Button auto size="lg" variant={tier.button.variant} asChild>
             <Link
               href={tier.button.href}
@@ -254,4 +347,11 @@ function PricingCard({
       </CardContent>
     </Card>
   );
+}
+
+function annualSavingsBadge(tier: Tier) {
+  return {
+    message: `Save ${Math.round(tier.discount.annually)}%`,
+    annualOnly: true,
+  };
 }

@@ -5,6 +5,7 @@ import {
   conversationWithSubject,
   openMail,
   readLatestMailMutation,
+  toggleMailLayout,
 } from "./mail-test-helpers";
 
 test("applies an existing label from the reader menu and keeps the conversation in inbox", async ({
@@ -14,11 +15,11 @@ test("applies an existing label from the reader menu and keeps the conversation 
   const conversation = conversationWithSubject(
     page,
     conversations,
-    "Re: Reader Navigation Message",
+    "Reader Navigation Message",
   );
   await conversation.click();
   await expect(
-    page.getByRole("heading", { name: "Re: Reader Navigation Message" }),
+    page.getByRole("heading", { name: "Reader Navigation Message" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: /^More actions/ }).click();
@@ -197,9 +198,7 @@ test("L labels the open conversation after it leaves the unread list, and its ch
   await expect(conversations).toBeVisible();
   const emptyReader = page.getByText("Nothing selected", { exact: true });
   if (!(await emptyReader.isVisible())) {
-    await page
-      .getByRole("button", { name: "Switch list or split view" })
-      .click();
+    await toggleMailLayout(page);
   }
   await expect(emptyReader).toBeVisible();
   await page.getByRole("button", { name: "Unread", exact: true }).click();

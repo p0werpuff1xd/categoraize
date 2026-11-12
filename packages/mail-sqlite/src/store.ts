@@ -430,6 +430,13 @@ export async function createSqliteMailStore(
     },
     async claimWork(input) {
       return driver.write(async (tx) => {
+        // A body someone is waiting to read goes before everything else;
+        // commands already show their result locally.
+        const interactive = await claimHydration(tx, input, {
+          interactiveOnly: true,
+          attemptId: runtime.randomId(),
+        });
+        if (interactive) return interactive;
         const preparing = await tx.query(
           `SELECT o.account_id, o.command_id, c.conversation_id, c.resolution_id, c.next_page, a.generation
            FROM operations o
@@ -560,50 +567,11 @@ export async function createSqliteMailStore(
             operation: prepared,
           };
         }
-        const hydrate = await tx.query(
-          `SELECT j.*, a.generation
-           FROM sync_jobs j
-           JOIN accounts a ON a.account_id = j.account_id
-           WHERE j.kind = 'hydrate'
-             AND (j.retry_at_ms IS NULL OR j.retry_at_ms <= ?)
-             AND (j.claimed_by IS NULL OR j.claimed_until_ms < ?)
-           LIMIT 1`,
-          [input.nowMs, input.nowMs],
-        );
-        if (hydrate[0]) {
-          const attemptId = runtime.randomId();
-          const claimed = await tx.execute(
-            `UPDATE sync_jobs SET claimed_by = ?, claimed_until_ms = ?, attempt_id = ?
-             WHERE job_id = ?
-               AND (retry_at_ms IS NULL OR retry_at_ms <= ?)
-               AND (claimed_by IS NULL OR claimed_until_ms < ?)`,
-            [
-              input.ownerId,
-              input.nowMs + input.leaseMs,
-              attemptId,
-              hydrate[0].job_id,
-              input.nowMs,
-              input.nowMs,
-            ],
-          );
-          if (claimed.changedRows > 0) {
-            const payload = JSON.parse(String(hydrate[0].payload_json)) as {
-              keys: MessageKey[];
-              purpose: "metadata" | "body";
-            };
-            return {
-              kind: "hydrate" as const,
-              jobId: String(hydrate[0].job_id),
-              attemptId,
-              session: {
-                accountId: String(hydrate[0].account_id),
-                generation: String(hydrate[0].generation),
-              },
-              keys: payload.keys,
-              purpose: payload.purpose,
-            };
-          }
-        }
+        const hydrate = await claimHydration(tx, input, {
+          interactiveOnly: false,
+          attemptId: runtime.randomId(),
+        });
+        if (hydrate) return hydrate;
         const search = await tx.query(
           `SELECT j.*, a.generation
            FROM sync_jobs j
@@ -855,7 +823,13 @@ export async function createSqliteMailStore(
                 confirmed,
                 input.operation.intent.change,
               );
-              await upsertConfirmed(tx, { ...confirmed, ...next });
+              await upsertConfirmed(tx, {
+                ...confirmed,
+                ...next,
+                deleted:
+                  confirmed.deleted ||
+                  input.operation.intent.change.kind === "discard_draft",
+              });
             }
           }
           await tx.execute(
@@ -1058,20 +1032,33 @@ export async function createSqliteMailStore(
           "SELECT revision, content_json FROM drafts WHERE account_id = ? AND draft_id = ?",
           [key.accountId, key.draftId],
         );
-        if (!current[0]) return { status: "missing" as const };
-        try {
-          const parsed = draftContentSchema.safeParse(
-            JSON.parse(String(current[0].content_json)),
-          );
-          if (!parsed.success) return { status: "missing" as const };
-          return {
-            status: "found" as const,
-            draftRevision: Number(current[0].revision),
-            content: parsed.data,
-          };
-        } catch {
-          return { status: "missing" as const };
-        }
+        const content =
+          current[0] && parseDraftContent(current[0].content_json);
+        if (!content) return { status: "missing" as const };
+        return {
+          status: "found" as const,
+          draftRevision: Number(current[0].revision),
+          content,
+        };
+      });
+    },
+    async listDrafts(accountId) {
+      return driver.read(async (tx) => {
+        const rows = await tx.query(
+          "SELECT draft_id, revision, content_json FROM drafts WHERE account_id = ? ORDER BY draft_id",
+          [accountId],
+        );
+        return rows.flatMap((row) => {
+          const content = parseDraftContent(row.content_json);
+          if (!content) return [];
+          return [
+            {
+              key: { accountId, draftId: String(row.draft_id) },
+              draftRevision: Number(row.revision),
+              content,
+            },
+          ];
+        });
       });
     },
     async admitSend(input) {
@@ -1121,6 +1108,9 @@ export async function createSqliteMailStore(
           quotedHtml: content.quotedHtml,
           ...(content.providerDraftId
             ? { providerDraftId: content.providerDraftId }
+            : {}),
+          ...(content.replacesDraftOfSession
+            ? { replacesDraftOfSession: content.replacesDraftOfSession }
             : {}),
           replyToMessageId: input.replyTo?.messageId ?? null,
           replyToConversationId,
@@ -1321,9 +1311,27 @@ export async function createSqliteMailStore(
       return driver.read(async (tx) => {
         const revision = await readRevision(tx);
         const row = await loadOperation(tx, key.accountId, key.operationId);
+        if (!row) return { revision, operation: null };
+        const sentMessageId =
+          row.sent_message_id == null ? null : String(row.sent_message_id);
+        const sent = sentMessageId
+          ? await tx.query(
+              "SELECT conversation_id FROM messages WHERE account_id = ? AND message_id = ?",
+              [key.accountId, sentMessageId],
+            )
+          : [];
         return {
           revision,
-          operation: row ? toOperationState(row) : null,
+          operation: {
+            ...toOperationState(row),
+            sentMessage:
+              sentMessageId && sent[0]
+                ? {
+                    messageId: sentMessageId,
+                    conversationId: String(sent[0].conversation_id),
+                  }
+                : null,
+          },
         };
       });
     },
@@ -1359,6 +1367,26 @@ export async function createSqliteMailStore(
           "SELECT connection FROM accounts WHERE account_id = ?",
           [accountId],
         );
+        const messageIdsByCommand = new Map<string, string[]>();
+        const conversationIdsByCommand = new Map<string, string[]>();
+        for (const conversation of conversations) {
+          appendTo(
+            conversationIdsByCommand,
+            String(conversation.command_id),
+            String(conversation.conversation_id),
+          );
+        }
+        for (const target of targets) {
+          const commandId = String(target.command_id);
+          appendTo(messageIdsByCommand, commandId, String(target.message_id));
+          if (target.conversation_id != null) {
+            appendTo(
+              conversationIdsByCommand,
+              commandId,
+              String(target.conversation_id),
+            );
+          }
+        }
         return {
           accountId,
           revision,
@@ -1379,31 +1407,17 @@ export async function createSqliteMailStore(
               changeKind: payload.changeKind,
               change: payload.change,
               messageIds: [
-                ...payload.messageIds,
-                ...targets
-                  .filter((target) => String(target.command_id) === operationId)
-                  .map((target) => String(target.message_id)),
-              ].filter(
-                (value, index, values) => values.indexOf(value) === index,
-              ),
+                ...new Set([
+                  ...payload.messageIds,
+                  ...(messageIdsByCommand.get(operationId) ?? []),
+                ]),
+              ],
               conversationIds: [
-                ...conversations
-                  .filter(
-                    (conversation) =>
-                      String(conversation.command_id) === operationId,
-                  )
-                  .map((conversation) => String(conversation.conversation_id)),
-                ...targets
-                  .filter(
-                    (target) =>
-                      String(target.command_id) === operationId &&
-                      target.conversation_id != null,
-                  )
-                  .map((target) => String(target.conversation_id)),
-                ...payload.conversationIds,
-              ].filter(
-                (value, index, values) => values.indexOf(value) === index,
-              ),
+                ...new Set([
+                  ...(conversationIdsByCommand.get(operationId) ?? []),
+                  ...payload.conversationIds,
+                ]),
+              ],
             };
           }),
         };
@@ -1777,6 +1791,7 @@ export async function createSqliteMailStore(
         await enqueueHydrationJobs(tx, {
           keys: input.keys,
           purpose: input.purpose,
+          priority: input.priority,
           digest,
         });
         return bumpRevision(tx);
@@ -1811,8 +1826,22 @@ export async function createSqliteMailStore(
         );
       });
     },
+    async releaseReadOnlyClaims(input) {
+      await driver.write(async (tx) => {
+        await tx.execute(
+          `UPDATE sync_jobs
+           SET claimed_by = NULL, claimed_until_ms = NULL, attempt_id = NULL
+           WHERE claimed_by = ? AND kind IN ('hydrate', 'search')`,
+          [input.ownerId],
+        );
+      });
+    },
     async recordConnection(input) {
       return driver.write(async (tx) => {
+        const previous = await tx.query(
+          "SELECT connection FROM accounts WHERE account_id = ?",
+          [input.accountId],
+        );
         // Every sync request reports its connection; only a change should
         // republish the views.
         const updated = await tx.execute(
@@ -1820,6 +1849,21 @@ export async function createSqliteMailStore(
           [input.connection, input.accountId, input.connection],
         );
         if (updated.changedRows === 0) return false;
+        if (
+          input.connection === "ready" &&
+          previous[0]?.connection === "blocked_auth"
+        ) {
+          // claimWork never picks up blocked_auth, so a command that hit an
+          // expired token would stay pending forever. Sync recovering from its
+          // own auth failure is the signal that the credentials work again;
+          // recovering from offline, or reporting ready again, is not.
+          await tx.execute(
+            `UPDATE operations
+             SET status = 'queued', next_attempt_at_ms = NULL, claimed_by = NULL, claimed_until_ms = NULL
+             WHERE account_id = ? AND status = 'blocked_auth'`,
+            [input.accountId],
+          );
+        }
         await bumpRevision(tx);
         return true;
       });
@@ -2400,11 +2444,123 @@ async function applyPageFacts(
   });
 }
 
+/**
+ * Claims the next hydration job, together with other waiting jobs for the
+ * same account and purpose up to one request's worth of keys, so a
+ * conversation's missing bodies arrive in one round trip instead of one each.
+ * Interactive jobs are found through their id prefix, so neither pass sorts
+ * or scans the queue.
+ */
+async function claimHydration(
+  tx: SqlTransaction,
+  input: { ownerId: string; nowMs: number; leaseMs: number },
+  options: { interactiveOnly: boolean; attemptId: string },
+) {
+  const eligible = `(j.retry_at_ms IS NULL OR j.retry_at_ms <= ?)
+       AND (j.claimed_by IS NULL OR j.claimed_until_ms < ?)`;
+  const [first] = await tx.query(
+    `SELECT j.*, a.generation
+     FROM sync_jobs j
+     JOIN accounts a ON a.account_id = j.account_id
+     WHERE ${
+       options.interactiveOnly
+         ? `j.job_id >= '${INTERACTIVE_HYDRATION_PREFIX}' AND j.job_id < '${INTERACTIVE_HYDRATION_PREFIX_END}'`
+         : "j.kind = 'hydrate'"
+}
+       AND ${eligible}
+     LIMIT 1`,
+    [input.nowMs, input.nowMs],
+  );
+  if (!first) return null;
+  const firstPayload = parseHydrationPayload(first.payload_json);
+  const jobs = [{ jobId: String(first.job_id), keys: firstPayload.keys }];
+  const seen = new Set(firstPayload.keys.map(messageKeyIdentity));
+  if (seen.size < HYDRATION_JOB_KEY_LIMIT) {
+    // Bodies someone is waiting for join the batch before background ones.
+    const interactiveRange = `j.job_id >= '${INTERACTIVE_HYDRATION_PREFIX}' AND j.job_id < '${INTERACTIVE_HYDRATION_PREFIX_END}'`;
+    const companionsWhere = (range: string) =>
+      tx.query(
+        `SELECT j.job_id, j.payload_json
+         FROM sync_jobs j
+         WHERE ${range} AND j.account_id = ? AND j.job_id != ?
+           AND ${eligible}
+         LIMIT ${HYDRATION_JOB_KEY_LIMIT}`,
+        [first.account_id, first.job_id, input.nowMs, input.nowMs],
+      );
+    const companions = [
+      ...(await companionsWhere(interactiveRange)),
+      ...(await companionsWhere(
+        `j.kind = 'hydrate' AND NOT (${interactiveRange})`,
+      )),
+    ];
+    for (const companion of companions) {
+      const payload = parseHydrationPayload(companion.payload_json);
+      if (payload.purpose !== firstPayload.purpose) continue;
+      const fresh = payload.keys.filter(
+        (key) => !seen.has(messageKeyIdentity(key)),
+      );
+      if (seen.size + fresh.length > HYDRATION_JOB_KEY_LIMIT) continue;
+      for (const key of fresh) seen.add(messageKeyIdentity(key));
+      jobs.push({ jobId: String(companion.job_id), keys: fresh });
+      if (seen.size >= HYDRATION_JOB_KEY_LIMIT) break;
+    }
+  }
+  const { attemptId } = options;
+  const claimed: typeof jobs = [];
+  for (const job of jobs) {
+    const result = await tx.execute(
+      `UPDATE sync_jobs SET claimed_by = ?, claimed_until_ms = ?, attempt_id = ?
+       WHERE job_id = ?
+         AND (retry_at_ms IS NULL OR retry_at_ms <= ?)
+         AND (claimed_by IS NULL OR claimed_until_ms < ?)`,
+      [
+        input.ownerId,
+        input.nowMs + input.leaseMs,
+        attemptId,
+        job.jobId,
+        input.nowMs,
+        input.nowMs,
+      ],
+    );
+    if (result.changedRows > 0) claimed.push(job);
+  }
+  if (claimed[0]?.jobId !== String(first.job_id)) return null;
+  return {
+    kind: "hydrate" as const,
+    jobId: String(first.job_id),
+    jobIds: claimed.map((job) => job.jobId),
+    attemptId,
+    session: {
+      accountId: String(first.account_id),
+      generation: String(first.generation),
+    },
+    keys: claimed.flatMap((job) => job.keys),
+    purpose: firstPayload.purpose,
+  };
+}
+
+// A body someone is waiting to read. The prefix lets claims find these jobs
+// with a primary-key range instead of reading every payload.
+const INTERACTIVE_HYDRATION_PREFIX = "hydrate-now:";
+const INTERACTIVE_HYDRATION_PREFIX_END = "hydrate-now;";
+
+function parseHydrationPayload(payload: unknown) {
+  return JSON.parse(String(payload)) as {
+    keys: MessageKey[];
+    purpose: "metadata" | "body";
+  };
+}
+
+function messageKeyIdentity(key: MessageKey) {
+  return `${key.accountId}\0${key.messageId}`;
+}
+
 async function enqueueHydrationJobs(
   tx: SqlTransaction,
   input: {
     keys: MessageKey[];
     purpose: "metadata" | "body";
+    priority?: "interactive";
     skipFreshContent?: boolean;
     digest: (value: unknown) => Promise<string>;
   },
@@ -2431,7 +2587,11 @@ async function enqueueHydrationJobs(
       );
     }
     for (const keys of chunkMessageKeys(sortedKeys, HYDRATION_JOB_KEY_LIMIT)) {
-      const jobId = `hydrate:${accountId}:${input.purpose}:${await input.digest(keys)}`;
+      const prefix =
+        input.priority === "interactive"
+          ? INTERACTIVE_HYDRATION_PREFIX
+          : "hydrate:";
+      const jobId = `${prefix}${accountId}:${input.purpose}:${await input.digest(keys)}`;
       await tx.execute(
         `INSERT OR IGNORE INTO sync_jobs(job_id, account_id, kind, payload_json)
          VALUES (?, ?, 'hydrate', ?)`,
@@ -2714,9 +2874,13 @@ async function recomputeTargets(tx: SqlTransaction, targets: MessageKey[]) {
        JOIN operation_targets t
          ON t.account_id = o.account_id AND t.command_id = o.command_id
        WHERE t.account_id = ? AND t.message_id = ?
-         AND (o.executable_hash IS NOT NULL OR o.status = 'preparing')`,
+         AND (o.executable_hash IS NOT NULL OR o.status = 'preparing')
+       ORDER BY o.rowid ASC`,
       [target.accountId, target.messageId],
     );
+    // Effects are applied in this order, so it has to be admission order (the
+    // rowid order execution dependencies use): command ids are random, and an
+    // undo must land after what it undoes.
     const pending = pendingRows
       .filter((row) => {
         const outcome = row.outcome == null ? null : String(row.outcome);
@@ -2739,6 +2903,13 @@ async function recomputeTargets(tx: SqlTransaction, targets: MessageKey[]) {
         };
       });
     const effective = deriveEffectiveMessage(confirmed, pending);
+    if (effective.deleted) {
+      await tx.execute(
+        "DELETE FROM effective_messages WHERE account_id = ? AND message_id = ?",
+        [target.accountId, target.messageId],
+      );
+      continue;
+    }
     const flags = roleFlags(effective.roles);
     await tx.execute(
       `INSERT INTO effective_messages(
@@ -3296,6 +3467,12 @@ function sentMessageIdFromObservations(observations: ProviderChange[]) {
   );
 }
 
+function appendTo(map: Map<string, string[]>, key: string, value: string) {
+  const values = map.get(key);
+  if (values) values.push(value);
+  else map.set(key, [value]);
+}
+
 function parseOperationPayload(value: import("./driver").SqlValue) {
   try {
     const payload = JSON.parse(String(value)) as {
@@ -3403,3 +3580,12 @@ async function defaultStoreSha256(bytes: Uint8Array): Promise<Uint8Array> {
 }
 
 export type { SyncPage, ConversationKey };
+
+function parseDraftContent(value: import("./driver").SqlValue) {
+  try {
+    const parsed = draftContentSchema.safeParse(JSON.parse(String(value)));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}

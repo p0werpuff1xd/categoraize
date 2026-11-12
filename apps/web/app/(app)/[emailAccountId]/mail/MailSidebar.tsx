@@ -2,12 +2,13 @@
 
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { getMailSidebarRowPresentation } from "@inboxzero/mail-ui/MailSidebarRow";
 import {
   ArchiveIcon,
-  ArrowLeftIcon,
   BellIcon,
-  ChevronDownIcon,
   ChevronRightIcon,
   Clock3Icon,
   FileIcon,
@@ -19,6 +20,7 @@ import {
   PenLineIcon,
   PlusIcon,
   SendIcon,
+  SettingsIcon,
   ShieldAlertIcon,
   SparklesIcon,
   StarIcon,
@@ -28,15 +30,18 @@ import {
   Users2Icon,
 } from "lucide-react";
 import type { MailboxLabelCount } from "@/utils/mail-engine/label-count-targets";
+import { Kbd } from "@/components/Kbd";
 import { Tooltip as ShortcutTooltip } from "@/components/Tooltip";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebarHeader } from "@/components/AppSidebarHeader";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getShortcutHint } from "@/lib/shortcuts/registry";
 import type { EmailLabel } from "@/providers/email-label-types";
 import { GmailLabel } from "@/utils/gmail/label";
 import { cn } from "@/utils";
@@ -67,6 +72,8 @@ export type MailSidebarProps = {
   activeFolderId: string | null;
   /** Builds the href for a row so the sidebar never owns routing. */
   hrefFor: (target: MailNavTarget) => string;
+  /** Runs when a row navigates in place, including to the view already open. */
+  onNavigate: () => void;
   labels: EmailLabel[];
   folders: OutlookFolder[];
   /** Keyed by provider label/folder id. Arrives after first paint; may be empty. */
@@ -75,9 +82,14 @@ export type MailSidebarProps = {
   categoryHeading: string;
   labelsHeading: string;
   labelSingular: string;
-  backToAppHref: string;
+  /** Builds the app section links in the shared sidebar header. */
+  emailAccountId: string;
+  hideToggle?: boolean;
   onCompose: () => void;
+  onOpenSettings: () => void;
   onCreateLabel: (name: string) => void;
+  /** Rows to keep keyed by an earlier id, such as a new label's placeholder. */
+  labelKeys?: ReadonlyMap<string, string>;
   onEditMailboxItem: (edit: MailboxItemEdit) => Promise<boolean>;
   onDeleteMailboxItem: (item: MailboxItem) => Promise<boolean>;
   labelEditMode: "color" | "name-and-color";
@@ -88,6 +100,8 @@ export type MailSidebarProps = {
   collapsibleCategories?: boolean;
   /** Icon-only rail: rows shrink to their icon and names move into tooltips. */
   collapsed?: boolean;
+  /** Shared conversations from teammates. Omitted for users outside an organization. */
+  team?: { href: string; unreadCount: number | null };
   footer?: ReactNode;
   unified?: boolean;
   className?: string;
@@ -95,6 +109,7 @@ export type MailSidebarProps = {
 
 type SystemItem = {
   name: string;
+  label: MessageDescriptor;
   type: string;
   /** null means the row never shows a count (a "sent unread" number is noise). */
   countId: string | null;
@@ -104,23 +119,61 @@ type SystemItem = {
 export const MAIL_SCHEDULED_TYPE = "scheduled";
 
 /** Everything the inbox isn't. Visited rarely enough to stay behind a toggle. */
-const MAILBOX_ITEMS: SystemItem[] = [
-  { name: "Drafts", type: "draft", countId: "DRAFT", Icon: FileIcon },
-  { name: "Sent", type: "sent", countId: null, Icon: SendIcon },
-  { name: "Archived", type: "archive", countId: null, Icon: ArchiveIcon },
-  { name: "Starred", type: "starred", countId: null, Icon: StarIcon },
+export const MAILBOX_ITEMS: SystemItem[] = [
+  {
+    name: "Drafts",
+    label: msg`Drafts`,
+    type: "draft",
+    countId: "DRAFT",
+    Icon: FileIcon,
+  },
+  {
+    name: "Sent",
+    label: msg`Sent`,
+    type: "sent",
+    countId: null,
+    Icon: SendIcon,
+  },
+  {
+    name: "Archived",
+    label: msg`Archived`,
+    type: "archive",
+    countId: null,
+    Icon: ArchiveIcon,
+  },
+  {
+    name: "Starred",
+    label: msg`Starred`,
+    type: "starred",
+    countId: null,
+    Icon: StarIcon,
+  },
   {
     name: "Scheduled",
+    label: msg`Scheduled`,
     type: MAIL_SCHEDULED_TYPE,
     countId: null,
     Icon: Clock3Icon,
   },
-  { name: "Spam", type: "spam", countId: null, Icon: ShieldAlertIcon },
-  { name: "Trash", type: "trash", countId: null, Icon: Trash2Icon },
+  {
+    name: "Spam",
+    label: msg`Spam`,
+    type: "spam",
+    countId: null,
+    Icon: ShieldAlertIcon,
+  },
+  {
+    name: "Trash",
+    label: msg`Trash`,
+    type: "trash",
+    countId: null,
+    Icon: Trash2Icon,
+  },
 ];
 
 export type MailCategory = {
   name: string;
+  label: MessageDescriptor;
   type: string;
   Icon: LucideIcon;
 };
@@ -128,34 +181,48 @@ export type MailCategory = {
 export const MAIL_CATEGORIES: MailCategory[] = [
   {
     name: "Personal",
+    label: msg`Personal`,
     type: GmailLabel.PERSONAL,
     Icon: UserIcon,
   },
   {
     name: "Social",
+    label: msg`Social`,
     type: GmailLabel.SOCIAL,
     Icon: Users2Icon,
   },
   {
     name: "Updates",
+    label: msg`Updates`,
     type: GmailLabel.UPDATES,
     Icon: BellIcon,
   },
   {
     name: "Forums",
+    label: msg`Forums`,
     type: GmailLabel.FORUMS,
     Icon: MessagesSquareIcon,
   },
   {
     name: "Promotions",
+    label: msg`Promotions`,
     type: GmailLabel.PROMOTIONS,
     Icon: MegaphoneIcon,
   },
 ];
 
+const OUTLOOK_INBOX_SECTION_LABELS: Record<
+  (typeof OUTLOOK_INBOX_SECTIONS)[number]["type"],
+  MessageDescriptor
+> = {
+  focused: msg`Focused`,
+  other: msg`Other`,
+};
+
 export const OUTLOOK_INBOX_CATEGORIES: MailCategory[] =
   OUTLOOK_INBOX_SECTIONS.map((section) => ({
     ...section,
+    label: OUTLOOK_INBOX_SECTION_LABELS[section.type],
     Icon: section.type === "focused" ? SparklesIcon : InboxIcon,
   }));
 
@@ -164,6 +231,7 @@ export function MailSidebar({
   activeLabelId,
   activeFolderId,
   hrefFor,
+  onNavigate,
   labels,
   folders,
   countsById,
@@ -171,9 +239,12 @@ export function MailSidebar({
   categoryHeading,
   labelsHeading,
   labelSingular,
-  backToAppHref,
+  emailAccountId,
+  hideToggle,
   onCompose,
+  onOpenSettings,
   onCreateLabel,
+  labelKeys,
   onEditMailboxItem,
   onDeleteMailboxItem,
   labelEditMode,
@@ -181,10 +252,12 @@ export function MailSidebar({
   supportsLabelVisibility = false,
   collapsibleCategories = false,
   collapsed = false,
+  team,
   footer,
   unified = false,
   className,
 }: MailSidebarProps) {
+  const { t, i18n } = useLingui();
   const [isAddingLabel, setIsAddingLabel] = useState(false);
   const [newLabelName, setNewLabelName] = useState("");
   const sidebarFolders = getMailSidebarFolders(folders);
@@ -255,58 +328,49 @@ export function MailSidebar({
   return (
     <aside
       className={cn(
-        "flex w-[236px] shrink-0 flex-col overflow-hidden border-border border-r bg-sidebar pt-3 pb-2.5",
-        collapsed ? "px-1.5" : "px-2.5",
+        // The padding matches the app sidebar so the shared header lines up.
+        "flex w-[256px] shrink-0 flex-col overflow-hidden border-border border-r bg-sidebar px-2 pt-2 pb-2.5",
         className,
       )}
     >
-      {/* Collapsed, the toggle moves beside the traffic lights (`MailTitlebarNav`). */}
-      {collapsed ? (
-        <div data-desktop-mac-titlebar-spacer className="shrink-0" />
-      ) : (
-        <div className="mb-2.5 flex shrink-0 items-center gap-1">
-          <Link
-            href={backToAppHref}
-            data-desktop-mac-end
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-muted-foreground text-xs hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <ArrowLeftIcon className="size-3.5 shrink-0" />
-            <span className="flex-1 truncate" data-hide-on-desktop-mac>
-              Categoraize
-            </span>
-          </Link>
-          <SidebarTrigger
-            name="left-sidebar"
-            className="size-6 shrink-0 text-muted-foreground"
-          />
-        </div>
-      )}
+      <AppSidebarHeader
+        active="mail"
+        emailAccountId={emailAccountId}
+        collapsed={collapsed}
+        hideToggle={hideToggle}
+      />
 
-      <ShortcutTooltip
-        shortcuts={[{ id: "compose", label: "Compose" }]}
-        side={collapsed ? "right" : "bottom"}
-      >
-        {collapsed ? (
+      {collapsed ? (
+        <ShortcutTooltip
+          shortcuts={[{ id: "compose", label: t`Compose` }]}
+          side="right"
+        >
           <Button
-            variant="gradient"
+            variant="outline"
             size="icon"
             onClick={onCompose}
-            aria-label="Compose"
-            className="mb-3.5 size-10 shrink-0 self-center rounded-xl"
+            aria-label={t`Compose`}
+            className="mb-2 size-8 shrink-0 self-center rounded-lg"
           >
-            <PenLineIcon className="size-4" />
+            <PenLineIcon className="size-4 text-blue-600 dark:text-blue-400" />
           </Button>
-        ) : (
-          <Button
-            variant="gradient"
-            onClick={onCompose}
-            className="mb-3.5 w-full shrink-0 justify-start gap-2 rounded-xl px-3"
-          >
-            <PenLineIcon className="size-4 shrink-0" />
-            Compose
-          </Button>
-        )}
-      </ShortcutTooltip>
+        </ShortcutTooltip>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={onCompose}
+          aria-label={t`Compose`}
+          aria-keyshortcuts="c"
+          // The 9px inset plus the border lines the icon up with the rows below.
+          className="mb-3 w-full shrink-0 justify-start gap-2.5 rounded-xl px-[9px]"
+        >
+          <PenLineIcon className="size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <span className="flex-1 text-left">
+            <Trans>Compose</Trans>
+          </span>
+          <Kbd>{getShortcutHint("compose")}</Kbd>
+        </Button>
+      )}
 
       {/* The negative margin lets the scrollbar sit in the sidebar's own
           padding, so a platform-width bar can't crowd the unread counts. */}
@@ -316,12 +380,13 @@ export function MailSidebar({
             href={
               unified ? undefined : hrefFor({ kind: "type", type: "inbox" })
             }
+            onNavigate={onNavigate}
             active={
               unified ||
               (!activeLabelId && !activeFolderId && activeType === "inbox")
             }
             icon={<InboxIcon className="size-4 shrink-0" />}
-            name={unified ? "All inboxes" : "Inbox"}
+            name={unified ? t`All inboxes` : t`Inbox`}
             count={unified ? null : displayCount(countsById.get("INBOX"))}
             emphasizeCount
             collapsed={collapsed}
@@ -335,19 +400,20 @@ export function MailSidebar({
               expanded={showMailboxes}
               onToggle={() => setShowMailboxes((open) => !open)}
             >
-              Mail
+              <Trans>More</Trans>
             </GroupHeading>
-            {showMailboxRows && (
+            <SidebarGroupContent open={showMailboxRows}>
               <nav className="flex flex-col gap-px">
-                {MAILBOX_ITEMS.map(({ name, type, countId, Icon }) => (
+                {MAILBOX_ITEMS.map(({ label, type, countId, Icon }) => (
                   <NavRow
                     key={type}
                     href={hrefFor({ kind: "type", type })}
+                    onNavigate={onNavigate}
                     active={
                       !activeLabelId && !activeFolderId && activeType === type
                     }
                     icon={<Icon className="size-4 shrink-0" />}
-                    name={name}
+                    name={i18n._(label)}
                     count={
                       countId ? displayCount(countsById.get(countId)) : null
                     }
@@ -355,7 +421,7 @@ export function MailSidebar({
                   />
                 ))}
               </nav>
-            )}
+            </SidebarGroupContent>
           </>
         )}
 
@@ -376,29 +442,32 @@ export function MailSidebar({
               >
                 {categoryHeading}
               </GroupHeading>
-              {showCategoryRows && (
+              <SidebarGroupContent open={showCategoryRows}>
                 <nav className="flex flex-col gap-px">
-                  {categories.map(({ name, type, Icon }) => (
+                  {categories.map(({ label, type, Icon }) => (
                     <NavRow
                       key={type}
                       href={hrefFor({ kind: "type", type })}
+                      onNavigate={onNavigate}
                       active={
                         !activeLabelId && !activeFolderId && activeType === type
                       }
                       icon={<Icon className="size-3.5 shrink-0" />}
-                      name={name}
+                      name={i18n._(label)}
                       count={null}
                       collapsed={collapsed}
                     />
                   ))}
                 </nav>
-              )}
+              </SidebarGroupContent>
             </>
           )}
 
         {!unified && sidebarFolders.length > 0 && (
           <>
-            <GroupHeading collapsed={collapsed}>Folders</GroupHeading>
+            <GroupHeading collapsed={collapsed}>
+              <Trans>Folders</Trans>
+            </GroupHeading>
             <nav className="flex flex-col gap-px">
               {sidebarFolders.map((folder) => (
                 <MailboxItemContextMenu
@@ -408,13 +477,14 @@ export function MailSidebar({
                     id: folder.id,
                     name: folder.displayName,
                   }}
-                  typeName="folder"
+                  typeName={t`folder`}
                   editMode="name"
                   onEdit={onEditMailboxItem}
                   onDelete={onDeleteMailboxItem}
                 >
                   <NavRow
                     href={hrefFor({ kind: "folder", folderId: folder.id })}
+                    onNavigate={onNavigate}
                     active={activeFolderId === folder.id}
                     icon={
                       <FolderIcon
@@ -450,7 +520,7 @@ export function MailSidebar({
                     setIsAddingLabel((open) => !open);
                   }}
                   aria-expanded={isAddingLabel}
-                  aria-label={`Create ${labelSingular}`}
+                  aria-label={t`Create ${labelSingular}`}
                   className="rounded-md p-0.5 text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <PlusIcon className="size-3.5" />
@@ -459,16 +529,18 @@ export function MailSidebar({
             >
               {labelsHeading}
             </GroupHeading>
-            {showLabels && (
+            <SidebarGroupContent open={showLabels}>
               <nav className="flex flex-col gap-px">
                 {labelTree.map((node) => (
                   <LabelBranch
-                    key={node.label.id}
+                    key={labelKeys?.get(node.label.id) ?? node.label.id}
                     node={node}
                     hasNestedLabels={hasNestedLabels}
                     collapsed={collapsed}
                     activeLabelId={activeLabelId}
+                    labelKeys={labelKeys}
                     hrefFor={hrefFor}
+                    onNavigate={onNavigate}
                     countsById={countsById}
                     labelSingular={labelSingular}
                     labelEditMode={labelEditMode}
@@ -479,76 +551,97 @@ export function MailSidebar({
                   />
                 ))}
               </nav>
-            )}
 
-            {showLabels && hiddenLabelNodes.length > 0 && !collapsed && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowHiddenLabels((open) => !open)}
-                  aria-expanded={showHiddenLabels}
-                  className="flex items-center gap-1 rounded-md px-2.5 py-1 text-muted-foreground text-xs hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {showHiddenLabels ? (
-                    <ChevronDownIcon className="size-3" />
-                  ) : (
-                    <ChevronRightIcon className="size-3" />
-                  )}
-                  More
-                </button>
-                {showHiddenLabels && (
-                  <nav className="flex flex-col gap-px">
-                    {hiddenLabelNodes.map((node) => (
-                      <LabelBranch
-                        key={node.label.id}
-                        node={node}
-                        hasNestedLabels={false}
-                        collapsed={collapsed}
-                        activeLabelId={activeLabelId}
-                        hrefFor={hrefFor}
-                        countsById={countsById}
-                        labelSingular={labelSingular}
-                        labelEditMode={labelEditMode}
-                        labelColorOptions={labelColorOptions}
-                        supportsLabelVisibility={supportsLabelVisibility}
-                        onEditMailboxItem={onEditMailboxItem}
-                        onDeleteMailboxItem={onDeleteMailboxItem}
-                      />
-                    ))}
-                  </nav>
-                )}
-              </>
-            )}
+              {hiddenLabelNodes.length > 0 && !collapsed && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowHiddenLabels((open) => !open)}
+                    aria-expanded={showHiddenLabels}
+                    className="flex items-center gap-1 rounded-md px-2.5 py-1 text-muted-foreground text-xs hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <DisclosureChevron expanded={showHiddenLabels} />
+                    <Trans>More</Trans>
+                  </button>
+                  <SidebarGroupContent open={showHiddenLabels}>
+                    <nav className="flex flex-col gap-px">
+                      {hiddenLabelNodes.map((node) => (
+                        <LabelBranch
+                          key={labelKeys?.get(node.label.id) ?? node.label.id}
+                          node={node}
+                          hasNestedLabels={false}
+                          collapsed={collapsed}
+                          activeLabelId={activeLabelId}
+                          labelKeys={labelKeys}
+                          hrefFor={hrefFor}
+                          onNavigate={onNavigate}
+                          countsById={countsById}
+                          labelSingular={labelSingular}
+                          labelEditMode={labelEditMode}
+                          labelColorOptions={labelColorOptions}
+                          supportsLabelVisibility={supportsLabelVisibility}
+                          onEditMailboxItem={onEditMailboxItem}
+                          onDeleteMailboxItem={onDeleteMailboxItem}
+                        />
+                      ))}
+                    </nav>
+                  </SidebarGroupContent>
+                </>
+              )}
 
-            {showLabels && isAddingLabel && !collapsed ? (
-              <form
-                onSubmit={submitNewLabel}
-                className="flex gap-1.5 px-2.5 py-2"
-              >
-                <Input
-                  value={newLabelName}
-                  onChange={(event) => setNewLabelName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") setIsAddingLabel(false);
-                  }}
-                  placeholder={`${labelSingular} name`}
-                  aria-label={`New ${labelSingular} name`}
-                  autoFocus
-                  className="h-7 min-w-0 flex-1 px-2 text-xs"
-                />
-                <Button
-                  type="submit"
-                  variant="gradient"
-                  size="xs-2"
-                  disabled={!newLabelName.trim()}
+              {isAddingLabel && !collapsed ? (
+                <form
+                  onSubmit={submitNewLabel}
+                  className="flex gap-1.5 px-2.5 py-2"
                 >
-                  Add
-                </Button>
-              </form>
-            ) : null}
+                  <Input
+                    value={newLabelName}
+                    onChange={(event) => setNewLabelName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setIsAddingLabel(false);
+                    }}
+                    placeholder={t`${labelSingular} name`}
+                    aria-label={t`New ${labelSingular} name`}
+                    autoFocus
+                    className="h-7 min-w-0 flex-1 px-2 text-xs"
+                  />
+                  <Button
+                    type="submit"
+                    variant="gradient"
+                    size="xs-2"
+                    disabled={!newLabelName.trim()}
+                  >
+                    <Trans>Add</Trans>
+                  </Button>
+                </form>
+              ) : null}
+            </SidebarGroupContent>
           </>
         ) : null}
       </div>
+      <nav className="flex shrink-0 flex-col gap-px pt-2">
+        {team && (
+          <NavRow
+            href={team.href}
+            onNavigate={onNavigate}
+            active={false}
+            icon={<Users2Icon className="size-4 shrink-0" />}
+            name={t`Discussions`}
+            count={team.unreadCount}
+            emphasizeCount
+            collapsed={collapsed}
+          />
+        )}
+        <NavRow
+          onClick={onOpenSettings}
+          onNavigate={onNavigate}
+          active={false}
+          icon={<SettingsIcon className="size-4 shrink-0" />}
+          name={t`Settings`}
+          count={null}
+          collapsed={collapsed}
+        />
+      </nav>
       {footer}
     </aside>
   );
@@ -562,7 +655,9 @@ function LabelBranch({
 }: Pick<
   MailSidebarProps,
   | "activeLabelId"
+  | "labelKeys"
   | "hrefFor"
+  | "onNavigate"
   | "countsById"
   | "labelSingular"
   | "labelEditMode"
@@ -571,7 +666,9 @@ function LabelBranch({
   | "onEditMailboxItem"
   | "onDeleteMailboxItem"
 > & { node: SidebarLabel; hasNestedLabels: boolean; collapsed: boolean }) {
+  const { t } = useLingui();
   const { label, children } = node;
+  const labelName = label.name;
   const activeDescendantId = children.some((child) =>
     containsLabel(child, props.activeLabelId),
   )
@@ -616,28 +713,27 @@ function LabelBranch({
           {children.length > 0 && !collapsed && (
             <button
               type="button"
-              aria-label={`${expanded ? "Collapse" : "Expand"} ${label.name}`}
+              aria-label={
+                expanded ? t`Collapse ${labelName}` : t`Expand ${labelName}`
+              }
               aria-expanded={expanded}
               onClick={() =>
                 setExpansion({ activeDescendantId, expanded: !expanded })
               }
               className="absolute top-1/2 left-0 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {expanded ? (
-                <ChevronDownIcon className="size-3" />
-              ) : (
-                <ChevronRightIcon className="size-3" />
-              )}
+              <DisclosureChevron expanded={expanded} />
             </button>
           )}
           <NavRow
             href={props.hrefFor({ kind: "label", labelId: label.id })}
+            onNavigate={props.onNavigate}
             active={props.activeLabelId === label.id}
             icon={
               collapsed ? (
                 <TagIcon
                   className="size-4 shrink-0"
-                  style={{ color: label.color?.backgroundColor }}
+                  style={{ color: label.color?.backgroundColor ?? undefined }}
                 />
               ) : (
                 <span
@@ -659,18 +755,21 @@ function LabelBranch({
           />
         </div>
       </MailboxItemContextMenu>
-      {expanded && children.length > 0 && (
-        <div className={collapsed ? undefined : "ml-3"}>
+      {children.length > 0 && (
+        <SidebarGroupContent
+          open={expanded}
+          className={collapsed ? undefined : "ml-2.5"}
+        >
           {children.map((child) => (
             <LabelBranch
-              key={child.label.id}
+              key={props.labelKeys?.get(child.label.id) ?? child.label.id}
               node={child}
               hasNestedLabels={hasNestedLabels}
               collapsed={collapsed}
               {...props}
             />
           ))}
-        </div>
+        </SidebarGroupContent>
       )}
     </div>
   );
@@ -717,19 +816,53 @@ function GroupHeading({
           aria-hidden="true"
           className="cursor-pointer rounded-md p-0.5 text-muted-foreground hover:text-foreground"
         >
-          {expanded ? (
-            <ChevronDownIcon className="size-3 shrink-0" />
-          ) : (
-            <ChevronRightIcon className="size-3 shrink-0" />
-          )}
+          <DisclosureChevron expanded={expanded} />
         </button>
       ) : null}
     </div>
   );
 }
 
+function SidebarGroupContent({
+  open,
+  className,
+  children,
+}: {
+  open: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Collapsible open={open}>
+      {/* The inset padding keeps row focus rings clear of the clipping that
+          the height animation needs. */}
+      <CollapsibleContent
+        className={cn(
+          "-m-0.5 overflow-hidden p-0.5 data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down motion-reduce:animate-none",
+          className,
+        )}
+      >
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function DisclosureChevron({ expanded }: { expanded?: boolean }) {
+  return (
+    <ChevronRightIcon
+      className={cn(
+        "size-3 shrink-0 transition-transform motion-reduce:transition-none",
+        expanded && "rotate-90",
+      )}
+    />
+  );
+}
+
 function NavRow({
   href,
+  onClick,
+  onNavigate,
   active,
   icon,
   name,
@@ -739,6 +872,9 @@ function NavRow({
   collapsed,
 }: {
   href?: string;
+  /** For rows that open something in place rather than navigating. */
+  onClick?: () => void;
+  onNavigate: () => void;
   active: boolean;
   icon: ReactNode;
   name: string;
@@ -759,19 +895,35 @@ function NavRow({
   const className = cn(presentation.className);
   const content = presentation.content;
 
-  const row = href ? (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={className}
-    >
-      {content}
-    </Link>
-  ) : (
-    <div aria-current={active ? "page" : undefined} className={className}>
-      {content}
-    </div>
-  );
+  let row: ReactNode;
+  if (href) {
+    row = (
+      <Link
+        href={href}
+        onNavigate={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={className}
+      >
+        {content}
+      </Link>
+    );
+  } else if (onClick) {
+    row = (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(className, "text-left")}
+      >
+        {content}
+      </button>
+    );
+  } else {
+    row = (
+      <div aria-current={active ? "page" : undefined} className={className}>
+        {content}
+      </div>
+    );
+  }
 
   if (!collapsed) return row;
 

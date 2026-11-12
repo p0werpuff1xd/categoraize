@@ -10,23 +10,25 @@ import {
 } from "@/utils/outlook/retry";
 import { sleep } from "@/utils/sleep";
 import {
+  listThreadMessages,
+  OutlookThreadPaginationError,
   processThreadMessagesFallback,
   runThreadMessageMutation,
 } from "@/utils/outlook/thread-helpers";
-import { inboxZeroLabels, type InboxZeroLabel } from "@/utils/label";
+import {
+  getDefaultLabelColorName,
+  inboxZeroLabels,
+  type InboxZeroLabel,
+} from "@/utils/label";
 import {
   normalizeOutlookCategoryName,
   sanitizeOutlookCategoryName,
 } from "@/utils/outlook/label-validation";
 import { findLabelByName } from "@/utils/label/find-label-by-name";
-import { escapeODataString } from "@/utils/outlook/odata-escape";
 import { getFolderIds } from "@/utils/outlook/message";
-import { isDefined } from "@/utils/types";
-import type {
-  OutlookCategory,
-  Message,
-} from "@microsoft/microsoft-graph-types";
+import type { OutlookCategory } from "@microsoft/microsoft-graph-types";
 import {
+  getDefaultOutlookCategoryColor,
   OUTLOOK_CATEGORY_COLOR_IDS,
   OUTLOOK_CATEGORY_COLOR_MAP,
 } from "@/utils/outlook/category-colors";
@@ -79,11 +81,10 @@ export async function createLabel({
   if (!sanitizedName) throw new Error("Label name cannot be empty");
 
   try {
-    // Use a random preset color if none provided or if the provided color is not supported
     const outlookColor =
       color && OUTLOOK_COLORS.includes(color)
         ? color
-        : OUTLOOK_COLORS[Math.floor(Math.random() * OUTLOOK_COLORS.length)];
+        : getDefaultOutlookColor(sanitizedName);
 
     const response: OutlookCategory = await withMicrosoftGraphWriteRetry(
       () =>
@@ -312,18 +313,15 @@ export async function labelThread({
   logger: Logger;
 }) {
   // In Outlook, we need to update each message in the thread
-  // Escape single quotes in threadId for the filter
-  const escapedThreadId = threadId.replace(/'/g, "''");
-  const messages: { value: Message[] } = await client
-    .getClient()
-    .api("/me/messages")
-    .filter(`conversationId eq '${escapedThreadId}'`)
-    .get();
+  const messages = await listThreadMessages({
+    client,
+    threadId,
+    select: "id",
+    logger,
+  });
 
   await runThreadMessageMutation({
-    messageIds: messages.value
-      .map((message) => message.id)
-      .filter((messageId): messageId is string => Boolean(messageId)),
+    messageIds: messages.map((message) => message.id),
     threadId,
     logger,
     messageHandler: (messageId) =>
@@ -332,7 +330,6 @@ export async function labelThread({
   });
 }
 
-// Doesn't use pagination. But this function not really used anyway. Can add in the future of needed.
 export async function removeThreadLabel({
   client,
   threadId,
@@ -349,24 +346,15 @@ export async function removeThreadLabel({
     return;
   }
 
-  // Get all messages in the thread
-  const escapedThreadId = threadId.replace(/'/g, "''");
-  const messages = await client
-    .getClient()
-    .api("/me/messages")
-    .filter(`conversationId eq '${escapedThreadId}'`)
-    .select("id,categories")
-    .get();
-
-  const messagesWithCategory: Array<{ id: string; categories?: string[] }> =
-    messages.value.filter((message: { id: string; categories?: string[] }) =>
-      message.categories?.includes(categoryName),
-    );
+  const messages = await listThreadMessages<{
+    id: string;
+    categories?: string[];
+  }>({ client, threadId, select: "id,categories", logger });
 
   await runThreadMessageMutation({
-    messageIds: messagesWithCategory.map(
-      (message: { id: string }) => message.id,
-    ),
+    messageIds: messages
+      .filter((message) => message.categories?.includes(categoryName))
+      .map((message) => message.id),
     threadId,
     logger,
     messageHandler: (messageId) =>
@@ -426,15 +414,16 @@ export async function archiveThread({
 
   // In Outlook, archiving is moving to a folder
   // We need to move each message in the thread individually
-  const escapedThreadId = threadId.replace(/'/g, "''");
-  let messages: { value: Array<{ id: string }> };
+  let messages: { id: string }[];
   try {
-    messages = await client
-      .getClient()
-      .api("/me/messages")
-      .filter(`conversationId eq '${escapedThreadId}'`) // Escape single quotes in threadId for the filter
-      .get();
+    messages = await listThreadMessages({
+      client,
+      threadId,
+      select: "id",
+      logger,
+    });
   } catch (error) {
+    if (error instanceof OutlookThreadPaginationError) throw error;
     return archiveThreadWithFallback({
       client,
       threadId,
@@ -447,7 +436,7 @@ export async function archiveThread({
   }
 
   const archivePromise = runThreadMessageMutation({
-    messageIds: messages.value.map((message) => message.id),
+    messageIds: messages.map((message) => message.id),
     threadId,
     logger,
     messageHandler: (messageId) =>
@@ -501,11 +490,6 @@ export async function archiveThread({
   return { status: 200 };
 }
 
-// Graph pages at 10 messages by default, which would silently leave the rest of
-// a long thread archived. Pages beyond this are followed via @odata.nextLink.
-const THREAD_MESSAGE_PAGE_SIZE = 100;
-const MAX_THREAD_MESSAGE_PAGES = 20;
-
 const SOURCE_FOLDER_LABELS = {
   archive: "Archive",
   deleteditems: "Deleted items",
@@ -545,47 +529,16 @@ async function moveThreadFromFolderToInbox({
     );
   }
 
-  const messageIds: string[] = [];
-  let nextLink: string | undefined;
-
-  for (let page = 0; page < MAX_THREAD_MESSAGE_PAGES; page++) {
-    const response: {
-      value: { id?: string | null }[];
-      "@odata.nextLink"?: string;
-    } = await withMicrosoftGraphRetry(
-      () =>
-        nextLink
-          ? client.getClient().api(nextLink).get()
-          : client
-              .getClient()
-              .api("/me/messages")
-              .filter(
-                `conversationId eq '${escapeODataString(threadId)}' and parentFolderId eq '${escapeODataString(sourceFolderId)}'`,
-              )
-              .select("id")
-              .top(THREAD_MESSAGE_PAGE_SIZE)
-              .get(),
-      logger,
-    );
-
-    messageIds.push(
-      ...response.value.map((message) => message.id).filter(isDefined),
-    );
-
-    nextLink = response["@odata.nextLink"];
-    if (!nextLink) break;
-  }
-
-  if (nextLink) {
-    logger.warn("Stopped paging thread messages at the page limit", {
-      threadId,
-      sourceFolder,
-      messageCount: messageIds.length,
-    });
-  }
+  const messages = await listThreadMessages({
+    client,
+    threadId,
+    select: "id",
+    folderId: sourceFolderId,
+    logger,
+  });
 
   await runThreadMessageMutation({
-    messageIds,
+    messageIds: messages.map((message) => message.id),
     threadId,
     logger,
     messageHandler: (messageId) =>
@@ -655,21 +608,20 @@ export async function markReadThread({
 }) {
   try {
     // In Outlook, we need to mark each message in the thread as read
-    // Escape single quotes in threadId for the filter
-    const escapedThreadId = threadId.replace(/'/g, "''");
-    const messages = await client
-      .getClient()
-      .api("/me/messages")
-      .filter(`conversationId eq '${escapedThreadId}'`)
-      .get();
+    const messages = await listThreadMessages({
+      client,
+      threadId,
+      select: "id",
+      logger,
+    });
 
-    // Update each message in the thread
     await runThreadMessageMutation({
-      messageIds: messages.value.map((message: { id: string }) => message.id),
+      messageIds: messages.map((message) => message.id),
       threadId,
       logger,
       messageHandler: (messageId) =>
-        withMicrosoftGraphWriteRetry(
+        // Idempotent absolute write: safe to retry on conflicts and network errors.
+        withMicrosoftGraphRetry(
           () =>
             client.getClient().api(`/me/messages/${messageId}`).patch({
               isRead: read,
@@ -679,6 +631,7 @@ export async function markReadThread({
       failureMessage: "Failed to mark message as read",
     });
   } catch (error) {
+    if (error instanceof OutlookThreadPaginationError) throw error;
     // If the filter fails, try a different approach
     logger.warn("Filter failed, trying alternative approach", {
       threadId,
@@ -691,7 +644,7 @@ export async function markReadThread({
         threadId,
         logger,
         messageHandler: (messageId) =>
-          withMicrosoftGraphWriteRetry(
+          withMicrosoftGraphRetry(
             () =>
               client
                 .getClient()
@@ -747,7 +700,10 @@ export async function markStarredMessage({
   logger: Logger;
   starred?: boolean;
 }) {
-  await withMicrosoftGraphWriteRetry(
+  // Setting the flag to an absolute value is idempotent, so the full retry
+  // policy is safe, including the 412 Graph returns when another write on the
+  // message (such as a label action) lands first.
+  await withMicrosoftGraphRetry(
     () =>
       client
         .getClient()
@@ -863,4 +819,10 @@ async function archiveThreadWithFallback({
     });
     throw directError;
   }
+}
+
+function getDefaultOutlookColor(name: string) {
+  const colorName = getDefaultLabelColorName(name);
+  if (colorName) return getDefaultOutlookCategoryColor(colorName);
+  return OUTLOOK_COLORS[Math.floor(Math.random() * OUTLOOK_COLORS.length)];
 }

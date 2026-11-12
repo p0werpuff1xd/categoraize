@@ -73,6 +73,7 @@ model User {
 
   // additional fields
   completedOnboardingAt   DateTime? // questions about the user. e.g. their role
+  signupIntent            SignupIntent? // which part of the product the user signed up for
   onboardingAnswers       Json?
   lastLogin               DateTime?
   utms                    Json?
@@ -132,6 +133,12 @@ model User {
   scimIdentityLinks      ScimIdentityLink[]
 }
 
+enum SignupIntent {
+  AI_ASSISTANT
+  MAIL_CLIENT
+  BOTH
+}
+
 enum ApiKeyScope {
   STATS_READ
   RULES_READ
@@ -152,9 +159,13 @@ model EmailAccount {
   name  String? // Name associated with the Google account
   image String? // Profile image URL from the Google account
 
+  sortOrder Int? // Position in the user's account switcher; null sorts last, by createdAt
+
   about                          String?
   writingStyle                   String?
   signature                      String? // User's email signature from provider or manually set
+  sentSignatureScan              Json? // signatures found in recent sent mail, see utils/email/signature-suggestions.ts
+  sentSignatureScannedAt         DateTime?
   includeReferralSignature       Boolean   @default(false)
   includeSentWithSignature       Boolean   @default(true) // "Sent with <brand>" footer on emails sent from the mail client
   sentMessageOpenTrackingEnabled Boolean   @default(true) // show when sent mail-client emails are opened
@@ -167,6 +178,7 @@ model EmailAccount {
   role                           String? // the role confirmed by the user - previously `User.surveyRole`
   timezone                       String? // User's timezone (IANA tz database format, e.g., "America/Los_Angeles", "Asia/Jerusalem") - handles DST automatically
   calendarBookingLink            String? // User's calendar booking link
+  draftDocsUrls                  String[]  @default([]) // Public docs sites (origin + optional path prefix) that drafts may look things up in
 
   statsEmailFrequency       Frequency            @default(WEEKLY)
   summaryEmailFrequency     Frequency            @default(WEEKLY)
@@ -186,6 +198,11 @@ model EmailAccount {
 
   mailLayout          MailLayout @default(LIST)
   mailExpandedPreview Boolean    @default(false)
+  /// Collapses threads from bundled splits into one row each in the inbox.
+  /// Null until first turned on, which is when default bundles are chosen.
+  mailBundleInbox     Boolean?
+  mailDefaultSplitId  String?
+  mailSetup           MailSetupState @default(PENDING)
 
   includeInAllAccounts Boolean @default(true)
 
@@ -229,6 +246,7 @@ model EmailAccount {
   emailTokens         EmailToken[]
   knowledge           Knowledge[]
   snippets            Snippet[]
+  emailSignatures     EmailSignature[]
   replyMemories       ReplyMemory[]
   chats               Chat[]
   chatMemories        ChatMemory[]
@@ -284,6 +302,9 @@ model MailSplit {
   /// Whether every filter must match, or any one of them ("Show mail matching
   /// all/any of these conditions"). A split with no filters is the plain inbox.
   matchAll  Boolean  @default(true)
+  /// Shown as one collapsed row in the inbox when the account bundles its inbox.
+  bundleInInbox Boolean @default(false)
+  hideFromAll   Boolean @default(false)
 
   emailAccountId String
   emailAccount   EmailAccount      @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
@@ -607,6 +628,8 @@ model Premium {
   stripeCancellationInitiatedAt  DateTime? // Timestamp of the event that first scheduled cancellation. Does not identify who initiated it.
   stripeCanceledAt               DateTime? // Stripe canceled_at: when cancellation was requested, which can precede the effective end in stripeEndedAt. Historical data.
   stripeEndedAt                  DateTime? // Timestamp for when the subscription ended permanently for any reason (cancellation, final payment failure). Historical data.
+  stripeCancellationFeedback     String? // Customer portal cancellation survey reason, e.g. 'too_expensive'.
+  stripeCancellationComment      String? // Customer portal cancellation survey free-text comment.
   stripeAiOverageLastInvoiceId   String?
   stripeAiOverageLastPeriodEnd   DateTime?
   stripeAiOverageLastUnits       Int?
@@ -841,6 +864,7 @@ model ExecutedRule {
   @@index([emailAccountId, status, createdAt])
   @@index([emailAccountId, createdAt])
   @@index([emailAccountId, id])
+  @@index([emailAccountId, updatedAt, id])
   @@index([ruleId])
 }
 
@@ -895,6 +919,8 @@ model ExecutedAction {
   @@index([executionStatus, createdAt])
   @@index([sentMessageIds], type: Gin)
   @@index([messagingChannelId, createdAt])
+  @@index([draftStatus, createdAt], map: "ExecutedAction_draftStatus_createdAt_draft_idx", where: raw("\"draftId\" IS NOT NULL"))
+  @@index([executedRuleId], map: "ExecutedAction_executedRuleId_draft_idx", where: raw("\"draftId\" IS NOT NULL"))
 }
 
 model ScheduledAction {
@@ -1222,9 +1248,11 @@ model ThreadTracker {
   resolved  Boolean           @default(false)
   type      ThreadTrackerType
 
-  followUpAppliedAt     DateTime?
-  followUpDraftId       String?
-  followUpNotifications Json?
+  followUpAppliedAt      DateTime?
+  followUpDraftId        String?
+  followUpDraftContent   String?
+  followUpDraftCreatedAt DateTime?
+  followUpNotifications  Json?
 
   emailAccountId String
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
@@ -1234,6 +1262,7 @@ model ThreadTracker {
   @@index([emailAccountId, resolved, sentAt, type])
   @@index([emailAccountId, type, resolved, sentAt])
   @@index([emailAccountId, type, resolved, followUpAppliedAt, sentAt])
+  @@index([emailAccountId, followUpDraftCreatedAt], map: "ThreadTracker_followUpDraft_cleanup_idx", where: raw("\"followUpDraftContent\" IS NOT NULL"))
 }
 
 model CleanupJob {
@@ -1299,6 +1328,20 @@ model Snippet {
 
   @@unique([emailAccountId, shortcut])
   @@index([emailAccountId])
+}
+
+// Signatures to choose from in compose besides the account's default `EmailAccount.signature`.
+model EmailSignature {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  html      String
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([emailAccountId, name])
 }
 
 model ReplyMemory {
@@ -1442,6 +1485,7 @@ model Chat {
   messages       ChatMessage[]
   compactions    ChatCompaction[]
   memories       ChatMemory[]
+  actionTotals   ChatActionTotal[]
   emailAccountId String
   emailAccount   EmailAccount     @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
 
@@ -1477,6 +1521,22 @@ model ChatCompaction {
   chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@index([chatId])
+}
+
+// Running count of inbox actions the assistant took in a chat, so totals stay
+// exact after earlier tool results are compacted or trimmed away.
+model ChatActionTotal {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  action String
+  count  Int    @default(0)
+
+  chatId String
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, action])
 }
 
 model ChatMemory {
@@ -2149,6 +2209,7 @@ enum MobilePushPlatform {
 enum MobilePushTokenType {
   EXPO @map("expo")
   APNS @map("apns")
+  FCM  @map("fcm")
 }
 
 enum ActionType {
@@ -2197,6 +2258,12 @@ enum MailLayout {
   SPLIT
 }
 
+enum MailSetupState {
+  PENDING
+  SUGGESTED
+  DONE
+}
+
 enum MailSplitFilterKind {
   UNREAD
   STARRED
@@ -2204,6 +2271,8 @@ enum MailSplitFilterKind {
   CATEGORY
   FROM
   OLDER_THAN
+  /// Mail addressed to an address or @domain, in To or Cc.
+  TO
 }
 
 enum DraftReplyConfidence {
@@ -2218,6 +2287,8 @@ enum DraftEmailStatus {
   REPLIED_WITHOUT_DRAFT
   CLEANED_UP_UNUSED
   MISSING_FROM_PROVIDER
+  USER_EDITED
+  CLEANUP_SKIPPED
 }
 
 enum ReplyMemoryKind {

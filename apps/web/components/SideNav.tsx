@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { useQueryState } from "nuqs";
-import { getEmailTerminology } from "@/utils/terminology";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   AlertCircleIcon,
   ArchiveIcon,
@@ -27,11 +28,11 @@ import {
   PersonStandingIcon,
   RatioIcon,
   SendIcon,
+  SmartphoneIcon,
   SparklesIcon,
   Users2Icon,
   ZapIcon,
 } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import { useComposeModal } from "@/providers/ComposeModalProvider";
 import {
   Sidebar,
@@ -45,9 +46,9 @@ import {
   SidebarMenuItem,
   SidebarMenu,
   useSidebar,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { SetupProgressCard } from "@/components/SetupProgressCard";
+import { DesktopUpdateMenuItem } from "@/components/DesktopUpdateMenuItem";
 import { SideNavMenu } from "@/components/SideNavMenu";
 import { CommandShortcut } from "@/components/ui/command";
 import { useSplitLabels } from "@/hooks/useLabels";
@@ -63,14 +64,20 @@ import {
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { useAccount } from "@/providers/EmailAccountProvider";
 import { prefixPath } from "@/utils/path";
-import { isGoogleProvider } from "@/utils/email/provider-types";
+import {
+  isGoogleProvider,
+  isMicrosoftProvider,
+} from "@/utils/email/provider-types";
+import { getEmailTerminologyMessages } from "@/utils/terminology-messages";
 import { NavUser } from "@/components/NavUser";
-import { PremiumCard } from "@/components/PremiumCard";
+import { SidebarCards } from "@/components/sidebar-cards/SidebarCards";
+import { AppSidebarHeader } from "@/components/AppSidebarHeader";
 import { FeedbackSidebarButton } from "@/components/FeedbackDialog";
-import { getInboxZeroDesktopApp } from "@/utils/desktop-app";
+import { TEAM_HREF, useTeamNav } from "@/components/team-comments/use-team-nav";
 
 type NavItem = {
   name: string;
+  label?: MessageDescriptor;
   href: string;
   icon: LucideIcon | (() => React.ReactNode);
   target?: "_blank";
@@ -86,11 +93,7 @@ export const useNavigation = () => {
   const showMeetingBriefs = useMeetingBriefsEnabled();
   const showMeetingRecorder = useMeetingRecorderEnabled();
   const showIntegrations = useIntegrationsEnabled();
-  const [isDesktopApp, setIsDesktopApp] = useState(false);
-
-  useEffect(() => {
-    setIsDesktopApp(Boolean(getInboxZeroDesktopApp()));
-  }, []);
+  const { hasTeam, unreadCount: teamUnreadCount } = useTeamNav();
 
   const { emailAccount, emailAccountId, provider } = useAccount();
   const currentEmailAccountId = emailAccount?.id || emailAccountId;
@@ -98,22 +101,20 @@ export const useNavigation = () => {
   const manageItems: NavItem[] = useMemo(
     () => [
       {
-        name: "Inbox",
-        href: prefixPath(currentEmailAccountId, "/mail"),
-        icon: InboxIcon,
-      },
-      {
         name: "Chat",
+        label: msg`Chat`,
         href: prefixPath(currentEmailAccountId, "/assistant"),
         icon: MessageSquareIcon,
       },
       {
-        name: "Assistant",
+        name: "Rules",
+        label: msg`Rules`,
         href: prefixPath(currentEmailAccountId, "/automation"),
         icon: SparklesIcon,
       },
       {
         name: "Channels",
+        label: msg`Channels`,
         href: prefixPath(currentEmailAccountId, "/channels"),
         icon: MessagesSquareIcon,
       },
@@ -121,6 +122,7 @@ export const useNavigation = () => {
         ? [
             {
               name: "Meetings",
+              label: msg`Meetings`,
               href: prefixPath(currentEmailAccountId, "/meetings"),
               icon: MicIcon,
             },
@@ -134,16 +136,19 @@ export const useNavigation = () => {
     () => [
       {
         name: "Bulk Unsubscribe",
+        label: msg`Bulk Unsubscribe`,
         href: prefixPath(currentEmailAccountId, "/bulk-unsubscribe"),
         icon: MailsIcon,
       },
       {
         name: "Bulk Archive",
+        label: msg`Bulk Archive`,
         href: prefixPath(currentEmailAccountId, "/bulk-archive"),
         icon: ArchiveIcon,
       },
       {
         name: "Analytics",
+        label: msg`Analytics`,
         href: prefixPath(currentEmailAccountId, "/stats"),
         icon: BarChartBigIcon,
       },
@@ -151,6 +156,7 @@ export const useNavigation = () => {
         ? [
             {
               name: "Deep Clean",
+              label: msg`Deep Clean`,
               href: prefixPath(currentEmailAccountId, "/clean"),
               icon: BrushIcon,
               beta: true,
@@ -165,6 +171,7 @@ export const useNavigation = () => {
     () => [
       {
         name: "Calendars",
+        label: msg`Calendars`,
         href: prefixPath(currentEmailAccountId, "/calendars"),
         icon: CalendarIcon,
       },
@@ -172,6 +179,7 @@ export const useNavigation = () => {
         ? [
             {
               name: "Meeting Briefs",
+              label: msg`Meeting Briefs`,
               href: prefixPath(currentEmailAccountId, "/briefs"),
               icon: FileTextIcon,
             },
@@ -182,6 +190,7 @@ export const useNavigation = () => {
         : [
             {
               name: "Attachments",
+              label: msg`Attachments`,
               href: prefixPath(currentEmailAccountId, "/drive"),
               icon: HardDriveIcon,
               new: false,
@@ -191,41 +200,73 @@ export const useNavigation = () => {
         ? [
             {
               name: "Integrations",
+              label: msg`Integrations`,
               href: prefixPath(currentEmailAccountId, "/integrations"),
               icon: ZapIcon,
             },
           ]
         : []),
+      ...(hasTeam
+        ? [
+            {
+              name: "Discussions",
+              label: msg`Discussions`,
+              href: TEAM_HREF,
+              icon: Users2Icon,
+              count: teamUnreadCount ?? undefined,
+            },
+          ]
+        : []),
     ],
-    [currentEmailAccountId, showMeetingBriefs, showIntegrations],
+    [
+      currentEmailAccountId,
+      showMeetingBriefs,
+      showIntegrations,
+      hasTeam,
+      teamUnreadCount,
+    ],
   );
 
   return {
-    homeHref: prefixPath(currentEmailAccountId, "/automation"),
+    emailAccountId: currentEmailAccountId,
     manageItems,
     cleanupItems,
     moreItems,
   };
 };
 
+const getTheAppLinks: NavItem[] = [
+  {
+    name: "Get the app",
+    label: msg`Get the app`,
+    icon: SmartphoneIcon,
+    href: "/download",
+    target: "_blank",
+  },
+];
+
 const topMailLinks: NavItem[] = [
   {
     name: "Inbox",
+    label: msg`Inbox`,
     icon: InboxIcon,
     href: "?type=inbox",
   },
   {
     name: "Drafts",
+    label: msg`Drafts`,
     icon: FileIcon,
     href: "?type=draft",
   },
   {
     name: "Sent",
+    label: msg`Sent`,
     icon: SendIcon,
     href: "?type=sent",
   },
   {
     name: "Archived",
+    label: msg`Archived`,
     icon: ArchiveIcon,
     href: "?type=archive",
   },
@@ -234,26 +275,31 @@ const topMailLinks: NavItem[] = [
 const bottomMailLinks: NavItem[] = [
   {
     name: "Personal",
+    label: msg`Personal`,
     icon: PersonStandingIcon,
     href: "?type=CATEGORY_PERSONAL",
   },
   {
     name: "Social",
+    label: msg`Social`,
     icon: Users2Icon,
     href: "?type=CATEGORY_SOCIAL",
   },
   {
     name: "Updates",
+    label: msg`Updates`,
     icon: AlertCircleIcon,
     href: "?type=CATEGORY_UPDATES",
   },
   {
     name: "Forums",
+    label: msg`Forums`,
     icon: MessagesSquareIcon,
     href: "?type=CATEGORY_FORUMS",
   },
   {
     name: "Promotions",
+    label: msg`Promotions`,
     icon: RatioIcon,
     href: "?type=CATEGORY_PROMOTIONS",
   },
@@ -281,6 +327,7 @@ export function SideNav({
         ? [
             {
               name: "Back",
+              label: msg`Back`,
               href: "/automation",
               icon: ArrowLeftIcon,
             },
@@ -289,23 +336,17 @@ export function SideNav({
     [showMailNav],
   );
 
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="gap-0 pb-0">
-        {state.includes("left-sidebar") ? (
-          <div className="flex items-center rounded-md pl-2 pr-0.5 py-3 text-foreground">
-            <Link href={navigation.homeHref} data-hide-on-desktop-mac>
-              <Logo className="h-3.5" />
-            </Link>
-            <SidebarTrigger name="left-sidebar" className="ml-auto" />
-          </div>
-        ) : (
-          <div data-desktop-mac-titlebar-spacer className="pb-2">
-            <SidebarTrigger name="left-sidebar" />
-          </div>
-        )}
+        <AppSidebarHeader
+          active="assistant"
+          emailAccountId={navigation.emailAccountId}
+          // The phone sheet always shows the full sidebar.
+          collapsed={!isMobile && !state.includes("left-sidebar")}
+        />
         <AccountSwitcher />
       </SidebarHeader>
 
@@ -318,11 +359,15 @@ export function SideNav({
           ) : (
             <>
               <SidebarGroup>
-                <SidebarGroupLabel>Manage</SidebarGroupLabel>
+                <SidebarGroupLabel>
+                  <Trans>Manage</Trans>
+                </SidebarGroupLabel>
                 <SideNavMenu items={navigation.manageItems} activeHref={path} />
               </SidebarGroup>
               <SidebarGroup>
-                <SidebarGroupLabel>Cleanup</SidebarGroupLabel>
+                <SidebarGroupLabel>
+                  <Trans>Cleanup</Trans>
+                </SidebarGroupLabel>
                 <SideNavMenu
                   items={navigation.cleanupItems}
                   activeHref={path}
@@ -341,7 +386,9 @@ export function SideNav({
                     ) : (
                       <ChevronRightIcon className="size-3.5" />
                     )}
-                    <span>Tools</span>
+                    <span>
+                      <Trans>Tools</Trans>
+                    </span>
                   </button>
                 </SidebarGroupLabel>
                 {showMoreItems && (
@@ -353,10 +400,16 @@ export function SideNav({
         </SidebarGroupContent>
       </SidebarContent>
 
-      <PremiumCard isCollapsed={!state.includes("left-sidebar")} />
+      <SidebarCards
+        className="px-3 pt-4"
+        collapsed={!state.includes("left-sidebar")}
+      />
 
       <SidebarFooter className="pb-4">
+        <DesktopUpdateMenuItem />
         <SideNavMenu items={visibleBottomLinks} activeHref={path} />
+
+        <SideNavMenu items={getTheAppLinks} activeHref={path} />
 
         {feedbackEnabled && (
           <SidebarMenu>
@@ -377,7 +430,9 @@ function MailNav({ path }: { path: string }) {
   const [showHiddenLabels, setShowHiddenLabels] = useState(false);
   const { visibleLabels, hiddenLabels, isLoading } = useSplitLabels();
   const { provider } = useAccount();
-  const terminology = getEmailTerminology(provider);
+  const { i18n } = useLingui();
+  const isOutlook = isMicrosoftProvider(provider);
+  const terminology = getEmailTerminologyMessages(provider);
 
   const [currentType] = useQueryState("type");
   const [currentLabelId] = useQueryState("labelId");
@@ -405,7 +460,9 @@ function MailNav({ path }: { path: string }) {
               sidebarName="left-sidebar"
             >
               <PenIcon className="size-4" />
-              <span className="truncate font-semibold">Compose</span>
+              <span className="truncate font-semibold">
+                <Trans>Compose</Trans>
+              </span>
               <CommandShortcut>C</CommandShortcut>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -420,7 +477,9 @@ function MailNav({ path }: { path: string }) {
       </SidebarGroup>
       {isGoogleProvider(provider) && (
         <SidebarGroup>
-          <SidebarGroupLabel>Categories</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            <Trans>Categories</Trans>
+          </SidebarGroupLabel>
           <SideNavMenu
             items={markActiveType(bottomMailLinks, activeType)}
             activeHref={path}
@@ -430,14 +489,18 @@ function MailNav({ path }: { path: string }) {
 
       <SidebarGroup>
         <SidebarGroupLabel>
-          {terminology.label.pluralCapitalized}
+          {i18n._(terminology.label.pluralCapitalized)}
         </SidebarGroupLabel>
         <LoadingContent loading={isLoading}>
           {visibleLabels.length > 0 ? (
             <SideNavMenu items={labelNavItems} activeHref={path} />
           ) : (
             <div className="px-3 py-2 text-xs text-muted-foreground">
-              No {terminology.label.plural}
+              {isOutlook ? (
+                <Trans>No categories</Trans>
+              ) : (
+                <Trans>No labels</Trans>
+              )}
             </div>
           )}
 
@@ -454,7 +517,9 @@ function MailNav({ path }: { path: string }) {
                 ) : (
                   <ChevronRightIcon className="mr-1 size-4" />
                 )}
-                <span>More</span>
+                <span>
+                  <Trans>More</Trans>
+                </span>
               </button>
 
               {showHiddenLabels && (

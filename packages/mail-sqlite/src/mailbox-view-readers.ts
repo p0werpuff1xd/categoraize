@@ -164,22 +164,35 @@ function readCounts(
 function filteredScope(scope: CountScope) {
   const mailbox =
     scope.predicate.kind === "mailbox" ? scope.predicate.mailbox : null;
-  const driven = searchDrivenSource(scope.predicate, scope.search);
+  const searched = searchDrivenSource(scope.predicate, scope.search);
+  const scoped = searched
+    ? null
+    : (roleDrivenSource(scope.predicate, scope.accountIds) ??
+      membershipDrivenSource(scope.predicate, scope.accountIds));
+  const source = searched ?? scoped;
   const compiled =
     mailbox === "archive" || mailbox === "all" || mailbox === "snoozed"
       ? { sql: "1=1", bindings: [] as SqlValue[] }
-      : compilePredicate(driven?.rest ?? scope.predicate, scope.search);
-  const accountPlaceholders = scope.accountIds.map(() => "?").join(",");
+      : compilePredicate(searched?.rest ?? scope.predicate, scope.search);
+  // The role or membership index already limits the accounts. Repeating the
+  // filter on messages leads SQLite to look each conversation up by account
+  // alone, rescanning the account once per conversation.
+  const accounts = scoped
+    ? null
+    : {
+        sql: `e.account_id IN (${scope.accountIds.map(() => "?").join(",")}) AND `,
+        bindings: scope.accountIds,
+      };
   const having = mailboxConversationHaving(mailbox);
   return {
     mailbox,
-    from: driven?.from ?? "effective_messages e",
-    where: `e.account_id IN (${accountPlaceholders}) AND ${compiled.sql}`,
+    from: source?.from ?? "effective_messages e",
+    where: `${accounts?.sql ?? ""}${compiled.sql}`,
     having,
     // In clause order: source, WHERE, HAVING.
     bindings: [
-      ...(driven?.bindings ?? []),
-      ...scope.accountIds,
+      ...(source?.bindings ?? []),
+      ...(accounts?.bindings ?? []),
       ...compiled.bindings,
       ...having.bindings,
     ],
@@ -288,25 +301,131 @@ function conversationIndexFor(
   if (predicate.kind === "mailbox" && predicate.mailbox === "inbox") {
     return roleIndex("inbox");
   }
-  if (predicate.kind === "membership") {
-    const account = predicate.accountId ? " AND account_id = ?" : "";
-    return {
-      source: `(SELECT account_id, conversation_id, MAX(received_at_ms) AS latest_at_ms,
-                       MAX(1 - read) AS unread, MAX(starred) AS starred
-                FROM effective_message_memberships
-                WHERE kind = ? AND membership_id = ?${account}
-                GROUP BY account_id, conversation_id)`,
-      sourceBindings: [
-        predicate.membership,
-        predicate.id,
-        ...(predicate.accountId ? [predicate.accountId] : []),
-      ],
-    };
+  const view = membershipView(predicate);
+  if (!view) return null;
+  const { membership, filters } = view;
+  const account = membership.accountId ? " AND account_id = ?" : "";
+  return {
+    source: `(SELECT account_id, conversation_id, MAX(received_at_ms) AS latest_at_ms,
+                     MAX(1 - read) AS unread, MAX(starred) AS starred
+              FROM effective_message_memberships
+              WHERE kind = ? AND membership_id = ?${account}${filters.map((filter) => ` AND ${filter.sql}`).join("")}
+              GROUP BY account_id, conversation_id)`,
+    sourceBindings: [
+      membership.membership,
+      membership.id,
+      ...(membership.accountId ? [membership.accountId] : []),
+      ...filters.flatMap((filter) => filter.bindings),
+    ],
+  };
+}
+
+// A label, category, or folder, alone or ANDed with conditions its index rows
+// carry: leaving out Trash and Spam (a Gmail label's view), read state, and
+// starring. Like the message filter, each condition applies to each message,
+// so a conversation's latest time, unread, and starred come from its matching
+// messages only.
+function membershipView(predicate: MailPredicate) {
+  const clauses = andClauses(predicate);
+  const memberships = clauses.filter((clause) => clause.kind === "membership");
+  const membership = memberships[0];
+  if (memberships.length !== 1 || membership?.kind !== "membership") {
+    return null;
   }
+  const filters: Array<{ sql: string; bindings: SqlValue[] }> = [];
+  for (const clause of clauses) {
+    if (clause.kind === "membership") continue;
+    if (clause.kind === "mailbox" && clause.mailbox === "all") {
+      filters.push({ sql: "in_trash_or_spam = 0", bindings: [] });
+    } else if (clause.kind === "mailbox" && clause.mailbox === "starred") {
+      filters.push({ sql: "starred = 1", bindings: [] });
+    } else if (clause.kind === "read" || clause.kind === "starred") {
+      filters.push({
+        sql: `${clause.kind} = ?`,
+        bindings: [clause.value ? 1 : 0],
+      });
+    } else {
+      return null;
+    }
+  }
+  return { membership, filters };
+}
+
+// The web nests a label's view inside the other conditions, as in
+// unread AND (label AND not Trash or Spam).
+function andClauses(predicate: MailPredicate): MailPredicate[] {
+  return predicate.kind === "all"
+    ? predicate.predicates.flatMap(andClauses)
+    : [predicate];
+}
+
+// A filter within one role, such as a split's "inbox and this label", would
+// otherwise scan every message: a 0/1 role column gives the planner no hint
+// that the role holds a small slice of the mailbox. Starting from the role's
+// conversation index reads only that role's conversations, and the whole
+// predicate still filters each message. Like the role's own list, this leaves
+// out an archived message that still carries the inbox role.
+function roleDrivenSource(
+  predicate: MailPredicate,
+  accountIds: string[],
+): { from: string; bindings: SqlValue[] } | null {
+  if (predicate.kind !== "all") return null;
+  const role = predicate.predicates.map(clauseRole).find((value) => value);
+  if (!role) return null;
+  return {
+    from: `(SELECT account_id, conversation_id FROM effective_role_conversations
+            WHERE account_id IN (${accountIds.map(() => "?").join(",")}) AND role = ?) scoped
+          CROSS JOIN effective_messages e
+            ON e.account_id = scoped.account_id AND e.conversation_id = scoped.conversation_id`,
+    bindings: [...accountIds, role],
+  };
+}
+
+// Same idea for a filter within one label or folder, such as a label's unread
+// mail: start from the messages carrying it. Only those can match, since the
+// membership must hold for every matching message.
+function membershipDrivenSource(
+  predicate: MailPredicate,
+  accountIds: string[],
+): { from: string; bindings: SqlValue[] } | null {
+  if (predicate.kind !== "all") return null;
+  const membership = predicate.predicates.find(
+    (clause) => clause.kind === "membership",
+  );
+  if (membership?.kind !== "membership") return null;
+  const account = membership.accountId ? " AND account_id = ?" : "";
+  return {
+    from: `(SELECT account_id, message_id FROM effective_message_memberships
+            WHERE account_id IN (${accountIds.map(() => "?").join(",")})
+              AND kind = ? AND membership_id = ?${account}) scoped
+          CROSS JOIN effective_messages e
+            ON e.account_id = scoped.account_id AND e.message_id = scoped.message_id`,
+    bindings: [
+      ...accountIds,
+      membership.membership,
+      membership.id,
+      ...(membership.accountId ? [membership.accountId] : []),
+    ],
+  };
+}
+
+function clauseRole(clause: MailPredicate): Role | null {
+  if (clause.kind === "role") return clause.role;
+  if (clause.kind === "mailbox") return MAILBOX_ROLES[clause.mailbox] ?? null;
   return null;
 }
 
-function roleIndex(role: MessageMetadata["roles"][number]): ConversationIndex {
+const MAILBOX_ROLES: Partial<Record<WellKnownMailbox, Role>> = {
+  inbox: "inbox",
+  sent: "sent",
+  drafts: "draft",
+  trash: "trash",
+  spam: "spam",
+};
+
+type Role = MessageMetadata["roles"][number];
+
+function roleIndex(role: Role): ConversationIndex {
   return {
     source:
       "(SELECT account_id, conversation_id, latest_at_ms, unread, starred FROM effective_role_conversations WHERE role = ?)",
@@ -393,11 +512,12 @@ async function readConversationSummaries(
   if (page.length === 0) return [];
   const members = await tx.query(
     `SELECT account_id, conversation_id, message_id, subject, preview, from_address, to_json,
-            received_at_ms, unread, starred, label_ids_json, roles_json, pending_operation_ids_json
+            received_at_ms, unread, starred, has_attachments, label_ids_json, roles_json,
+            pending_operation_ids_json
      FROM (
        SELECT e.account_id, e.conversation_id, e.message_id, e.subject, e.preview, e.from_address,
-              e.to_json, e.received_at_ms, e.read AS unread, e.starred, e.label_ids_json, e.roles_json,
-              e.pending_operation_ids_json
+              e.to_json, e.received_at_ms, e.read AS unread, e.starred, e.has_attachments,
+              e.label_ids_json, e.roles_json, e.pending_operation_ids_json
        FROM effective_messages e
        WHERE ${page
          .map(() => "(e.account_id = ? AND e.conversation_id = ?)")
@@ -425,9 +545,10 @@ async function readConversationSummaries(
     const message = conversationMembers.at(-1);
     if (!message)
       throw new Error("Conversation query has no effective message");
-    // A draft must not rename the conversation, including after it moves to trash.
+    // Titled by its first message, as Gmail and Outlook do, so a "Re:" reply
+    // does not rename it. A draft must not either, even after it moves to trash.
     const subjectMessage =
-      [...conversationMembers].reverse().find((member) => {
+      conversationMembers.find((member) => {
         const roles = jsonStringArray(member.roles_json);
         return !roles.includes("draft") && !roles.includes("trash");
       }) ?? message;
@@ -446,6 +567,9 @@ async function readConversationSummaries(
       latestMessageAtMs: Number(row.latest),
       unread: Number(row.unread) === 1,
       starred: Number(row.starred) === 1,
+      hasAttachments: conversationMembers.some(
+        (member) => Number(member.has_attachments) === 1,
+      ),
       labelIds: uniqueStrings(
         conversationMembers.flatMap((member) =>
           jsonStringArray(member.label_ids_json),
