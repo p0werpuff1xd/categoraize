@@ -203,7 +203,7 @@ export function PriorityInbox() {
       </div>
       {blockedReason && (
         <p className="text-xs text-muted-foreground">
-          Classify and Re-score are unavailable: {blockedReason.toLowerCase()}.
+          Classify and Re-score are unavailable. {blockedReason}.
         </p>
       )}
 

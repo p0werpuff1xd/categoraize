@@ -457,7 +457,7 @@ export function TriageDetail({
           </div>
           {correctDisabledReason && targetCategoryId && (
             <p className="text-xs text-muted-foreground">
-              Can't correct right now: {correctDisabledReason.toLowerCase()}.
+              Can't correct right now. {correctDisabledReason}.
             </p>
           )}
 

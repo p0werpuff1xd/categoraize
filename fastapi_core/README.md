@@ -1,4 +1,4 @@
-# CategorAIze NLP service
+﻿# CategorAIze NLP service
 
 Stateless FastAPI service called by the web app (`apps/web`). The web app
 sends category data with every request and stores the results; the service
@@ -24,9 +24,9 @@ All endpoints except `/healthz` need the header `X-Internal-Key` matching
 rejected (fail closed).
 
 - `GET /healthz`: 503 while the model loads, 200 when ready.
-- `POST /api/v1/embed` `{texts}` → `{model, dimension, vectors}`
+- `POST /api/v1/embed` `{texts}` â†’ `{model, dimension, vectors}`
 - `POST /api/v1/classify`: see `ClassifyRequest` / `ClassifyResponse` in `app/schemas.py`.
-- `POST /api/v1/feedback` `{embedding, correct: {id, centroid}, incorrect?, alpha?, beta?}` → updated centroids.
+- `POST /api/v1/feedback` `{embedding, correct: {id, centroid}, incorrect?, alpha?, beta?}` â†’ updated centroids.
 
 Errors: 401 bad or missing key, 422 invalid payload or an impossible
 correction, 503 while the model loads.
@@ -34,8 +34,8 @@ correction, 503 while the model loads.
 ## Run on Windows (PowerShell)
 
 ```powershell
-. D:\categoraize\dev-env.ps1          # keeps pip and Hugging Face caches on D:
-cd D:\categoraize\categoraize\fastapi_core
+. E:\categoraize\dev-env.ps1          # keeps pip and Hugging Face caches on E:
+cd E:\categoraize\categoraize\fastapi_core
 py -3.12 -m venv .venv                # 3.11 also works
 .\.venv\Scripts\python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
@@ -73,3 +73,4 @@ some non-matching emails reach about 0.33. Borderline transactional emails
 still right, and one Rocchio correction moves the category over the
 threshold (covered in the tests). Richer category descriptions help more
 than lowering the threshold.
+
