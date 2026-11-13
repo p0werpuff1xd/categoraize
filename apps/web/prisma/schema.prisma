@@ -71,6 +71,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
 
+  categorizeConsents CategorizeUserConsent[]
+
   // additional fields
   completedOnboardingAt   DateTime? // questions about the user. e.g. their role
   signupIntent            SignupIntent? // which part of the product the user signed up for
@@ -3014,6 +3016,7 @@ model CategorizeCategory {
   isActive                Boolean                     @default(true)
 
   classifications CategorizeClassification[]
+  priorityLogs    CategorizePriorityOverrideLog[]
 
   @@unique([emailAccountId, name])
   @@index([emailAccountId])
@@ -3174,6 +3177,11 @@ model CategorizePriorityOverrideLog {
   sender           String
   computedPriority Int
   manualPriority   Int?
+  /// "Accurate / not accurate" rating; null for plain overrides and resets.
+  isAccurate       Boolean?
+
+  categoryId String?
+  category   CategorizeCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   classificationId String
   classification   CategorizeClassification @relation(fields: [classificationId], references: [id], onDelete: Cascade)
@@ -3182,6 +3190,24 @@ model CategorizePriorityOverrideLog {
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
 
   @@index([emailAccountId, sender, createdAt])
+  @@index([emailAccountId, categoryId, createdAt])
+}
+
+/// FR-1.8 consent record. A new row per acceptance keeps the history; the
+/// latest row without withdrawnAt is the active consent.
+model CategorizeUserConsent {
+  id                 String    @id @default(cuid())
+  createdAt          DateTime  @default(now())
+  termsVersion       String
+  privacyVersion     String
+  acceptedAt         DateTime
+  externalLlmEnabled Boolean   @default(false)
+  withdrawnAt        DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 /// Time-sensitive deadlines and action items detected by AI from emails.
