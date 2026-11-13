@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { withEmailAccount } from "@/utils/middleware";
 import prisma from "@/utils/prisma";
+import { getClassificationStats } from "@/utils/categoraize/classification-stats";
 
 export type CategoraizeClassificationsResponse = Awaited<
   ReturnType<typeof getData>
@@ -64,6 +65,7 @@ async function getData({
       deadlineAt: true,
       detectedLang: true,
       isReviewedByUser: true,
+      _count: { select: { feedbackEvents: true } },
       spans: {
         where: { dismissedAt: null },
         orderBy: [{ source: "asc" }, { start: "asc" }],
@@ -83,7 +85,7 @@ async function getData({
     },
   });
 
-  const [messages, contacts] = await Promise.all([
+  const [messages, contacts, stats] = await Promise.all([
     prisma.emailMessage.findMany({
       where: {
         emailAccountId,
@@ -100,6 +102,7 @@ async function getData({
       },
       select: { email: true, role: true, isVip: true },
     }),
+    getClassificationStats(emailAccountId),
   ]);
   const readByMessageId = new Map(
     messages.map((message) => [message.messageId, message.read]),
@@ -108,8 +111,9 @@ async function getData({
     contacts.map((contact) => [contact.email, contact]),
   );
 
-  const enriched = rows.map((row) => ({
+  const enriched = rows.map(({ _count, ...row }) => ({
     ...row,
+    corrected: _count.feedbackEvents > 0,
     priority: row.manualPriority ?? row.computedPriority,
     // Seeded demo mail has no Gmail message, so it counts as unread.
     read: readByMessageId.get(row.messageId) ?? false,
@@ -136,7 +140,14 @@ async function getData({
     )
     .slice(0, limit);
 
-  return { classifications, counts };
+  return {
+    classifications,
+    counts,
+    total: stats.total,
+    // Rows beyond the 500 most recent are not ranked or counted.
+    truncated: stats.total > rows.length,
+    latestAnalyzedAt: stats.latestAnalyzedAt,
+  };
 }
 
 function compareDeadlines(a: Date | null, b: Date | null) {

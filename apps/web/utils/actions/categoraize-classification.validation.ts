@@ -11,6 +11,11 @@ export const setCategoraizeManualPriority = z.object({
   priority: z.number().int().min(1).max(5).nullable(),
 });
 
+export const rateCategoraizePriority = z.object({
+  classificationId: z.string().min(1),
+  accurate: z.boolean(),
+});
+
 export const classifyRecentCategoraizeEmails = z.object({
   limit: z.number().int().min(1).max(100).default(25),
 });

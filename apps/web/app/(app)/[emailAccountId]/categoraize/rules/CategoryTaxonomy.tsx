@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { useAction } from "next-safe-action/hooks";
-import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, PlusIcon, TagsIcon, Trash2Icon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +31,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LoadingContent } from "@/components/LoadingContent";
+import {
+  ListSkeleton,
+  StateEmpty,
+  StateError,
+} from "@/components/CategoraizeStates";
 import { priorityLabel } from "@/components/CategoraizePriority";
 import { toastError, toastSuccess } from "@/components/Toast";
 import { useCategoraizeCategories } from "@/hooks/useCategoraize";
@@ -64,20 +78,38 @@ export function CategoryTaxonomy() {
             }}
           />
         )}
-        <LoadingContent loading={isLoading} error={error}>
-          {data?.categories.length === 0 && !adding && (
-            <p className="text-sm text-muted-foreground">
-              No labels yet. Add one, or run the seed script for demo data.
-            </p>
-          )}
-          {data?.categories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              onChange={() => mutate()}
-            />
-          ))}
-        </LoadingContent>
+        {isLoading ? (
+          <ListSkeleton rows={4} label="Loading labels" />
+        ) : error ? (
+          <StateError
+            title="Couldn't load your labels"
+            error={error}
+            onRetry={() => mutate()}
+          />
+        ) : (
+          <>
+            {data?.categories.length === 0 && !adding && (
+              <StateEmpty
+                title="No labels yet"
+                description="Add a label with a short description of the emails that belong in it. Every email is matched against these descriptions."
+                icon={<TagsIcon />}
+                action={
+                  <Button size="sm" onClick={() => setAdding(true)}>
+                    <PlusIcon className="mr-1 size-4" />
+                    Add label
+                  </Button>
+                }
+              />
+            )}
+            {data?.categories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                onChange={() => mutate()}
+              />
+            ))}
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -92,6 +124,7 @@ function CategoryCard({
 }) {
   const { emailAccountId } = useAccount();
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const update = useAction(
     updateCategoraizeCategoryAction.bind(null, emailAccountId),
@@ -147,19 +180,36 @@ function CategoryCard({
             size="icon"
             variant="ghost"
             aria-label={`Delete ${category.name}`}
-            disabled={remove.isExecuting}
-            onClick={() => {
-              if (
-                confirm(
-                  `Delete the label "${category.name}"? Emails in it become Uncategorized.`,
-                )
-              ) {
-                remove.execute({ categoryId: category.id });
-              }
-            }}
+            loading={remove.isExecuting}
+            onClick={() => setConfirmingDelete(true)}
           >
             <Trash2Icon className="size-4" />
           </Button>
+          <AlertDialog
+            open={confirmingDelete}
+            onOpenChange={setConfirmingDelete}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Delete the label "{category.name}"?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Its {category._count.classifications} emails become
+                  Uncategorized, and what it learned from your corrections is
+                  lost. This can't be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => remove.execute({ categoryId: category.id })}
+                >
+                  Delete label
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">

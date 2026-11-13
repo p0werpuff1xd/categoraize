@@ -17,21 +17,45 @@ export type CategoraizePriorityFactors = {
   vip_pin: number;
 };
 
-/** Text label and color together, never color alone. */
+const PENDING_STATES = {
+  "not-analyzed": "Not yet analyzed",
+  analyzing: "Analyzing…",
+  recalculating: "Recalculating…",
+  unavailable: "Priority unavailable",
+} as const;
+
+/** Text label and color together, never color alone, and never blank. */
 export function PriorityBadge({
   level,
   manual,
+  vipPinned,
+  state,
   className,
 }: {
-  level: number;
+  level?: number | null;
   manual?: boolean;
+  vipPinned?: boolean;
+  state?: keyof typeof PENDING_STATES;
   className?: string;
 }) {
+  if (state || !level) {
+    const text = PENDING_STATES[state ?? "not-analyzed"];
+    const busy = state === "analyzing" || state === "recalculating";
+    return (
+      <Badge
+        color="gray"
+        className={cn("whitespace-nowrap", busy && "animate-pulse", className)}
+      >
+        {busy && level ? `P${level} · ${text}` : text}
+      </Badge>
+    );
+  }
+
   const { label, color } = PRIORITY_LEVELS[level] ?? PRIORITY_LEVELS[3];
   return (
     <Badge color={color} className={cn("whitespace-nowrap", className)}>
       P{level} · {label}
-      {manual ? " · manual" : ""}
+      {manual ? " · manual" : vipPinned ? " · VIP" : ""}
     </Badge>
   );
 }
@@ -40,14 +64,18 @@ export function priorityLabel(level: number) {
   return PRIORITY_LEVELS[level]?.label ?? "";
 }
 
+export type DeadlineState = "validated" | "needs-review" | "none";
+
 export function PriorityFactorBreakdown({
   factors,
   level,
   computedLevel,
+  deadlineState,
 }: {
   factors: CategoraizePriorityFactors;
   level: number;
   computedLevel?: number;
+  deadlineState: DeadlineState;
 }) {
   const rows = [
     {
@@ -92,6 +120,40 @@ export function PriorityFactorBreakdown({
           <span className="font-mono">P{level}</span>
         </div>
       )}
+      <ul className="list-disc space-y-0.5 pl-4 pt-1 text-xs text-muted-foreground">
+        {deadlineState === "none" && (
+          <li>No validated deadline, so there is no deadline boost.</li>
+        )}
+        {deadlineState === "needs-review" && (
+          <li>
+            A date needs review. It counts toward priority only after you
+            confirm it as a deadline.
+          </li>
+        )}
+        <li>
+          Calendar is not connected, so there is no calendar boost. Missing
+          calendar data never lowers priority.
+        </li>
+      </ul>
     </div>
   );
+}
+
+/** Deadline wording for the breakdown, from the stored spans. */
+export function deadlineStateFromSpans(
+  spans: Array<{
+    label: string;
+    ambiguous: boolean;
+    isDeadline: boolean;
+    confirmed?: boolean;
+  }>,
+): DeadlineState {
+  const dates = spans.filter((span) => span.label === "DATE");
+  if (
+    dates.some((span) => span.confirmed || (span.isDeadline && !span.ambiguous))
+  ) {
+    return "validated";
+  }
+  if (dates.some((span) => span.ambiguous)) return "needs-review";
+  return "none";
 }

@@ -29,6 +29,7 @@ import {
   classifyRecentCategoraizeEmails,
   correctCategoraizeCategory,
   previewCategoraizeClassification,
+  rateCategoraizePriority,
   reclassifyStoredCategoraizeEmails,
   setCategoraizeManualPriority,
 } from "./categoraize-classification.validation";
@@ -159,7 +160,12 @@ export const setCategoraizeManualPriorityAction = actionClient
   .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
     const classification = await prisma.categorizeClassification.findFirst({
       where: { id: parsedInput.classificationId, emailAccountId },
-      select: { id: true, fromEmail: true, computedPriority: true },
+      select: {
+        id: true,
+        fromEmail: true,
+        computedPriority: true,
+        categoryId: true,
+      },
     });
     if (!classification) throw new SafeError("Email not found");
 
@@ -171,6 +177,7 @@ export const setCategoraizeManualPriorityAction = actionClient
       data: {
         emailAccountId,
         classificationId: classification.id,
+        categoryId: classification.categoryId,
         sender: classification.fromEmail ?? "",
         computedPriority: classification.computedPriority,
         manualPriority: parsedInput.priority,
@@ -178,6 +185,36 @@ export const setCategoraizeManualPriorityAction = actionClient
     });
 
     revalidateCategoraize(emailAccountId);
+  });
+
+/** "Accurate / not accurate" feedback on the shown priority; logged only, nothing changes automatically. */
+export const rateCategoraizePriorityAction = actionClient
+  .metadata({ name: "rateCategoraizePriority" })
+  .inputSchema(rateCategoraizePriority)
+  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+    const classification = await prisma.categorizeClassification.findFirst({
+      where: { id: parsedInput.classificationId, emailAccountId },
+      select: {
+        id: true,
+        fromEmail: true,
+        computedPriority: true,
+        manualPriority: true,
+        categoryId: true,
+      },
+    });
+    if (!classification) throw new SafeError("Email not found");
+
+    await prisma.categorizePriorityOverrideLog.create({
+      data: {
+        emailAccountId,
+        classificationId: classification.id,
+        categoryId: classification.categoryId,
+        sender: classification.fromEmail ?? "",
+        computedPriority: classification.computedPriority,
+        manualPriority: classification.manualPriority,
+        isAccurate: parsedInput.accurate,
+      },
+    });
   });
 
 /** Backfill: classify the most recent inbox messages through the service. */

@@ -5,6 +5,7 @@ import { env } from "@/env";
 
 const VECTOR_DIMENSION = 384;
 const REQUEST_TIMEOUT_MS = 20_000;
+const HEALTH_TIMEOUT_MS = 3000;
 
 const vectorSchema = z.array(z.number()).length(VECTOR_DIMENSION);
 
@@ -126,6 +127,31 @@ export function isCategoraizeEnabled(): boolean {
       env.CATEGORAIZE_SERVICE_URL &&
       env.CATEGORAIZE_INTERNAL_KEY,
   );
+}
+
+export type CategoraizeServiceStatus =
+  | "disabled"
+  | "ready"
+  | "loading"
+  | "unavailable";
+
+export async function getCategoraizeServiceStatus(): Promise<CategoraizeServiceStatus> {
+  if (!isCategoraizeEnabled()) return "disabled";
+  try {
+    const response = await fetch(`${env.CATEGORAIZE_SERVICE_URL}/healthz`, {
+      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+      cache: "no-store",
+    });
+    if (response.ok) return "ready";
+    const body = (await response.json().catch(() => null)) as {
+      status?: string;
+    } | null;
+    return response.status === 503 && body?.status === "loading"
+      ? "loading"
+      : "unavailable";
+  } catch {
+    return "unavailable";
+  }
 }
 
 export async function embedTexts(texts: string[]) {

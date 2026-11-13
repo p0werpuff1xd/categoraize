@@ -68,15 +68,22 @@ export function DeadlineStatus({
   ambiguous,
   confirmed,
   isDeadline,
+  resolvedAt,
 }: {
   ambiguous: boolean;
   confirmed?: boolean;
   isDeadline: boolean;
+  resolvedAt?: string | Date | null;
 }) {
+  const overdue =
+    (confirmed || (isDeadline && !ambiguous)) &&
+    resolvedAt &&
+    new Date(resolvedAt).getTime() < Date.now();
+  if (overdue) return <Badge color="red">Overdue</Badge>;
   if (confirmed) return <Badge color="green">Confirmed deadline</Badge>;
-  if (!isDeadline) return <Badge color="gray">Date, not a deadline</Badge>;
   if (ambiguous)
-    return <Badge color="yellow">Ambiguous: confirm to count</Badge>;
+    return <Badge color="yellow">Needs review: confirm to count</Badge>;
+  if (!isDeadline) return <Badge color="gray">Date, not a deadline</Badge>;
   return <Badge color="green">Deadline</Badge>;
 }
 

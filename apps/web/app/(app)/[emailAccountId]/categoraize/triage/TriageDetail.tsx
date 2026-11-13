@@ -10,9 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
 import {
   type CategoraizePriorityFactors,
+  PriorityBadge,
   PriorityFactorBreakdown,
+  deadlineStateFromSpans,
   priorityLabel,
 } from "@/components/CategoraizePriority";
 import {
@@ -26,6 +29,7 @@ import { useAccount } from "@/providers/EmailAccountProvider";
 import {
   acceptCategoraizeCategoryAction,
   correctCategoraizeCategoryAction,
+  rateCategoraizePriorityAction,
   setCategoraizeManualPriorityAction,
 } from "@/utils/actions/categoraize-classification";
 import { createCategoryFromSuggestionAction } from "@/utils/actions/categoraize";
@@ -39,17 +43,28 @@ import type { TriageEmail } from "./PriorityInbox";
 
 type Category = CategoraizeCategoriesResponse["categories"][number];
 
+/** Matches between the 0.35 threshold and this get a "Review" cue. */
+export const LOW_CONFIDENCE_SIMILARITY = 0.45;
+
 export function TriageDetail({
   email,
   categories,
+  serviceBlockedReason,
   onChange,
+  onOptimistic,
+  onRecalculating,
 }: {
   email: TriageEmail;
   categories: Category[];
+  serviceBlockedReason: string | null;
   onChange: () => void;
+  onOptimistic: (patch: Partial<TriageEmail>) => void;
+  onRecalculating: (busy: boolean) => void;
 }) {
   const { emailAccountId } = useAccount();
   const [targetCategoryId, setTargetCategoryId] = useState<string>("");
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [rated, setRated] = useState<boolean | null>(null);
 
   const callbacks = (success: string) => ({
     onSuccess: () => {
@@ -62,27 +77,84 @@ export function TriageDetail({
       error: Parameters<typeof getActionErrorMessage>[0];
     }) => toastError({ description: getActionErrorMessage(error) }),
   });
+  // Optimistic changes are undone by refetching the saved state.
+  const rollbackOnError = ({
+    error,
+  }: {
+    error: Parameters<typeof getActionErrorMessage>[0];
+  }) => {
+    onChange();
+    toastError({
+      title: "Couldn't save, so the change was undone",
+      description: getActionErrorMessage(error),
+    });
+  };
 
   const accept = useAction(
     acceptCategoraizeCategoryAction.bind(null, emailAccountId),
-    callbacks("Label accepted"),
-  );
-  const correctCallbacks = callbacks(
-    "Label corrected. The labels' centroids were updated.",
+    {
+      ...callbacks("Label accepted"),
+      onExecute: () => onOptimistic({ isReviewedByUser: true }),
+      onError: rollbackOnError,
+    },
   );
   const correct = useAction(
     correctCategoraizeCategoryAction.bind(null, emailAccountId),
     {
-      ...correctCallbacks,
+      onExecute: ({ input }) => {
+        onRecalculating(true);
+        onOptimistic({
+          categoryId: input.categoryId,
+          categoryName:
+            categories.find(({ id }) => id === input.categoryId)?.name ??
+            email.categoryName,
+          isReviewedByUser: true,
+          corrected: true,
+        });
+      },
       onSuccess: () => {
         setTargetCategoryId("");
-        correctCallbacks.onSuccess();
+        toastSuccess({
+          description: "Label corrected. The labels' centroids were updated.",
+        });
+        onChange();
       },
+      onError: rollbackOnError,
+      onSettled: () => onRecalculating(false),
     },
   );
   const override = useAction(
     setCategoraizeManualPriorityAction.bind(null, emailAccountId),
-    callbacks("Priority updated"),
+    {
+      onExecute: ({ input }) =>
+        onOptimistic({
+          manualPriority: input.priority,
+          priority: input.priority ?? email.computedPriority,
+        }),
+      onSuccess: () => {
+        setOverrideOpen(false);
+        toastSuccess({ description: "Priority updated" });
+        onChange();
+      },
+      onError: rollbackOnError,
+    },
+  );
+  const rate = useAction(
+    rateCategoraizePriorityAction.bind(null, emailAccountId),
+    {
+      onExecute: ({ input }) => {
+        setRated(input.accurate);
+        if (!input.accurate) setOverrideOpen(true);
+      },
+      onSuccess: () => toastSuccess({ description: "Thanks, rating saved" }),
+      onError: ({ error }) => {
+        setRated(null);
+        toastError({
+          title: "Couldn't save the rating",
+          description: getActionErrorMessage(error),
+        });
+      },
+    },
   );
   const createFromSuggestion = useAction(
     createCategoryFromSuggestionAction.bind(null, emailAccountId),
@@ -108,6 +180,11 @@ export function TriageDetail({
   const nameById = new Map(categories.map(({ id, name }) => [id, name]));
   const factors = email.priorityFactors as CategoraizePriorityFactors | null;
   const dates = email.spans.filter((span) => span.label === "DATE");
+  const correctDisabledReason = serviceBlockedReason
+    ? serviceBlockedReason
+    : targetCategoryId
+      ? null
+      : "Pick a label first";
 
   return (
     <div className="grid gap-6 border-t bg-muted/20 px-4 py-4 lg:grid-cols-2">
@@ -151,6 +228,7 @@ export function TriageDetail({
                     ambiguous={span.ambiguous}
                     confirmed={span.confirmed}
                     isDeadline={span.isDeadline}
+                    resolvedAt={span.resolvedAt}
                   />
                   {!span.confirmed && span.resolvedAt && (
                     <Button
@@ -181,20 +259,72 @@ export function TriageDetail({
 
       <div className="space-y-5">
         <section className="space-y-2">
-          <h3 className="text-sm font-medium">Why this priority</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-medium">Why this priority</h3>
+            <div
+              className="flex items-center gap-1.5 text-xs"
+              role="group"
+              aria-label="Rate this priority"
+            >
+              <PriorityBadge
+                level={email.priority}
+                manual={email.manualPriority !== null}
+              />
+              {rated === null ? (
+                <>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    disabled={rate.isExecuting}
+                    onClick={() =>
+                      rate.execute({
+                        classificationId: email.id,
+                        accurate: true,
+                      })
+                    }
+                  >
+                    <ThumbsUpIcon className="mr-1 size-3" />
+                    Accurate
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    disabled={rate.isExecuting}
+                    onClick={() =>
+                      rate.execute({
+                        classificationId: email.id,
+                        accurate: false,
+                      })
+                    }
+                  >
+                    <ThumbsDownIcon className="mr-1 size-3" />
+                    Not accurate
+                  </Button>
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Rated {rated ? "accurate" : "not accurate"}
+                </span>
+              )}
+            </div>
+          </div>
           {factors ? (
             <PriorityFactorBreakdown
               factors={factors}
               level={email.priority}
               computedLevel={email.computedPriority}
+              deadlineState={deadlineStateFromSpans(email.spans)}
             />
           ) : (
             <p className="text-sm text-muted-foreground">
-              No breakdown stored.
+              No breakdown stored for this email. Re-score it to compute one.
             </p>
           )}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Select
+              open={overrideOpen}
+              onOpenChange={setOverrideOpen}
+              disabled={override.isExecuting}
               value={email.manualPriority ? String(email.manualPriority) : ""}
               onValueChange={(value) =>
                 override.execute({
@@ -242,12 +372,24 @@ export function TriageDetail({
               <>
                 <b>{email.categoryName}</b> ({email.confidence.toFixed(2)}{" "}
                 similarity)
-                {email.isReviewedByUser ? " · reviewed" : ""}
+                {email.corrected
+                  ? " · corrected by you"
+                  : email.isReviewedByUser
+                    ? " · confirmed"
+                    : ""}
               </>
             ) : (
               "Uncategorized: no label passed the similarity threshold."
             )}
           </p>
+          {email.categoryName &&
+            !email.isReviewedByUser &&
+            email.confidence < LOW_CONFIDENCE_SIMILARITY && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Low confidence: this barely passed the threshold. Accept it or
+                move it to the right label.
+              </p>
+            )}
 
           {!email.categoryName && suggestion && (
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-2 text-sm">
@@ -300,7 +442,8 @@ export function TriageDetail({
             </Select>
             <Button
               size="sm"
-              disabled={!targetCategoryId}
+              disabled={Boolean(correctDisabledReason)}
+              title={correctDisabledReason ?? undefined}
               loading={correct.isExecuting}
               onClick={() =>
                 correct.execute({
@@ -312,6 +455,11 @@ export function TriageDetail({
               Correct label
             </Button>
           </div>
+          {correctDisabledReason && targetCategoryId && (
+            <p className="text-xs text-muted-foreground">
+              Can't correct right now: {correctDisabledReason.toLowerCase()}.
+            </p>
+          )}
 
           {ranked.length > 0 && (
             <details className="text-sm">
