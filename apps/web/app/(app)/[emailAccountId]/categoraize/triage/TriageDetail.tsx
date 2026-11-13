@@ -67,9 +67,18 @@ export function TriageDetail({
     acceptCategoraizeCategoryAction.bind(null, emailAccountId),
     callbacks("Label accepted"),
   );
+  const correctCallbacks = callbacks(
+    "Label corrected. The labels' centroids were updated.",
+  );
   const correct = useAction(
     correctCategoraizeCategoryAction.bind(null, emailAccountId),
-    callbacks("Label corrected. The labels' centroids were updated."),
+    {
+      ...correctCallbacks,
+      onSuccess: () => {
+        setTargetCategoryId("");
+        correctCallbacks.onSuccess();
+      },
+    },
   );
   const override = useAction(
     setCategoraizeManualPriorityAction.bind(null, emailAccountId),

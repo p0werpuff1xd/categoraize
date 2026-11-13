@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadingContent } from "@/components/LoadingContent";
-import { PriorityBadge, priorityLabel } from "@/components/CategoraizePriority";
+import { priorityLabel } from "@/components/CategoraizePriority";
 import { toastError, toastSuccess } from "@/components/Toast";
 import { useCategoraizeCategories } from "@/hooks/useCategoraize";
 import { useAccount } from "@/providers/EmailAccountProvider";
@@ -190,7 +190,6 @@ function CategoryCard({
             </SelectContent>
           </Select>
         </div>
-        <PriorityBadge level={category.basePriority} />
         <span>
           {category._count.classifications} emails ·{" "}
           {category.centroidVersion === 0
