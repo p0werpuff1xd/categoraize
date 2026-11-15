@@ -133,6 +133,61 @@ class ClassifyResponse(BaseModel):
     timings_ms: dict[str, float]
 
 
+class MatchCandidate(StrictModel):
+    id: CategoryId
+    text: str = Field(default="", max_length=2_000)
+    centroid: Vector | None = None
+
+    @field_validator("text")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        return value.strip()
+
+
+class MatchRequest(StrictModel):
+    """Zero-shot match of one email (or sender) against free-text descriptions.
+
+    Used for rule matching, cold-email detection and sender categories. A
+    candidate with a learned centroid uses it; otherwise its text is embedded.
+    """
+
+    subject: str = Field(default="", max_length=2_000)
+    body: str = Field(default="", max_length=50_000)
+    candidates: list[MatchCandidate] = Field(min_length=1, max_length=200)
+    threshold: float = Field(default=0.35, ge=-1.0, le=1.0)
+
+    @field_validator("candidates")
+    @classmethod
+    def _candidates_have_content(cls, value: list[MatchCandidate]) -> list[MatchCandidate]:
+        for candidate in value:
+            if not candidate.text and candidate.centroid is None:
+                raise ValueError(f"candidate {candidate.id} needs text or a centroid")
+        if len({candidate.id for candidate in value}) != len(value):
+            raise ValueError("candidate ids must be unique")
+        return value
+
+
+class MatchResponse(BaseModel):
+    ranked: list[CategoryMatch]
+    best: CategoryMatch | None
+    threshold: float
+    embedding: list[float]
+    # The TASK/DATE tagger found a request in the subject or body.
+    has_task: bool
+    timings_ms: dict[str, float]
+
+
+class SummarizeRequest(StrictModel):
+    subject: str = Field(default="", max_length=2_000)
+    body: str = Field(max_length=50_000)
+    max_sentences: int = Field(default=2, ge=1, le=5)
+
+
+class SummarizeResponse(BaseModel):
+    sentences: list[str]
+    method: Literal["sbert_centroid"] = "sbert_centroid"
+
+
 class CentroidInput(StrictModel):
     id: CategoryId
     centroid: Vector

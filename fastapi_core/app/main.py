@@ -22,6 +22,7 @@ from .ml.priority_rules import compute_priority
 from .nlp.extractor import resolve_date
 from .nlp.language import detect_language
 from .nlp.regex_tagger import has_deadline_marker_before
+from .nlp.summarizer import split_sentences, summarize
 from .schemas import (
     CategoryInput,
     CategoryMatch,
@@ -32,10 +33,14 @@ from .schemas import (
     EmbedResponse,
     FeedbackRequest,
     FeedbackResponse,
+    MatchRequest,
+    MatchResponse,
     Priority,
     PriorityFactors,
     Span,
     SuggestedLabel,
+    SummarizeRequest,
+    SummarizeResponse,
 )
 from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, model_manager
 from .services.tagger import tagger_manager
@@ -162,6 +167,53 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         priority=Priority(level=priority.level, factors=PriorityFactors(**priority.factors), deadline=priority.deadline),
         embedding=email_vector,
         timings_ms=timings,
+    )
+
+
+@app.post(
+    "/api/v1/match",
+    response_model=MatchResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def match(request: MatchRequest) -> MatchResponse:
+    started = time.perf_counter()
+    query_vector = model_manager.embed_email(request.subject, request.body)
+    needs_text = [candidate for candidate in request.candidates if candidate.centroid is None]
+    text_vectors = dict(
+        zip((candidate.id for candidate in needs_text), model_manager.embed([c.text for c in needs_text]))
+    )
+    ranked = rank_categories(
+        query_vector,
+        [(candidate.id, candidate.centroid or text_vectors[candidate.id]) for candidate in request.candidates],
+    )
+    best = choose_category(ranked, request.threshold)
+    _name, tag, _version = tagger_manager.active()
+    has_task = any(span.label == "TASK" for text in (request.subject, request.body) for span in tag(text))
+    return MatchResponse(
+        ranked=[CategoryMatch(id=item.id, similarity=item.similarity) for item in ranked],
+        best=CategoryMatch(id=best.id, similarity=best.similarity) if best else None,
+        threshold=request.threshold,
+        embedding=query_vector,
+        has_task=has_task,
+        timings_ms={"total": _elapsed_ms(started)},
+    )
+
+
+@app.post(
+    "/api/v1/summarize",
+    response_model=SummarizeResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def summarize_email(request: SummarizeRequest) -> SummarizeResponse:
+    _name, tag, _version = tagger_manager.active()
+    sentences = split_sentences(request.body) or split_sentences(request.subject)
+    return SummarizeResponse(
+        sentences=summarize(
+            sentences,
+            embed=model_manager.embed,
+            span_labels=lambda sentence: {span.label for span in tag(sentence)},
+            limit=request.max_sentences,
+        )
     )
 
 
