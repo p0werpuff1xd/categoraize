@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services.embeddings import model_manager
+from app.services.tagger import tagger_manager
 
 AUTH = {"X-Internal-Key": "test-internal-key"}
 RECEIVED_AT = "2026-11-09T09:00:00+08:00"  # a Monday morning in Manila
@@ -47,6 +48,20 @@ def loaded_model():
 def client(loaded_model):
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def fresh_tagger(monkeypatch):
+    """Reload the span tagger after env changes made through the returned monkeypatch."""
+    tagger_manager.reset()
+    yield monkeypatch
+    tagger_manager.reset()
+
+
+@pytest.fixture
+def regex_tagger(fresh_tagger):
+    fresh_tagger.setenv("CATEGORAIZE_TAGGER", "regex")
+    return fresh_tagger
 
 
 @pytest.fixture

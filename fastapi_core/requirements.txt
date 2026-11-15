@@ -8,3 +8,4 @@ tzdata>=2024.1
 sentence-transformers>=3.0,<6.0
 langdetect>=1.0,<2.0
 dateparser>=1.2,<2.0
+pytorch-crf==0.7.2

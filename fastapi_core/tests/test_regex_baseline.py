@@ -63,7 +63,7 @@ def test_resolve_date(phrase, expected, ambiguous):
     assert resolved.ambiguous is ambiguous
 
 
-def test_scenario3_taglish_bukas_through_api(client):
+def test_scenario3_taglish_bukas_through_api(client, regex_tagger):
     payload = classify_payload(subject="Report", body="Hi team, paki-send ang final report bukas. Salamat!")
     result = client.post("/api/v1/classify", json=payload, headers=AUTH).json()
     tasks = [span for span in result["spans"] if span["label"] == "TASK"]

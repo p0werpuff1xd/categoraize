@@ -21,7 +21,7 @@ from .algorithms.label_library import LABEL_TEMPLATES
 from .ml.priority_rules import compute_priority
 from .nlp.extractor import resolve_date
 from .nlp.language import detect_language
-from .nlp.regex_tagger import has_deadline_marker_before, tag
+from .nlp.regex_tagger import has_deadline_marker_before
 from .schemas import (
     CategoryInput,
     CategoryMatch,
@@ -38,14 +38,16 @@ from .schemas import (
     SuggestedLabel,
 )
 from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, model_manager
+from .services.tagger import tagger_manager
 
-SERVICE_VERSION = "0.2.0"
+SERVICE_VERSION = "0.3.0"
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if os.getenv("CATEGORAIZE_SKIP_MODEL_LOAD") != "1":
         model_manager.start_background_load()
+        tagger_manager.active()
     yield
 
 
@@ -78,6 +80,7 @@ def healthz() -> JSONResponse:
         "version": SERVICE_VERSION,
         "model": MODEL_NAME,
         "dimension": VECTOR_DIMENSION,
+        "tagger": tagger_manager.describe(),
     }
     return JSONResponse(status_code=200 if model_manager.ready else 503, content=body)
 
@@ -209,11 +212,14 @@ def _suggest_label(email_vector: list[float], request: ClassifyRequest) -> Sugge
 def _extract_spans(request: ClassifyRequest) -> list[Span]:
     spans: list[Span] = []
     received_day = request.received_at.astimezone(ZoneInfo(request.timezone)).date()
+    tagger_name, tag, _version = tagger_manager.active()
     for source, text in (("subject", request.subject), ("body", request.body)):
         raw_spans = tag(text)
         has_task = any(span.label == "TASK" for span in raw_spans)
         for raw in raw_spans:
-            span = Span(label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end)
+            span = Span(
+                label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end, tagger=tagger_name
+            )
             if raw.label == "DATE":
                 resolved = resolve_date(raw.text, received_at=request.received_at, timezone=request.timezone)
                 span.resolved = resolved.value
