@@ -21,7 +21,16 @@ from app.algorithms.sequence_tagger import SequenceTagger, TaggerConfig, save_mo
 
 from .data import DATA_DIR, Example, load_markup_file
 from .evaluation import evaluate, format_report
-from .registry import MODELS_DIR, PROVISIONAL_TEST, current_version, load_team_examples, load_test_set, next_version, set_current
+from .registry import (
+    MODELS_DIR,
+    PROVISIONAL_TEST,
+    current_version,
+    load_llm_examples,
+    load_team_examples,
+    load_test_set,
+    next_version,
+    set_current,
+)
 from .retrain import regex_predictor
 from .synthetic import generate
 from .train_lib import predictor, train_tagger
@@ -29,11 +38,14 @@ from app.nlp.tokens import parse_markup
 
 HOLDOUT = DATA_DIR / "test" / "holdout_claude.md"
 
+# The first search (16 settings) chose 5,000 / 128 / 0.5 / 12; this one asks
+# how much the LLM-written emails help, at the two best model sizes.
 GRID = {
-    "train_size": [2000, 5000],
+    "train_size": [5000],
     "hidden": [128, 256],
-    "dropout": [0.3, 0.5],
-    "epochs": [12, 20],
+    "dropout": [0.5],
+    "epochs": [12],
+    "llm_copies": [0, 1, 2],
 }
 
 
@@ -46,30 +58,41 @@ def entity_f1(examples: list[Example], tagger: SequenceTagger) -> float:
 
 
 def main() -> None:
-    dev_real = load_markup_file(PROVISIONAL_TEST)
+    llm_all = load_llm_examples()
+    # Every 10th LLM email is a dev example for choosing settings, never trained on.
+    llm_train = [example for index, example in enumerate(llm_all) if index % 10]
+    llm_dev = [example for index, example in enumerate(llm_all) if not index % 10]
+    dev_real = load_markup_file(PROVISIONAL_TEST) + llm_dev
     team = load_team_examples()
     synthetic_dev = as_examples(generate(300, 99))
     data_cache: dict[int, list[Example]] = {}
     results = []
+    print(f"LLM emails: {len(llm_train)} train, {len(llm_dev)} dev, {len(load_llm_examples(holdout=True))} holdout")
 
-    for train_size, hidden, dropout, epochs in itertools.product(*GRID.values()):
+    for train_size, hidden, dropout, epochs, llm_copies in itertools.product(*GRID.values()):
         if train_size not in data_cache:
             data_cache[train_size] = as_examples(generate(train_size, 13))
         config = replace(TaggerConfig(), hidden=hidden, dropout=dropout)
         started = time.perf_counter()
         tagger, history = train_tagger(
-            data_cache[train_size] + team, synthetic_dev, config=config, epochs=epochs, log=lambda _: None
+            data_cache[train_size] + team + llm_train * llm_copies,
+            synthetic_dev, config=config, epochs=epochs, log=lambda _: None,
         )
         score = (entity_f1(dev_real, tagger), entity_f1(synthetic_dev, tagger))
         results.append({"train_size": train_size, "hidden": hidden, "dropout": dropout, "epochs": epochs,
-                        "dev_f1": score[0], "synthetic_dev_f1": score[1], "tagger": tagger, "history": history})
-        print(f"size {train_size:>5} hidden {hidden:>3} dropout {dropout} epochs {epochs:>2}: "
+                        "llm_copies": llm_copies, "dev_f1": score[0], "synthetic_dev_f1": score[1],
+                        "tagger": tagger, "history": history})
+        print(f"size {train_size:>5} hidden {hidden:>3} dropout {dropout} epochs {epochs:>2} llm x{llm_copies}: "
               f"dev F1 {score[0]:.4f}  synthetic dev {score[1]:.4f}  ({time.perf_counter() - started:.0f}s)", flush=True)
 
     best = max(results, key=lambda r: (r["dev_f1"], r["synthetic_dev_f1"], -r["train_size"], -r["hidden"]))
     tagger = best["tagger"]
     print(f"\nBest on dev: size {best['train_size']} hidden {best['hidden']} dropout {best['dropout']} "
-          f"epochs {best['epochs']} (dev F1 {best['dev_f1']:.4f})")
+          f"epochs {best['epochs']} llm x{best['llm_copies']} (dev F1 {best['dev_f1']:.4f})")
+    llm_holdout = load_llm_examples(holdout=True)
+    if llm_holdout:
+        print(format_report("Chosen model on the LLM holdout (scored once)", evaluate(llm_holdout, predictor(tagger))))
+        print(format_report("Regex baseline on the LLM holdout", evaluate(llm_holdout, regex_predictor)))
 
     test, test_name = load_test_set()
     new_test = evaluate(test, predictor(tagger))
