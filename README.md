@@ -21,7 +21,9 @@ Drafted replies stay on an external LLM (OpenRouter). They run only after the
 user turns on external AI processing in Settings; it is **off by default**.
 When the local model is unsure about a rule match or a Reply Zero status, the
 app asks the external LLM only with that consent; otherwise it keeps the local
-answer.
+answer. The assistant chat (in the app and through Telegram) is a
+separate feature the user opens on purpose; it always uses the external LLM
+and is not gated by this setting.
 
 ## Screenshots
 
