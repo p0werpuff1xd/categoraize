@@ -2,8 +2,9 @@ import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { CategorizeContactRole } from "@/generated/prisma/enums";
-import type { Logger } from "@/utils/logger";
+import { createScopedLogger, type Logger } from "@/utils/logger";
 import prisma from "@/utils/prisma";
+import { getCalendarBusyForPriority } from "@/utils/categoraize/calendar-busy";
 import {
   type CategoraizeClassifyRequest,
   type CategoraizeContactRoleLabel,
@@ -304,8 +305,12 @@ async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
     threshold: categories.length
       ? Math.min(...categories.map((category) => category.threshold))
       : undefined,
-    // Calendar busy periods arrive in Phase 6; until then no calendar boost is applied.
-    calendar_busy: null,
+    // Free/busy from connected calendars; null (no boost) when none is connected.
+    calendar_busy: await getCalendarBusyForPriority({
+      emailAccountId,
+      timezone: emailAccount?.timezone || "UTC",
+      logger: createScopedLogger("categoraize/calendar"),
+    }),
   } satisfies Partial<CategoraizeClassifyRequest>;
 
   return { categories, request };
