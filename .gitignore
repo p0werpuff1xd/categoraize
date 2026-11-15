@@ -129,3 +129,7 @@ _apalache-out/
 /apps/web/locales/messages.pot
 # SWC plugin cache (Lingui macros)
 /apps/web/.swc/
+
+# CategorAIze tagger: generated synthetic data is rebuilt by training.generate_synthetic
+fastapi_core/data/synthetic/
+
