@@ -78,20 +78,25 @@ LANG_NAMES = {
 }
 
 
-def batch_language(number: int) -> str:
-    """Rotate one language per request to hold the 40/30/30 mix."""
-    cycle = ["taglish", "tl", "en", "taglish", "tl", "en", "taglish", "tl", "en", "taglish"]
+DEFAULT_CYCLE = ["taglish", "tl", "en", "taglish", "tl", "en", "taglish", "tl", "en", "taglish"]
+
+
+def batch_language(number: int, cycle: list[str] | None = None) -> str:
+    """Rotate one language per request (default: the 40/30/30 mix)."""
+    cycle = cycle or DEFAULT_CYCLE
     return cycle[(number - 1) % len(cycle)]
 
 
-def tagger_prompt(rng: random.Random, count: int, lang: str) -> tuple[str, list[str]]:
+def tagger_prompt(rng: random.Random, count: int, lang: str, request_share: float = 0.5) -> tuple[str, list[str]]:
     domains = rng.sample(DOMAINS, 6)
+    requests = round(request_share * 100)
     return f"""Write {count} different short emails (1 to 5 sentences each) that people in the Philippines might send.
 Write ALL of them in {LANG_NAMES[lang]}; set "lang" to "{lang}".
 Topics: mostly {', '.join(domains)}; vary senders, tone (formal, casual, texting style, lowercase), length and wording.
-Kinds, mixed: about half contain a request (some with a deadline, some without), some contain only dates or
-news with no request, some contain "fake requests" (please find attached, please note, please welcome),
-some are subject-line-like fragments. Use many different verbs, date expressions and sentence shapes.
+Kinds, mixed: about {requests}% contain a request (some with a deadline, some without; vary how the request is
+phrased: questions, polite requests, direct orders, indirect asks like "it would help if you could..."), the rest
+contain only dates or news with no request, "fake requests" (please find attached, please note, please welcome),
+or subject-line-like fragments. Use many different verbs, date expressions and sentence shapes.
 Invent all names; no real people or companies' private data.
 
 {LABELING_RULES}
@@ -237,6 +242,8 @@ def main() -> None:
     parser.add_argument("--per-request", type=int, default=40)
     parser.add_argument("--seed", type=int, default=int(time.time()))
     parser.add_argument("--offset", type=int, default=0, help="language rotation offset (continue a cycle)")
+    parser.add_argument("--languages", help="comma-separated language rotation for tagger emails, e.g. tl,tl,en")
+    parser.add_argument("--request-share", type=float, default=0.5, help="share of tagger emails with a request")
     args = parser.parse_args()
 
     key = os.environ.get("OPENROUTER_API_KEY")
@@ -256,7 +263,10 @@ def main() -> None:
     kept = rejected = 0
     for number in range(1, args.requests + 1):
         if args.task == "tagger":
-            prompt, _ = tagger_prompt(rng, args.per_request, batch_language(number + args.offset))
+            cycle = args.languages.split(",") if args.languages else None
+            prompt, _ = tagger_prompt(
+                rng, args.per_request, batch_language(number + args.offset, cycle), args.request_share
+            )
         elif args.task == "rules":
             prompt = rules_prompt(rng, args.per_request)
         else:
