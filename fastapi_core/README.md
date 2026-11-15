@@ -32,6 +32,12 @@ rejected (fail closed).
   an email (or a sender) against free-text descriptions. The web app uses it for
   rule matching, cold-email detection and sender categories. `has_task` says
   whether the TASK/DATE tagger found a request.
+- `POST /api/v1/choose-rule` `{subject, body, rules: [{id, name, instructions, reply_needed, system_type?}], allow_multiple}` →
+  `{ranked, matched, confident, reasons, has_request, params}`. Rule matching with a
+  confidence verdict (local first; the web app escalates unsure emails to the
+  external LLM only with consent). Settings: `app/data/matching_params.json`.
+- `POST /api/v1/thread-status` `{messages: [{from_user, subject, body, automated}]}` →
+  `{status, confident, reason, signals}`. Reply Zero status from tagger signals.
 - `POST /api/v1/summarize` `{subject?, body, max_sentences?}` → `{sentences}`.
   Extractive: up to N original sentences, ranked by similarity to the email's
   Sentence-BERT centroid, with a small boost for sentences with a request or a date.
@@ -113,7 +119,33 @@ python -m training.evaluate --version v3 --file data/test/holdout_claude.md
 | v1 | 0.988 | 0.641 | 0.518 |
 | v2 | 0.969 | 0.939 | 0.792 |
 | v3 | 0.993 | 0.940 | 0.775 |
-| v4 (current) | n/a | 0.981 | 0.765 |
+| v4 | n/a | 0.981 | 0.765 |
+| v5 (current) | 1.000 | 0.981 | **0.828** |
+
+v5 comes from `python -m training.tune_tagger`, a grid search over 16 settings
+(training size 2,000/5,000, hidden 128/256, dropout 0.3/0.5, 12/20 epochs). The
+best on the provisional set was 5,000 emails, hidden 128, dropout 0.5. It also
+added "please welcome…" style non-request sentences. On the held-out set it is
+the first version above the regex baseline in every language (Filipino 0.788 vs
+0.759).
+
+## Rule matching and Reply Zero (cascade)
+
+`python -m training.eval_matching --test` tunes rule matching on the dev half
+of `data/matching` and scores the test half once. These are invented emails
+against the default Inbox Zero rules:
+
+| | Dev (tuned on) | Test (scored once) |
+| --- | --- | --- |
+| Rule matching, local only | 0.729 | 0.562 |
+| Decided locally (confident) | 75%, accuracy 0.861 | 62%, accuracy 0.700 |
+| If the external AI got every unsure email right | 0.896 | 0.812 |
+| Reply Zero status | 0.958 | 0.917 |
+
+The dev-to-test drop shows the tuned rule settings fit the 48 dev emails better
+than new ones. That is why unsure emails escalate. Reply Zero holds up. Both
+sets were written by the same author as the rule descriptions, so treat them as
+optimistic.
 
 v4 adds subject lines to the synthetic data: v3 tagged words in plain
 subjects ("Your receipt from Grab") as requests. The held-out score is the

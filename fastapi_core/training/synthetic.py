@@ -128,7 +128,15 @@ INFO_TL = ["Sana okay lang kayo.", "Na-post na po ang results.", "Ang galing ng 
            "May bagong memo galing sa admin.", "Sorry sa late reply."]
 DECOYS_EN = ["Please find attached the {doc}.", "Kindly be advised that the office follows a new schedule.",
              "Please disregard my previous email.", "Please note that the portal is slow today.",
-             "Thank you for submitting your report.", "Can you believe how fast this year went?"]
+             "Thank you for submitting your report.", "Can you believe how fast this year went?",
+             "Please welcome Carlo, who joins the design team today.",
+             "Please join me in congratulating Bea on her promotion.",
+             "Please be informed that the elevator is under repair.", "Kindly note the new office hours.",
+             "Feel free to reach out anytime.", "Hope you enjoy the long weekend.",
+             "We are happy to announce our new branch in Cebu."]
+DECOYS_TL = ["Ikinagagalak naming ipakilala si Bea, ang bago nating kasama.", "Binabati namin si Carlo sa kanyang promosyon.",
+             "Ipinababatid po na sira ang elevator.", "Malugod naming tinatanggap ang mga bagong miyembro.",
+             "Welcome sa team, Paolo!", "Congrats sa lahat ng pumasa!"]
 # Plain news with verbs, numbers and "sa"/"ng" phrases: no TASK, sometimes a DATE.
 NEWS_EN = ["Your order #{n} has shipped.", "Attendance is required.", "The class in room {n} is cancelled.",
            "We plan to hold the event {date}.", "Reminder: the assembly is {date}.", "Chapter {n} is due {date}.",
@@ -267,8 +275,8 @@ def other_sentence(rng: random.Random, language: str) -> str:
     roll = rng.random()
     if roll < 0.3:
         return rng.choice(INFO_TL if tl_like else INFO_EN)
-    if roll < 0.55 and not tl_like:
-        return rng.choice(DECOYS_EN).format(doc=rng.choice(DOCS))
+    if roll < 0.55:
+        return rng.choice(DECOYS_TL if tl_like else DECOYS_EN).format(doc=rng.choice(DOCS))
     if roll < 0.8:
         past = rng.choice(PAST_DATES_TL if tl_like else PAST_DATES_EN)
         options = (
