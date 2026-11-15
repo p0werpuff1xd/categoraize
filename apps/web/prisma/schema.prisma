@@ -288,6 +288,8 @@ model EmailAccount {
   categorizeContacts        CategorizeContact[]
   categorizeFeedbackEvents  CategorizeFeedbackEvent[]
   categorizePriorityOverrides CategorizePriorityOverrideLog[]
+  categorizeSenderCentroids   CategorizeSenderCategoryCentroid[]
+  categorizeSenderEmbeddings  CategorizeSenderEmbedding[]
 
   @@index([userId])
   @@index([lastSummaryEmailAt])
@@ -1146,6 +1148,8 @@ model Category {
 
   emailSenders Newsletter[]
   rules        Rule[]
+
+  categorizeCentroid CategorizeSenderCategoryCentroid?
 
   @@unique([name, emailAccountId])
   @@index([emailAccountId])
@@ -3191,6 +3195,39 @@ model CategorizePriorityOverrideLog {
 
   @@index([emailAccountId, sender, createdAt])
   @@index([emailAccountId, categoryId, createdAt])
+}
+
+/// Learned Rocchio centroid for an original (sender) smart category. Kept beside
+/// Category so the upstream table is untouched; starts as the description embedding.
+model CategorizeSenderCategoryCentroid {
+  id              String                      @id @default(cuid())
+  updatedAt       DateTime                    @updatedAt
+  centroid        Unsupported("vector(384)")?
+  centroidVersion Int                         @default(0)
+
+  categoryId String   @unique
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@index([emailAccountId])
+}
+
+/// A sender's embedding (address + recent subjects/snippets) from the last
+/// categorization, so a manual recategorization can teach the centroids.
+model CategorizeSenderEmbedding {
+  id                String                      @id @default(cuid())
+  updatedAt         DateTime                    @updatedAt
+  sender            String
+  embedding         Unsupported("vector(384)")?
+  /// Category Rocchio last learned for this sender; blocks repeating the same correction.
+  learnedCategoryId String?
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([emailAccountId, sender])
 }
 
 /// FR-1.8 consent record. A new row per acceptance keeps the history; the
