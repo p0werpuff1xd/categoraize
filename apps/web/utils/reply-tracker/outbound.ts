@@ -1,4 +1,5 @@
 import type { EmailAccountWithAI } from "@/utils/llms/types";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 import type { ParsedMessage } from "@/utils/types";
 import { aiDetermineThreadStatus } from "@/utils/ai/reply/determine-thread-status";
 import prisma from "@/utils/prisma";
@@ -101,6 +102,11 @@ export async function handleOutboundReply({
 
     if (!threadMessagesForLLM.length) {
       logger.error("No messages for AI analysis");
+      return;
+    }
+
+    if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+      logger.info("Skipping Reply Zero status: external AI is turned off");
       return;
     }
 

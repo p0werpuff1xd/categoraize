@@ -1,4 +1,5 @@
 import type { EmailProvider } from "@/utils/email/types";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 import { buildDraftReplyBody } from "@/utils/email/reply-body";
 import type { Logger } from "@/utils/logger";
 import type { EmailAccountWithAI } from "@/utils/llms/types";
@@ -66,6 +67,13 @@ export async function generateFollowUpDraft({
         "Skipping follow-up draft because the tracked message was not sent by the user",
         { threadId, messageId },
       );
+      return;
+    }
+
+    if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+      logger.info("Skipping follow-up draft: external AI is turned off", {
+        threadId,
+      });
       return;
     }
 

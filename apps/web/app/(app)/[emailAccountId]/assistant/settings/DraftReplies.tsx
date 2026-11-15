@@ -11,10 +11,15 @@ import { ActionType, SystemType } from "@/generated/prisma/enums";
 import { LoadingContent } from "@/components/LoadingContent";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SettingCard } from "@/components/SettingCard";
+import { useCategoraizeConsent } from "@/hooks/useCategoraize";
 
 export function DraftReplies() {
   const { t } = useLingui();
   const { enabled, toggleDraftReplies, loading, error } = useDraftReplies();
+  const consent = useCategoraizeConsent();
+  const externalAiOff = Boolean(
+    consent.data?.gated && !consent.data.externalLlmEnabled,
+  );
 
   const handleToggle = useCallback(
     async (enable: boolean) => {
@@ -35,7 +40,11 @@ export function DraftReplies() {
   return (
     <SettingCard
       title={t`Auto draft replies`}
-      description={t`Automatically draft replies written in your tone to emails needing a reply.`}
+      description={
+        externalAiOff
+          ? t`Automatically draft replies written in your tone to emails needing a reply. Unavailable while external AI processing is off; you can still write replies yourself.`
+          : t`Automatically draft replies written in your tone to emails needing a reply.`
+      }
       right={
         <LoadingContent
           loading={loading}
@@ -44,7 +53,9 @@ export function DraftReplies() {
         >
           <Toggle
             name="draft-replies"
-            enabled={enabled}
+            enabled={enabled && !externalAiOff}
+            disabled={externalAiOff}
+            disabledTooltipText={t`Turn on External AI processing to use AI drafts`}
             onChange={handleToggle}
           />
         </LoadingContent>

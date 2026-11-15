@@ -100,6 +100,7 @@ export type DraftReplyInput = {
   meetingContext: string | null;
   recordedMeetingContext?: string | null;
   attachmentContext?: string | null;
+  categoraizeContext?: string | null;
   hasConfiguredSignature?: boolean;
   currentDate?: Date;
 };
@@ -121,6 +122,7 @@ type DraftReplyModelContextInput = {
   meetingContext: string | null;
   recordedMeetingContext: string | null;
   attachmentContext: string | null;
+  categoraizeContext: string | null;
   hasConfiguredSignature: boolean;
 };
 
@@ -152,6 +154,7 @@ export function buildDraftReplyModelEvidence({
   senderReplyExamples = null,
   learnedWritingStyle = null,
   attachmentContext = null,
+  categoraizeContext = null,
   hasConfiguredSignature = false,
   recordedMeetingContext = null,
   ...modelContextInput
@@ -163,6 +166,7 @@ export function buildDraftReplyModelEvidence({
     senderReplyExamples,
     learnedWritingStyle,
     attachmentContext,
+    categoraizeContext,
     hasConfiguredSignature,
     recordedMeetingContext,
   });
@@ -196,6 +200,7 @@ export function buildDraftReplyModelContext({
   meetingContext,
   recordedMeetingContext,
   attachmentContext,
+  categoraizeContext,
   hasConfiguredSignature,
 }: DraftReplyModelContextInput): string {
   const normalizedWritingStyle = writingStyle?.trim() || null;
@@ -314,6 +319,14 @@ ${attachmentContext}
 Mention attached documents only when useful and only if this section is present.
 `
     : "";
+  const categoraizeAnalysis = categoraizeContext
+    ? `Analysis of the newest email by the user's own language service. Use it so the reply answers every request and deadline and matches the email's language; if it disagrees with the thread, the thread wins.
+
+<categoraize_analysis>
+${categoraizeContext}
+</categoraize_analysis>
+`
+    : "";
   const signatureContext = hasConfiguredSignature
     ? `The user's email account already has a configured signature that will be appended after this draft. Do not write any closing, sign-off, name, title, contact details, or signature block.
 `
@@ -333,6 +346,7 @@ ${mcpToolsContext}
 ${missingExternalContext}
 ${upcomingMeetingsContext}
 ${recordedMeetingContext || ""}
+${categoraizeAnalysis}
 ${selectedAttachments}`;
 }
 

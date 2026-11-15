@@ -1,4 +1,6 @@
 import type { ParsedMessage } from "@/utils/types";
+import { assertExternalLlmAllowed } from "@/utils/categoraize/consent";
+import { getCategoraizeDraftContext } from "@/utils/categoraize/draft-context";
 import { internalDateToDate, sortByInternalDate } from "@/utils/date";
 import { getEmailForLLM } from "@/utils/get-email-from-message";
 import { extractEmailAddress, extractEmailAddresses } from "@/utils/email";
@@ -83,6 +85,9 @@ export async function fetchMessagesAndGenerateDraftWithConfidenceThreshold(
   minimumConfidence: DraftReplyConfidence,
   selectedRuleId?: string,
 ): Promise<DraftGenerationResult> {
+  // Drafting sends the thread to the external LLM, so it needs the user's opt-in.
+  await assertExternalLlmAllowed(emailAccount.userId);
+
   // Providers return chronological order; sort defensively since drafting
   // logic breaks silently if messages arrive out of order.
   const threadMessages = testMessage
@@ -397,6 +402,12 @@ async function generateDraftContent(
     });
   }
 
+  const categoraizeContext = await getCategoraizeDraftContext({
+    emailAccountId: emailAccount.id,
+    messageId: lastMessage.id,
+    timezone: emailAccount.timezone,
+  });
+
   // 3. Draft reply
   const { reply, confidence, attribution } = await aiDraftReplyWithConfidence({
     messages,
@@ -414,6 +425,7 @@ async function generateDraftContent(
     meetingContext,
     recordedMeetingContext,
     attachmentContext: attachmentSelection.attachmentContext,
+    categoraizeContext,
   });
 
   const meetsThreshold = meetsDraftReplyConfidenceRequirement({

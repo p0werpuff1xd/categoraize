@@ -4,6 +4,11 @@ import type { CategoraizeCategoriesResponse } from "@/app/api/categorai/categori
 import type { CategoraizeClassificationsResponse } from "@/app/api/categorai/classifications/route";
 import type { CategoraizeLatestResponse } from "@/app/api/categorai/classifications/latest/route";
 import type { CategoraizeStatusResponse } from "@/app/api/categorai/status/route";
+import type { CategoraizeConsentResponse } from "@/app/api/user/categoraize-consent/route";
+
+export function useCategoraizeConsent() {
+  return useSWR<CategoraizeConsentResponse>("/api/user/categoraize-consent");
+}
 
 export function useCategoraizeCategories() {
   return useSWR<CategoraizeCategoriesResponse>("/api/categorai/categories");

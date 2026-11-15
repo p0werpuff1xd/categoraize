@@ -16,6 +16,22 @@ Decisions:
   do. It stays on OpenRouter, unchanged, so the feature keeps working. These are the "fits neither" cases.
 - **Not AI**: a settings check, not a feature.
 
+## Phase 5 status
+
+Everything below runs only while `CATEGORAIZE_ENABLED` is on. With it off, the app behaves like the original.
+
+| Feature | Switch (default on) | Now | Code |
+| --- | --- | --- | --- |
+| Rule matching | `CATEGORAIZE_RULE_MATCHING` | Each rule's name and listed items are matched by Sentence-BERT (`/api/v1/match`). The best one counts, and To Reply gets +0.15 when the Bi-LSTM-CRF finds a request. Threshold 0.35. | `utils/categoraize/rule-matching.ts`, `multi-match.ts` |
+| Cold email | `CATEGORAIZE_COLD_EMAIL` | After the original deterministic checks (whitelist, same org, learned senders, prior contact), the email is cold only if a cold-outreach description beats every legitimate kind of email. | `utils/categoraize/cold-email.ts` |
+| Smart categories (senders) | `CATEGORAIZE_SMART_CATEGORIES` | The sender's address plus up to 3 recent subjects and snippets are matched against category centroids, or descriptions until a centroid exists. A manual recategorization runs Rocchio, stored in `CategorizeSenderCategoryCentroid` / `CategorizeSenderEmbedding`. | `utils/categoraize/sender-categories.ts` |
+| Summaries (Summarise button, digest) | `CATEGORAIZE_SUMMARIES` | Extractive: up to 2 original sentences (`/api/v1/summarize`). | `app/api/ai/summarise/route.ts`, `utils/ai/digest/summarize-email-for-digest.ts` |
+| Drafts and Reply Zero (R2) | n/a | They stay on OpenRouter. They need the user's optional external-AI consent (off by default; Settings → External AI processing). The draft prompt gets a short `categoraize_analysis` block (language, requests, dates found in the newest email). | `utils/categoraize/consent.ts`, `draft-context.ts`, `utils/reply-tracker/*`, `utils/follow-up/generate-draft.ts` |
+
+**When the service fails:** an R1 feature falls back to the original LLM path only for users who turned on external AI. For everyone else it errors instead, so no email goes to the external provider without consent (`utils/categoraize/features.ts`).
+
+**Still on the external LLM without a consent check:** the "Keep (LLM)" features below (assistant chat, prompt-to-rules, and so on). This needs a decision in Phase 8.
+
 ## R1: replace with the service
 
 | File | Function / label | Feature | Notes |

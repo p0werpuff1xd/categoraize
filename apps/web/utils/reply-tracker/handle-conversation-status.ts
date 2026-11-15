@@ -1,4 +1,8 @@
 import type { EmailAccountWithAI } from "@/utils/llms/types";
+import {
+  EXTERNAL_LLM_OFF_MESSAGE,
+  isExternalLlmAllowed,
+} from "@/utils/categoraize/consent";
 import type { ModelType } from "@/utils/llms/model";
 import type { ParsedMessage, RuleWithActions } from "@/utils/types";
 import type { EmailProvider } from "@/utils/email/types";
@@ -68,6 +72,11 @@ export async function determineConversationStatus({
       rule: null,
       reason: "Thread only contains assistant messages",
     };
+  }
+
+  if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+    logger.info("Skipping Reply Zero status: external AI is turned off");
+    return { rule: null, reason: EXTERNAL_LLM_OFF_MESSAGE };
   }
 
   const threadMessagesForLLM = buildThreadStatusMessagesForLLM(sortedMessages);
