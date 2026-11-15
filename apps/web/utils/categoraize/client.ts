@@ -76,6 +76,21 @@ const feedbackResponseSchema = z.object({
   beta: z.number(),
 });
 
+const matchResponseSchema = z.object({
+  ranked: z.array(categoryMatchSchema),
+  best: categoryMatchSchema.nullable(),
+  threshold: z.number(),
+  embedding: vectorSchema,
+  has_task: z.boolean(),
+  timings_ms: z.record(z.string(), z.number()),
+});
+
+const summarizeResponseSchema = z.object({
+  sentences: z.array(z.string()),
+  method: z.string(),
+});
+
+export type CategoraizeMatch = z.infer<typeof matchResponseSchema>;
 export type CategoraizeClassification = z.infer<typeof classifyResponseSchema>;
 export type CategoraizeSpan = z.infer<typeof spanSchema>;
 export type CategoraizePriorityFactors = z.infer<typeof priorityFactorsSchema>;
@@ -181,6 +196,34 @@ export async function applyCategoryFeedback({
     { embedding, correct, incorrect },
     feedbackResponseSchema,
   );
+}
+
+/** Sentence-BERT zero-shot match of an email (or sender) against free-text descriptions. */
+export async function matchEmail(request: {
+  subject: string;
+  body: string;
+  candidates: Array<{ id: string; text?: string; centroid?: number[] | null }>;
+  threshold?: number;
+}) {
+  return callService("/api/v1/match", request, matchResponseSchema);
+}
+
+/** Extractive summary: up to maxSentences original sentences. */
+export async function summarizeEmail(request: {
+  subject: string;
+  body: string;
+  maxSentences?: number;
+}) {
+  const result = await callService(
+    "/api/v1/summarize",
+    {
+      subject: request.subject,
+      body: request.body,
+      max_sentences: request.maxSentences ?? 2,
+    },
+    summarizeResponseSchema,
+  );
+  return result.sentences;
 }
 
 async function callService<T>(

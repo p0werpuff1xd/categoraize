@@ -12,6 +12,8 @@ import { getUserInfoPrompt, getUserRulesPrompt } from "@/utils/ai/helpers";
 import { sortRulesByCanonicalOrder } from "@/utils/rule/sort";
 import type { Logger } from "@/utils/logger";
 import type { ClassificationFeedbackItem } from "@/utils/rule/classification-feedback";
+import { runCategoraizeOrLlm } from "@/utils/categoraize/features";
+import { semanticChooseRule } from "@/utils/categoraize/rule-matching";
 
 type GetAiResponseOptions = {
   email: EmailForLLM;
@@ -45,6 +47,51 @@ export async function aiChooseRule<
 
   const orderedRules = sortRulesByCanonicalOrder(rules);
 
+  return runCategoraizeOrLlm({
+    feature: "ruleMatching",
+    userId: emailAccount.userId,
+    logger,
+    categoraize: () =>
+      semanticChooseRule({
+        email,
+        rules: orderedRules,
+        allowMultiple: shouldSelectMultipleRules({
+          rules: orderedRules,
+          emailAccount,
+        }),
+      }),
+    llm: () =>
+      llmChooseRule({
+        email,
+        orderedRules,
+        emailAccount,
+        modelType,
+        logger,
+        classificationFeedback,
+      }),
+  });
+}
+
+async function llmChooseRule<
+  T extends { name: string; instructions: string; systemType?: string | null },
+>({
+  email,
+  orderedRules,
+  emailAccount,
+  modelType,
+  logger,
+  classificationFeedback,
+}: {
+  email: EmailForLLM;
+  orderedRules: T[];
+  emailAccount: EmailAccountWithAI;
+  modelType?: ModelType;
+  logger: Logger;
+  classificationFeedback?: ClassificationFeedbackItem[] | null;
+}): Promise<{
+  rules: { rule: T; isPrimary?: boolean }[];
+  reason: string;
+}> {
   const { result: aiResponse } = await getAiResponse({
     email,
     rules: orderedRules,

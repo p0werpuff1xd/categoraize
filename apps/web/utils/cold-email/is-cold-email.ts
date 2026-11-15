@@ -16,6 +16,8 @@ import { isWhitelistedSender } from "@/utils/email/whitelist";
 import { hasPriorContactOrAssumeYes } from "@/utils/cold-email/has-prior-contact";
 import { decideColdEmail } from "@/utils/decision-model/cold-email";
 import { runDecisionModelOrFallback } from "@/utils/decision-model/decision-model";
+import { semanticIsColdEmail } from "@/utils/categoraize/cold-email";
+import { runCategoraizeOrLlm } from "@/utils/categoraize/features";
 
 export const COLD_EMAIL_FOLDER_NAME = "Cold Emails";
 
@@ -157,6 +159,44 @@ export async function isColdEmail({
 
   if (guardResult) return guardResult;
 
+  return runCategoraizeOrLlm<ColdEmailResult>({
+    feature: "coldEmail",
+    userId: emailAccount.userId,
+    logger,
+    categoraize: async () => {
+      const result = await semanticIsColdEmail({
+        email,
+        instructions: coldEmailRule?.instructions,
+      });
+      logger.info("CategorAIze checked cold email", {
+        coldEmail: result.isColdEmail,
+      });
+      return {
+        isColdEmail: result.isColdEmail,
+        reason: "ai" as const,
+        aiReason: result.aiReason,
+      };
+    },
+    llm: () =>
+      isColdEmailWithOriginalAi({
+        email,
+        emailAccount,
+        coldEmailRule,
+        modelType,
+        logger,
+      }),
+  });
+}
+
+async function isColdEmailWithOriginalAi({
+  email,
+  emailAccount,
+  coldEmailRule,
+  modelType,
+  logger,
+}: Omit<ColdEmailGuardsInput, "provider"> & {
+  modelType?: ModelType;
+}): Promise<ColdEmailResult> {
   // Off by default: a false "cold" archives a real email, and in evals the
   // decision model could not separate personalized pitches from legitimate outreach.
   if (!env.DECISION_MODEL_COLD_EMAIL_ENABLED) {

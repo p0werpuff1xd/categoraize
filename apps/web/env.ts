@@ -75,6 +75,12 @@ const parsedEnv = createEnv({
     CATEGORAIZE_ENABLED: booleanString.optional().default(false),
     CATEGORAIZE_SERVICE_URL: z.string().url().optional(),
     CATEGORAIZE_INTERNAL_KEY: z.string().min(1).optional(),
+    // Per-feature switches: true routes the feature to the CategorAIze service
+    // instead of the original LLM path (only while CATEGORAIZE_ENABLED is on).
+    CATEGORAIZE_RULE_MATCHING: booleanString.optional().default(true),
+    CATEGORAIZE_SMART_CATEGORIES: booleanString.optional().default(true),
+    CATEGORAIZE_COLD_EMAIL: booleanString.optional().default(true),
+    CATEGORAIZE_SUMMARIES: booleanString.optional().default(true),
 
     AUTH_SECRET: z.string().optional(),
     SCIM_CREDENTIAL_HASH_SECRET: z.string().min(32).optional(),

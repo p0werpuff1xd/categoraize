@@ -6,6 +6,8 @@ import { stringifyEmailSimple } from "@/utils/stringify-email";
 import { getModelForUseCase, LlmUseCase } from "@/utils/llms/use-cases";
 import { createGenerateObject } from "@/utils/llms";
 import { getUserInfoPrompt } from "@/utils/ai/helpers";
+import { summarizeEmail } from "@/utils/categoraize/client";
+import { runCategoraizeOrLlm } from "@/utils/categoraize/features";
 
 const logger = createScopedLogger("summarize-digest-email");
 
@@ -26,6 +28,42 @@ export async function aiSummarizeEmailForDigest({
   // If messageToSummarize somehow is null/undefined, default to null.
   if (!messageToSummarize) return null;
 
+  try {
+    return await runCategoraizeOrLlm({
+      feature: "summaries",
+      userId: emailAccount.userId,
+      logger,
+      // Extractive digest line: up to two original sentences, one per line.
+      categoraize: async () => {
+        const sentences = await summarizeEmail({
+          subject: messageToSummarize.subject,
+          body: messageToSummarize.content,
+        });
+        return sentences.length ? { content: sentences.join("\n") } : null;
+      },
+      llm: () =>
+        llmSummarizeEmailForDigest({
+          ruleName,
+          emailAccount,
+          messageToSummarize,
+        }),
+    });
+  } catch (error) {
+    // Same as the LLM path: a digest item without a summary beats a failed digest.
+    logger.warn("Digest summary unavailable", { error });
+    return null;
+  }
+}
+
+async function llmSummarizeEmailForDigest({
+  ruleName,
+  emailAccount,
+  messageToSummarize,
+}: {
+  ruleName: string;
+  emailAccount: EmailAccountWithAI & { name: string | null };
+  messageToSummarize: EmailForLLM;
+}): Promise<AISummarizeResult | null> {
   const userMessageForPrompt = messageToSummarize;
 
   const system = `You are an AI assistant that processes emails for inclusion in a daily digest.

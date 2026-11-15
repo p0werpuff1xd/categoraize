@@ -10,6 +10,8 @@ import { strictOptional } from "@/utils/llms/strict-optional";
 import { createScopedLogger } from "@/utils/logger";
 import { decideBulkSenderCategories } from "@/utils/decision-model/categorize-sender";
 import { runDecisionModelOrFallback } from "@/utils/decision-model/decision-model";
+import { runCategoraizeOrLlm } from "@/utils/categoraize/features";
+import { semanticCategorizeSenders } from "@/utils/categoraize/sender-categories";
 
 const logger = createScopedLogger("categorize-senders-bulk");
 
@@ -45,6 +47,33 @@ export async function aiCategorizeSenders({
 > {
   if (senders.length === 0) return [];
 
+  return runCategoraizeOrLlm({
+    feature: "smartCategories",
+    userId: emailAccount.userId,
+    logger,
+    categoraize: () =>
+      semanticCategorizeSenders({
+        emailAccountId: emailAccount.id,
+        senders,
+        categories,
+      }),
+    llm: () =>
+      categorizeSendersWithOriginalAi({ emailAccount, senders, categories }),
+  });
+}
+
+function categorizeSendersWithOriginalAi({
+  emailAccount,
+  senders,
+  categories,
+}: {
+  emailAccount: EmailAccountWithAI;
+  senders: {
+    emailAddress: string;
+    emails: { subject: string; snippet: string }[];
+  }[];
+  categories: Pick<Category, "name" | "description">[];
+}): Promise<{ category?: string; sender: string }[]> {
   return runDecisionModelOrFallback({
     emailAccount,
     logger,
