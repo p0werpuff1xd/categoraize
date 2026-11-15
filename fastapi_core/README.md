@@ -27,6 +27,14 @@ rejected (fail closed).
 - `POST /api/v1/embed` `{texts}` → `{model, dimension, vectors}`
 - `POST /api/v1/classify`: see `ClassifyRequest` / `ClassifyResponse` in `app/schemas.py`.
 - `POST /api/v1/feedback` `{embedding, correct: {id, centroid}, incorrect?, alpha?, beta?}` → updated centroids.
+- `POST /api/v1/match` `{subject, body, candidates: [{id, text?, centroid?}], threshold?}` →
+  `{ranked, best, threshold, embedding, has_task}`. Zero-shot Sentence-BERT match of
+  an email (or a sender) against free-text descriptions. The web app uses it for
+  rule matching, cold-email detection and sender categories. `has_task` says
+  whether the TASK/DATE tagger found a request.
+- `POST /api/v1/summarize` `{subject?, body, max_sentences?}` → `{sentences}`.
+  Extractive: up to N original sentences, ranked by similarity to the email's
+  Sentence-BERT centroid, with a small boost for sentences with a request or a date.
 
 Errors: 401 bad or missing key, 422 invalid payload or an impossible
 correction, 503 while the model loads.
@@ -104,7 +112,13 @@ python -m training.evaluate --version v3 --file data/test/holdout_claude.md
 | Regex baseline | n/a | 0.830 | 0.767 |
 | v1 | 0.988 | 0.641 | 0.518 |
 | v2 | 0.969 | 0.939 | 0.792 |
-| v3 (current) | 0.993 | 0.940 | 0.775 |
+| v3 | 0.993 | 0.940 | 0.775 |
+| v4 (current) | n/a | 0.981 | 0.765 |
+
+v4 adds subject lines to the synthetic data: v3 tagged words in plain
+subjects ("Your receipt from Grab") as requests. The held-out score is the
+same within noise, and the subject false positives are gone. The provisional
+column is a development number from v2 on.
 
 Held-out set, v3 against regex, per label:
 

@@ -141,6 +141,22 @@ NEWS_TL = ["Cancelled yung class {date} kasi may seminar.", "Due na yung chapter
            "Sarado ang library {date} dahil sa inventory.", "Naiwan ko yung charger sa room {n}."]
 DOCS = ["minutes", "updated memo", "receipt", "program", "seat plan"]
 
+# Subject lines: short fragments the service also tags. Most contain no request.
+BRANDS = ["Grab", "Shopee", "Lazada", "GCash", "Meralco", "Globe", "BDO", "Netflix", "Canva", "Zoom"]
+SUBJECTS_PLAIN = [
+    "Your receipt from {brand}", "Order #{n} confirmed", "Your {brand} order has shipped", "{brand} weekly digest",
+    "The Weekly Dev Digest #{n}", "Your verification code", "Your password was changed", "Welcome to {brand}",
+    "Payment received", "Statement of account for {brand}", "Project update", "Minutes of the meeting",
+    "Grades for chapter {n}", "Enrollment advisory", "Newsletter: what's new at {brand}", "Security alert",
+    "Resibo ng iyong bayad", "Paalala mula sa {brand}", "Bagong memo", "Thank you for your order",
+    "Your {brand} bill is ready", "Invoice #{n}", "Mega sale up to {n}% off", "Account statement",
+]
+SUBJECTS_WITH_DATE = [
+    "Invitation: thesis consultation {date}", "Meeting {date}", "Reminder: assembly {date}",
+    "Deadline {date}", "Seminar {date}", "Walang pasok {date}", "Meeting tayo {date}",
+]
+SUBJECT_PREFIXES = ["", "", "", "Re: ", "Fwd: ", "RE: ", "Reminder: ", "FYI: "]
+
 LANGUAGES = ("en", "tl", "taglish")
 
 
@@ -290,12 +306,29 @@ def synthetic_email(rng: random.Random, language: str) -> str:
     return email
 
 
+def subject_line(rng: random.Random, language: str) -> str:
+    roll = rng.random()
+    prefix = rng.choice(SUBJECT_PREFIXES)
+    if roll < 0.6:
+        text = rng.choice(SUBJECTS_PLAIN).format(brand=rng.choice(BRANDS), n=rng.randint(2, 999))
+        return prefix + text
+    if roll < 0.85:
+        template = rng.choice(SUBJECTS_WITH_DATE)
+        return prefix + template.replace("{date}", tag("DATE", date_phrase(rng, language)))
+    # A request written as the subject.
+    task = en_task(rng) if language == "en" else tl_task(rng, taglish=language == "taglish")
+    return prefix + tag("TASK", task)
+
+
 def generate(count: int, seed: int) -> list[dict]:
+    """Emails, with about one in six examples a subject line on its own."""
     rng = random.Random(seed)
-    return [
-        {"lang": (language := LANGUAGES[index % len(LANGUAGES)]), "markup": synthetic_email(rng, language)}
-        for index in range(count)
-    ]
+    rows = []
+    for index in range(count):
+        language = LANGUAGES[index % len(LANGUAGES)]
+        markup = subject_line(rng, language) if rng.random() < 0.17 else synthetic_email(rng, language)
+        rows.append({"lang": language, "markup": markup})
+    return rows
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
