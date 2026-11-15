@@ -28,6 +28,9 @@ class StrictModel(BaseModel):
 
 class EmbedRequest(StrictModel):
     texts: list[Annotated[str, Field(max_length=20_000)]] = Field(min_length=1, max_length=64)
+    # Search queries: Filipino/Taglish text is embedded as its English gloss
+    # (Taglish dictionary); English text is embedded as is.
+    gloss: bool = False
 
 
 class EmbedResponse(BaseModel):

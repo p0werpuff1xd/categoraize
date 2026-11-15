@@ -25,6 +25,7 @@ from .nlp.extractor import resolve_date
 from .nlp.language import detect_language
 from .nlp.regex_tagger import has_deadline_marker_before
 from .nlp.summarizer import split_sentences, summarize
+from .nlp.taglish_cleaner import normalize
 from .schemas import (
     CategoryInput,
     CategoryMatch,
@@ -102,7 +103,8 @@ def healthz() -> JSONResponse:
     dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
 )
 def embed(request: EmbedRequest) -> EmbedResponse:
-    return EmbedResponse(model=MODEL_NAME, dimension=VECTOR_DIMENSION, vectors=model_manager.embed(request.texts))
+    texts = [_search_gloss(text) for text in request.texts] if request.gloss else request.texts
+    return EmbedResponse(model=MODEL_NAME, dimension=VECTOR_DIMENSION, vectors=model_manager.embed(texts))
 
 
 @app.post(
@@ -294,6 +296,17 @@ def feedback(request: FeedbackRequest) -> FeedbackResponse:
         alpha=request.alpha,
         beta=request.beta,
     )
+
+
+def _search_gloss(text: str) -> str:
+    """Filipino/Taglish search text becomes its English gloss; English stays as is.
+
+    A short Filipino query otherwise matches other Filipino emails by language
+    rather than the English email it is about.
+    """
+    if detect_language(text) in {"tl", "mixed"}:
+        return normalize(text) or text
+    return text
 
 
 _DESCRIPTION_CACHE: dict[str, list[float]] = {}
