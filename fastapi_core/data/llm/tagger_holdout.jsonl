@@ -1,0 +1,142 @@
+{"lang": "tl", "markup": "Kagalang-galang na Presidente, [TASK]isinumite ko na po ang budget proposal[/TASK] [DATE]kahapon[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Mahal na Employado, [TASK]pakiusap po ay kumpletuhin ang performance review form[/TASK] bago magkatapus ng [DATE]buwan[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Ma'am, [TASK]paki-follow up yung check payment sa accounting[/TASK] [DATE]kanina[/DATE] pa naka-pending.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Tita, [TASK]paki-alam sa Tito na late ako[/TASK] [DATE]mamaya[/DATE], meeting kasi.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Supplier: [TASK]Available pa ba yung 100 pcs eco bag[/TASK] para [DATE]sa Biyernes[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Supplier update: Price increase ng cooking oil effective [DATE]Feb 1[/DATE]. [TASK]Please find attached new pricelist[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Ma'am, [TASK]pakisuyong i-schedule ang meeting with suppliers[/TASK] [DATE]next week[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Sir, [TASK]paki-check kung okay na yung loan application ko[/TASK] [DATE]mamaya[/DATE]. Need ko po kasi for tuition.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Hello! [TASK]Please confirm attendance for the org planning[/TASK] [DATE]this Saturday 2pm[/DATE] at the student center.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Sir, [TASK]kindly approve my leave request[/TASK] [DATE]Nov 20-22[/DATE] for board exam review. Salamat po.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Ate, [TASK]pwede bang bayaran mo na lang yung water bill[/TASK] [DATE]mamaya[/DATE]? Bayad ako sa GCash mo later.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Sir, [TASK]pakisuyong i-email yung SSS contribution table[/TASK] [DATE]today[/DATE] po. Need ko for computation.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Ate, [TASK]pwede bang bayaran mo yung Globe bill ko[/TASK] [DATE]sa 30th[/DATE]? I-send ko sa Maya mo.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Barkada, tara swim [DATE]sa Sabado ng umaga[/DATE]? Libre ako after 9am.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Landlord: [TASK]bayaran nyo na yung water bill[/TASK] bago [DATE]mag-Dec 15[/DATE] para walang penalty.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Tita, [TASK]pwede bang hingan ng recipe yung leche flan mo[/TASK]? Gagawin ko sa Pasko.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Sir, [TASK]paki-extend nga yung deadline ng report[/TASK] hanggang [DATE]Friday[/DATE] kasi may emergency.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Class announcement: [TASK]bring your own laptop[/TASK] [DATE]sa Lunes[/DATE] for coding workshop.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Kuya, [TASK]paki-hatid nga ako sa station[/TASK] [DATE]mamayang 5pm[/DATE]? Late na ako.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Tito Jun, [TASK]pwede bang hiramin yung ladder mo[/TASK] [DATE]bukas ng umaga[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Sir, [TASK]kindly check my attendance record[/TASK] [DATE]last week[/DATE], may discrepancy kasi.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Father, [TASK]paki-announce po ang misa para sa fiesta[/TASK] [DATE]sa Sabado[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Sir, [TASK]please find attached the signed contract[/TASK] para sa inyong reference.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Parishioners, [TASK]pakidalo sa general assembly[/TASK] [DATE]sa Linggo pagkatapos ng 8am mass[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Freshmen, [TASK]welcome to the org! paki-fill up ng form[/TASK] [DATE]mamaya[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Committee, [TASK]kailangan nating tapusin ang proposal[/TASK] [DATE]sa Linggo[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Water interruption [DATE]bukas 8am-12nn[/DATE]. [TASK]mag-ipon kayo ng tubig[/TASK] [DATE]mamayang gabi[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Voucher code: SAVE50 hanggang [DATE]Sabado[/DATE] lang. [TASK]gamitin na sa checkout[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Dear Sir/Madam, [TASK]please verify my account balance and send the statement to my email[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "[TASK]Pls load 1k to my PayMaya account now[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "[TASK]Please extend my membership[/TASK] until [DATE]end of March[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Class, the field trip is moved to [DATE]September 3[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Please find attached the updated membership list.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Please note that the office will be closed on holidays.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Budget review meeting [DATE]next Thursday[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Your credit card statement is available online as of [DATE]today[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Mahal na Kapitan, [TASK]paki-confirm po ang attendance[/TASK] [DATE]sa Lunes[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Mahal na Bangko, [TASK]paki-update po ng contact number ko sa online banking[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Ate, [TASK]paki-abot nga yung gamot ni Lola sa clinic[/TASK] [DATE]kahapon[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Tol, [TASK]pwede mo bang i-withdraw ang pera ko sa ATM[/TASK] [DATE]mamaya[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Teacher, [TASK]pakiconfirm po ang attendance ng anak ko sa recognition day[/TASK] [DATE]sa Biyernes[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Agenda for [DATE]Monday[/DATE] meeting.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Please [TASK]submit the project report[/TASK] by [DATE]next Friday[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Please [TASK]pick up the kids from school[/TASK] at [DATE]3pm[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Boss, [TASK]na-submit ko na po yung liquidation[/TASK] [DATE]kanina[/DATE]. Kindly check.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Suki, [TASK]pwede bang i-hold ang order[/TASK] hanggang [DATE]Sabado[/DATE]? Magbabayad ako mamaya.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Reminder: [TASK]please pay your Meralco bill[/TASK] [DATE]Nov 25[/DATE] to avoid disconnection.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Doc, [TASK]paki-schedule na lang ako[/TASK] [DATE]next week[/DATE] kung may slot pa.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Bank, [TASK]paki-block na yung lost card[/TASK] [DATE]mamaya[/DATE] at issue new one.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "PayMaya, [TASK]pa-link nga yung bank account[/TASK] [DATE]mamaya[/DATE] para ma-cash out.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Hi Prof. Reyes, [TASK]paki-check po yung draft ng Chapter 3 ko[/TASK] [DATE]bukas ng umaga[/DATE] para ma-finalize na. Salamat!", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Fr. Miguel announces: Simbang Gabi starts [DATE]Dec 16[/DATE] at 4:30am. [TASK]Please welcome[/TASK] the new choir members [DATE]this Sunday[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Boarding house rule update: [TASK]No cooking inside rooms[/TASK] effective [DATE]Jan 1[/DATE]. Use communal kitchen only. Fine: 500 pesos.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "CoMSCA meeting [DATE]sa Miyerkules 7pm[/DATE] sa chapel. [TASK]Bring your savings passbook[/TASK] for audit. Snacks provided.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Adviser memo: [TASK]Submit clearance forms[/TASK] [DATE]sa Lunes[/DATE] para ma-process ang diploma. Late = delayed graduation.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Fr. Jose: [TASK]Please note[/TASK] na wala pong confessions [DATE]sa Dec 24-25[/DATE]. Regular schedule resumes [DATE]Dec 26[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Thesis panel: [TASK]Submit revised manuscript[/TASK] [DATE]Jan 10[/DATE] hard copy at soft copy. Bind in maroon. Defense [DATE]Jan 24[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Advisory: [TASK]Puwede na pumunta sa registrar para sa transcript[/TASK] simula [DATE]bukas[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Application received. [TASK]Kindly wait for the interview schedule[/TASK] [DATE]sa susunod na buwan[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Class, please note that the midterm exam is scheduled for [DATE]next Monday at 8am[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Re: Budget approval needed.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Thank you for considering my application; I look forward to hearing from you soon.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Kuya, [TASK]paki-check yung inventory ng mga shirts[/TASK] [DATE]mamaya[/DATE] para ma-update ko yung site.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Boss, [TASK]kailangan mo ba ng additional designs[/TASK] [DATE]this week[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Barangay cleanup [DATE]sa Linggo[/DATE], [TASK]sama ka[/TASK] na!", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Ma'am, [TASK]please note[/TASK] na extended yung deadline hanggang [DATE]Mar 30[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Supplier: [TASK]confirmed na yung delivery[/TASK] [DATE]sa Huwebes ng umaga[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Client approved [DATE]kanina[/DATE], [TASK]proceed na tayo sa development[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Sir, [TASK]kindly check the attached invoice[/TASK] before end of day.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Freelancer here: [TASK]available ako[/TASK] starting [DATE]Monday[/DATE] for new projects.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "kuya [TASK]pabili ng gamot sa botika[/TASK] [DATE]bukas[/DATE] ha", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Good morning Sir, [TASK]kindly confirm your attendance[/TASK] [DATE]next week Monday[/DATE] for the team building.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Hi Kuya driver, [TASK]pakihatid nalang sa gate[/TASK] [DATE]mamaya[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Thanks for the payment. [TASK]Please find attached[/TASK] the official receipt.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "[TASK]paki-update mo na lang yung status ng order ko[/TASK] [DATE]mamaya[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Please note that the project deadline is moved to [DATE]April 20[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "We [TASK]kindly request you to submit the compliance report[/TASK] no later than [DATE]May 30[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Please find attached the updated member list for your review", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Na-deliver na [DATE]kahapon ng hapon[/DATE] yung books mo, nasa lobby na", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "bes [TASK]pakibook ride ko papunta sa school[/TASK] [DATE]bukas 6:30am[/DATE] late na ako", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Order cancelled [DATE]kahapon[/DATE] refund 3-5 business days", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Ate [TASK]paki-save seat ko sa library[/TASK] [DATE]bukas 7am[/DATE] review kami", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Ate, [TASK]pa-send mo yung wifi password sa new boarder[/TASK] [DATE]kahapon[/DATE] pa niya hiningi.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Barkada, [TASK]samahan niyo ako sa canteen[/TASK] [DATE]mamayang break[/DATE] para surprise si Jay.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Landlord text: [TASK]bayaran niyo na yung kuryente[/TASK] bago [DATE]mag-15th[/DATE] para walang penalty.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Subject: Boarding house inspection [DATE]this Saturday 9am[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Gym buddy, [TASK]spot mo ako[/TASK] [DATE]mamaya[/DATE] sa bench press, [TARGET]heavy na 'to[/TARGET].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Subject: Canteen menu change starting [DATE]Monday[/DATE], more vegan options.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Team, [TASK]kindly submit your weekly accomplishment reports[/TASK] [DATE]every Friday 5pm[/DATE] para updated tayo.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Doc, [TASK]paki-check nga po yung lab results ko[/TASK] [DATE]kahapon[/DATE] nabasa ko sa portal.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Tito, [TASK]pwede mo bang i-pickup yung gamot ko?[/TASK] [DATE]bukas ng hapon[/DATE] busy ako sa work.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Mom, [TASK]paki-bili mo na yung gamot sa pharmacy[/TASK] [DATE]bukas ng umaga[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "[TASK]Padala mo na lang sa GCash[/TASK] [DATE]mamaya[/DATE] yung bayad ko sa ticket.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Kindly submit your SALN bago matapos ang [DATE]buwan[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Na-approve na ang loan application ko [DATE]kanina[/DATE]!", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Kailangan ninyong [TASK]mag-attend ng seminar[/TASK] [DATE]sa Oktubre 5[/DATE] para sa compliance.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Kuya, [TASK]paki-schedule ng plumber[/TASK] [DATE]bukas[/DATE], nasira ang shower.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Confirmed po ang venue [DATE]sa Pebrero 14[/DATE] para sa kasal nina Jen at Mark.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "GCash cash-in of P1,000 received [DATE]Nov 15 2:30pm[/DATE]. Ref #GC123456.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Your Landbank loan approved! [TASK]Claim check at branch[/TASK] starting [DATE]Nov 22[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Maynilad bill P890 due [DATE]Nov 25[/DATE]. [TASK]Pay via app[/TASK] bago ma-cut off.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "New rule: [TASK]Visitors must sign logbook[/TASK] effective [DATE]Nov 20[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Please find attached the barangay clearance. [TASK]Print for enrollment[/TASK] [DATE]Monday[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Kindly be advised that the server maintenance will happen [DATE]tonight[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Guys, the concert tickets go on sale [DATE]Friday[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Ate, [TASK]pa-deliver mo na yung cake sa bahay[/TASK] [DATE]bukas[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Kagawad Cruz, [TASK]paki-issue po ng barangay clearance para sa scholarship application ko[/TASK] [DATE]sa Lunes[/DATE] po sana. Maraming salamat.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Please welcome the freshies sa org orientation [DATE]bukas[/DATE]!", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Kuya, [TASK]pabili po ng bond paper sa store[/TASK] [DATE]bukas[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Submitted the NBI clearance application [DATE]kanina[/DATE] pa. Waiting for schedule.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "[TASK]Send the invoice to the client email[/TASK] [DATE]today[/DATE] pls.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Kailangan mo [TASK]mag-rehistro sa COMELEC[/TASK] bago [DATE]mag-Mayo[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Sportsfest schedule final [DATE]sa Lunes[/DATE]. Events start 7 AM.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Thanks for the feedback, I will revise the design and send it [DATE]tomorrow morning[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Please welcome our new hire, Ana, effective [DATE]March 1[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "[TASK]Could you please forward the client email to me[/TASK]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Subject: [TASK]Request for quotation - 50 pcs customized mugs[/TASK]", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Naka-schedule na ang Canteen Food Fair [DATE]sa Nov 20-22[/DATE]. Magkakaroon ng discount lahat ng items.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Your fund transfer of PHP 5,000 to Juan Dela Cruz was completed [DATE]kahapon ng 2:15pm[/DATE]. Ref: TXN123456.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Class suspended [DATE]bukas[/DATE] dahil sa bagyo. Stay safe everyone.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Game scheduled for [DATE]Feb 10, 7pm[/DATE] at the court. Let's win!", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "[TASK]Could you please check the article draft and reply[/TASK] by [DATE]Wednesday[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "I will deliver the final files on [DATE]Friday afternoon[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Just a reminder: invoice #2021 due on [DATE]Nov 30[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Class, please note that the schedule for the retreat has been moved to [DATE]next Monday[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Mama, [TASK]paki-bili mo na lang yung gamot sa pharmacy[/TASK], salamat!", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Please welcome our new class officer, Ana.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Ate, [TASK]paki-text mo ako kung nakauwi na si Kuya[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "Client wants revision. [TASK]Pwede mo bang gawin [/TASK][DATE]mamaya[/DATE] lang?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "dentist appointment ko [DATE]sa Miyerkules ng 2pm[/DATE]. [TASK]Paalala lang[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "simbang gabi starts [DATE]sa Dec 16[/DATE]. [TASK]Paki-volunteer nlng kung free ka[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "logo final version sent [DATE]kanina[/DATE]. [TASK]Please review[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "taglish", "markup": "lease contract expiring [DATE]sa Aug 31[/DATE]. [TASK]Let me know kung gagawin mo[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Simula [DATE]Ngayong Linggo[/DATE], [TASK]may bible sharing sa chapel[/TASK].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "tl", "markup": "Subject: [TASK]Canteen Price Increase Proposal[/TASK] for review.", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Can you [TASK]check the spreadsheet and let me know if the numbers match[/TASK]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Please [TASK]confirm the delivery schedule[/TASK] [DATE]next week[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Hey, are we still on for karaoke [DATE]tomorrow night[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Re: Invoice #1023 - Payment due [DATE]Oct 30[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "We will schedule your interview for [DATE]next Tuesday at 10am[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Let's meet at the mall [DATE]tomorrow after lunch[/DATE].", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}
+{"lang": "en", "markup": "Can you [TASK]pick me up at the station[/TASK] [DATE]tomorrow morning[/DATE]?", "source": "llm:nvidia/nemotron-3-ultra-550b-a55b:free"}

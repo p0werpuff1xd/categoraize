@@ -25,7 +25,15 @@ from app.nlp.tokens import CharSpan
 
 from .data import DATA_DIR, load_jsonl
 from .evaluation import evaluate, format_report
-from .registry import MODELS_DIR, current_version, load_team_examples, load_test_set, next_version, set_current
+from .registry import (
+    MODELS_DIR,
+    current_version,
+    load_llm_examples,
+    load_team_examples,
+    load_test_set,
+    next_version,
+    set_current,
+)
 from .synthetic import generate, write_jsonl
 from .train_lib import predictor, train_tagger
 
@@ -46,11 +54,12 @@ def main() -> None:
         write_jsonl(dev_path, generate(300, 99))
     synthetic_train, synthetic_dev = load_jsonl(train_path), load_jsonl(dev_path)
     team = load_team_examples()
+    llm = load_llm_examples()
     test, test_name = load_test_set()
-    print(f"train: {len(synthetic_train)} synthetic + {len(team)} team-written/corrected; "
+    print(f"train: {len(synthetic_train)} synthetic + {len(team)} team-written/corrected + {len(llm)} LLM-written; "
           f"dev: {len(synthetic_dev)} synthetic; test: {len(test)} from {test_name}")
 
-    tagger, history = train_tagger(synthetic_train + team, synthetic_dev, epochs=args.epochs)
+    tagger, history = train_tagger(synthetic_train + team + llm, synthetic_dev, epochs=args.epochs)
 
     new_test = evaluate(test, predictor(tagger))
     regex_test = evaluate(test, regex_predictor)

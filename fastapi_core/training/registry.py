@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from .data import DATA_DIR, Example, load_markup_dir, load_markup_file
+from .data import DATA_DIR, Example, load_jsonl, load_markup_dir, load_markup_file
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models" / "tagger"
 HAND_LABELED_TEST = DATA_DIR / "test" / "hand_labeled.md"
@@ -39,3 +39,13 @@ def load_test_set() -> tuple[list[Example], str]:
 def load_team_examples() -> list[Example]:
     """Team-written and hand-corrected examples (never real users' mail)."""
     return [*load_markup_dir(DATA_DIR / "team"), *load_markup_dir(DATA_DIR / "corrected")]
+
+
+LLM_TRAIN = DATA_DIR / "llm" / "tagger.jsonl"
+LLM_HOLDOUT = DATA_DIR / "llm" / "tagger_holdout.jsonl"
+
+
+def load_llm_examples(holdout: bool = False) -> list[Example]:
+    """LLM-written synthetic emails (training/llm_generate.py); the holdout slice is never trained on."""
+    path = LLM_HOLDOUT if holdout else LLM_TRAIN
+    return load_jsonl(path) if path.exists() else []

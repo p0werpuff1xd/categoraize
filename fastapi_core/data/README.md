@@ -14,6 +14,17 @@ here is synthetic or written by the team.
 | `corrected/` | Team-written examples the model got wrong, with the labels fixed | Training |
 | `test/hand_labeled.md` | About 100 emails you write and label yourself | The fixed test set |
 | `test/provisional_claude.md` | About 45 emails written by Claude | Test set only until `hand_labeled.md` has emails |
+| `llm/tagger.jsonl` | Thousands of English, Filipino and Taglish emails written by a free OpenRouter model (`python -m training.llm_generate tagger …`) | Training (every 10th email is a dev example for tuning) |
+| `llm/tagger_holdout.jsonl` | About 10% of the LLM emails, chosen by hash | A second held-out test, never trained on |
+| `llm/rules.jsonl`, `llm/threads.jsonl` | LLM-written rule emails and Reply Zero threads | Tuning rule matching and Reply Zero (80%), with an LLM holdout (20%) |
+
+The LLM files are synthetic. The generator's prompts contain only the labeling
+rules and topic lists, never user or mailbox data. Each email is validated
+(markup parses, no tag cuts a word, no duplicates), and common labeling slips
+are cleaned automatically: deadline words removed from DATE spans, non-dates
+untagged, trailing particles removed from TASK spans. LLM-written emails share
+the model's style, so scores on them are optimistic. The hand-labeled set is
+still the honest test.
 
 ## Markup format
 
