@@ -3,6 +3,8 @@ import {
   ruleDescriptions,
 } from "@/utils/categoraize/multi-match";
 import type { EmailForLLM } from "@/utils/types";
+import { SystemType } from "@/generated/prisma/enums";
+import { CONVERSATION_TRACKING_META_RULE_ID } from "@/utils/reply-tracker/conversation-status-config";
 
 // Same starting threshold as label classification (plan section 2).
 export const RULE_MATCH_THRESHOLD = 0.35;
@@ -22,7 +24,12 @@ const SECONDARY_MARGIN = 0.05;
  * meaning to match against.
  */
 export async function semanticChooseRule<
-  T extends { name: string; instructions: string; systemType?: string | null },
+  T extends {
+    id?: string;
+    name: string;
+    instructions: string;
+    systemType?: string | null;
+  },
 >({
   email,
   rules,
@@ -51,9 +58,7 @@ export async function semanticChooseRule<
     .map(({ id, similarity }) => {
       const rule = rules[Number(id)];
       const boost =
-        result.hasTask && rule.systemType === "TO_REPLY"
-          ? TO_REPLY_TASK_BOOST
-          : 0;
+        result.hasTask && isReplyNeededRule(rule) ? TO_REPLY_TASK_BOOST : 0;
       return { rule, similarity: similarity + boost };
     })
     .sort((a, b) => b.similarity - a.similarity);
@@ -89,4 +94,13 @@ export async function semanticChooseRule<
     ],
     reason: `CategorAIze (Sentence-BERT): matched "${primary.rule.name}" with similarity ${primary.similarity.toFixed(2)} (threshold ${RULE_MATCH_THRESHOLD}). Ranked: ${top}.${requestNote}`,
   };
+}
+
+// With conversation tracking on, the To Reply rule is offered as the
+// "Conversations" meta-rule (no systemType), which then decides the status.
+function isReplyNeededRule(rule: { id?: string; systemType?: string | null }) {
+  return (
+    rule.systemType === SystemType.TO_REPLY ||
+    rule.id === CONVERSATION_TRACKING_META_RULE_ID
+  );
 }

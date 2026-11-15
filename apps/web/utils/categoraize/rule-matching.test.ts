@@ -108,6 +108,36 @@ describe("semanticChooseRule", () => {
     expect(withoutRequest.rules[0].rule.name).toBe("Receipt");
   });
 
+  it("boosts the Conversations meta-rule the same way when conversation tracking is on", async () => {
+    const { CONVERSATION_TRACKING_META_RULE_ID } = await import(
+      "@/utils/reply-tracker/conversation-status-config"
+    );
+    const rules = [
+      { name: "Newsletter", instructions: "Newsletters and mailing lists" },
+      {
+        id: CONVERSATION_TRACKING_META_RULE_ID,
+        name: "Conversations",
+        instructions: "Conversations where someone needs a reply",
+        systemType: null,
+      },
+    ];
+    mocks.matchEmail.mockResolvedValue(
+      serviceMatch(
+        [
+          ["0::0", 0.6],
+          ["1::0", 0.53],
+        ],
+        true,
+      ),
+    );
+    const result = await semanticChooseRule({
+      email: EMAIL,
+      rules,
+      allowMultiple: false,
+    });
+    expect(result.rules[0].rule.name).toBe("Conversations");
+  });
+
   it("adds one close second rule only when multiple rules are allowed", async () => {
     mocks.matchEmail.mockResolvedValue(
       serviceMatch([
