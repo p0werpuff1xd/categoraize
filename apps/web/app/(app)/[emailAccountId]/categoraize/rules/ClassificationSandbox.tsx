@@ -207,6 +207,7 @@ export function ClassificationSandbox() {
             preview={preview}
             subject={input?.subject ?? subject}
             body={input?.body ?? body}
+            calendarConnected={categories.data?.calendarConnected ?? false}
           />
         )}
       </CardContent>
@@ -222,10 +223,12 @@ function SandboxResult({
   preview,
   subject,
   body,
+  calendarConnected,
 }: {
   preview: NonNullable<Preview>;
   subject: string;
   body: string;
+  calendarConnected: boolean;
 }) {
   const { result, categories, timezone } = preview;
   const nameById = new Map(categories.map(({ id, name }) => [id, name]));
@@ -323,6 +326,7 @@ function SandboxResult({
         <PriorityFactorBreakdown
           factors={result.priority.factors}
           level={result.priority.level}
+          calendarConnected={calendarConnected}
           deadlineState={deadlineStateFromSpans(
             result.spans.map((span) => ({
               label: span.label,

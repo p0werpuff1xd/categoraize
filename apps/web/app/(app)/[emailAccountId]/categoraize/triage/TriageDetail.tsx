@@ -19,6 +19,7 @@ import {
   priorityLabel,
 } from "@/components/CategoraizePriority";
 import {
+  AddToCalendarLink,
   DeadlineStatus,
   HighlightedText,
   SpanLegend,
@@ -49,6 +50,7 @@ export const LOW_CONFIDENCE_SIMILARITY = 0.45;
 export function TriageDetail({
   email,
   categories,
+  calendarConnected,
   serviceBlockedReason,
   onChange,
   onOptimistic,
@@ -56,6 +58,7 @@ export function TriageDetail({
 }: {
   email: TriageEmail;
   categories: Category[];
+  calendarConnected: boolean;
   serviceBlockedReason: string | null;
   onChange: () => void;
   onOptimistic: (patch: Partial<TriageEmail>) => void;
@@ -230,6 +233,13 @@ export function TriageDetail({
                     isDeadline={span.isDeadline}
                     resolvedAt={span.resolvedAt}
                   />
+                  {span.resolvedAt && (span.isDeadline || span.confirmed) && (
+                    <AddToCalendarLink
+                      title={`Deadline: ${email.subject || "email request"}`}
+                      deadline={span.resolvedAt}
+                      details={`From ${email.fromName || email.fromEmail || "an email"}: "${span.text}"`}
+                    />
+                  )}
                   {!span.confirmed && span.resolvedAt && (
                     <Button
                       size="xs"
@@ -314,6 +324,7 @@ export function TriageDetail({
               level={email.priority}
               computedLevel={email.computedPriority}
               deadlineState={deadlineStateFromSpans(email.spans)}
+              calendarConnected={calendarConnected}
             />
           ) : (
             <p className="text-sm text-muted-foreground">

@@ -6,7 +6,9 @@ import { useLocalStorage } from "usehooks-ts";
 import {
   ArrowUpIcon,
   FilterXIcon,
+  ListChecksIcon,
   RefreshCwIcon,
+  SearchXIcon,
   StarIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ import {
   useCategoraizeCategories,
   useCategoraizeClassifications,
   useCategoraizeLatest,
+  useCategoraizeSearch,
   useCategoraizeServiceStatus,
 } from "@/hooks/useCategoraize";
 import { useAccount } from "@/providers/EmailAccountProvider";
@@ -38,7 +41,10 @@ import {
 import { getActionErrorMessage } from "@/utils/error";
 import { cn } from "@/utils";
 import type { CategoraizeClassificationsResponse } from "@/app/api/categorai/classifications/route";
+import type { CategoraizeSearchBody } from "@/app/api/categorai/search/validation";
 import { LOW_CONFIDENCE_SIMILARITY, TriageDetail } from "./TriageDetail";
+import { TaskSheet } from "./TaskSheet";
+import { TriageSearch } from "./TriageSearch";
 
 export type TriageEmail =
   CategoraizeClassificationsResponse["classifications"][number];
@@ -62,6 +68,10 @@ export function PriorityInbox() {
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [openId, setOpenId] = useState<string | null>(null);
   const [recalculatingId, setRecalculatingId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] =
+    useState<CategoraizeSearchBody | null>(null);
+  const search = useCategoraizeSearch(searchParams);
+  const [taskSheetOpen, setTaskSheetOpen] = useState(false);
 
   const actionCallbacks = {
     onError: ({
@@ -144,6 +154,49 @@ export function PriorityInbox() {
     setVisible(PAGE_SIZE);
   };
 
+  const refreshAll = () => {
+    mutate();
+    categories.mutate();
+    if (searchParams) search.mutate();
+  };
+
+  // One row plus its detail panel; shared by the triage list and search results.
+  const renderEmail = (email: TriageEmail, similarity?: number) => (
+    <div key={email.id}>
+      <TriageRow
+        email={email}
+        open={openId === email.id}
+        similarity={similarity}
+        recalculating={rescore.isExecuting || recalculatingId === email.id}
+        onToggle={() =>
+          setOpenId((current) => (current === email.id ? null : email.id))
+        }
+      />
+      {openId === email.id && (
+        <TriageDetail
+          email={email}
+          categories={categories.data?.categories ?? []}
+          calendarConnected={categories.data?.calendarConnected ?? false}
+          serviceBlockedReason={blockedReason}
+          onRecalculating={(busy) => setRecalculatingId(busy ? email.id : null)}
+          onOptimistic={(patch) =>
+            mutate(
+              (current) =>
+                current && {
+                  ...current,
+                  classifications: current.classifications.map((row) =>
+                    row.id === email.id ? { ...row, ...patch } : row,
+                  ),
+                },
+              { revalidate: false },
+            )
+          }
+          onChange={refreshAll}
+        />
+      )}
+    </div>
+  );
+
   return (
     <div className="mt-6 space-y-4">
       <ServiceStatusBanner />
@@ -199,6 +252,15 @@ export function PriorityInbox() {
             <RefreshCwIcon className="mr-1 size-4" />
             Re-score all
           </Button>
+          <Button size="sm" onClick={() => setTaskSheetOpen(true)}>
+            <ListChecksIcon className="mr-1 size-4" />
+            Task Sheet
+          </Button>
+          <TaskSheet
+            open={taskSheetOpen}
+            onOpenChange={setTaskSheetOpen}
+            onChange={refreshAll}
+          />
         </div>
       </div>
       {blockedReason && (
@@ -223,86 +285,80 @@ export function PriorityInbox() {
         </div>
       )}
 
-      <Card className="divide-y">
-        {isLoading ? (
-          <ListSkeleton rows={6} label="Loading prioritized emails" />
-        ) : error ? (
-          <StateError
-            title="Couldn't load the Priority Inbox"
-            error={error}
-            onRetry={() => mutate()}
-          />
-        ) : allEmails.length === 0 ? (
-          <StateEmpty
-            title="No analyzed emails yet"
-            description={
-              blockedReason
-                ? "New mail is analyzed once the CategorAIze service is available."
-                : 'Use "Classify recent inbox" to analyze your latest emails, or run the seed script for demo data.'
-            }
-          />
-        ) : emails.length === 0 ? (
-          <StateEmpty
-            title="No emails match this filter"
-            description="Nothing is at this priority right now."
-            icon={<FilterXIcon />}
-            action={
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => selectFilter("all")}
-              >
-                Clear filters
-              </Button>
-            }
-          />
-        ) : (
-          emails.slice(0, visible).map((email) => (
-            <div key={email.id}>
-              <TriageRow
-                email={email}
-                open={openId === email.id}
-                recalculating={
-                  rescore.isExecuting || recalculatingId === email.id
-                }
-                onToggle={() =>
-                  setOpenId((current) =>
-                    current === email.id ? null : email.id,
-                  )
-                }
-              />
-              {openId === email.id && (
-                <TriageDetail
-                  email={email}
-                  categories={categories.data?.categories ?? []}
-                  serviceBlockedReason={blockedReason}
-                  onRecalculating={(busy) =>
-                    setRecalculatingId(busy ? email.id : null)
-                  }
-                  onOptimistic={(patch) =>
-                    mutate(
-                      (current) =>
-                        current && {
-                          ...current,
-                          classifications: current.classifications.map((row) =>
-                            row.id === email.id ? { ...row, ...patch } : row,
-                          ),
-                        },
-                      { revalidate: false },
-                    )
-                  }
-                  onChange={() => {
-                    mutate();
-                    categories.mutate();
-                  }}
-                />
-              )}
-            </div>
-          ))
-        )}
-      </Card>
+      <TriageSearch
+        categories={categories.data?.categories ?? []}
+        active={Boolean(searchParams)}
+        disabledReason={blockedReason}
+        onSearch={(params) => {
+          setSearchParams(params);
+          setOpenId(null);
+        }}
+        onClear={() => setSearchParams(null)}
+      />
 
-      {emails.length > visible && (
+      {searchParams ? (
+        <Card className="divide-y">
+          {search.isLoading ? (
+            <ListSkeleton rows={4} label="Searching" />
+          ) : search.error ? (
+            <StateError
+              title="Search failed"
+              error={search.error}
+              onRetry={() => search.mutate()}
+            />
+          ) : !search.data?.results.length ? (
+            <StateEmpty
+              title="No emails match your search"
+              description="Try other words, or loosen the label, priority or deadline filters."
+              icon={<SearchXIcon />}
+            />
+          ) : (
+            search.data.results.map((email) =>
+              renderEmail(email, email.similarity),
+            )
+          )}
+        </Card>
+      ) : (
+        <Card className="divide-y">
+          {isLoading ? (
+            <ListSkeleton rows={6} label="Loading prioritized emails" />
+          ) : error ? (
+            <StateError
+              title="Couldn't load the Priority Inbox"
+              error={error}
+              onRetry={() => mutate()}
+            />
+          ) : allEmails.length === 0 ? (
+            <StateEmpty
+              title="No analyzed emails yet"
+              description={
+                blockedReason
+                  ? "New mail is analyzed once the CategorAIze service is available."
+                  : 'Use "Classify recent inbox" to analyze your latest emails, or run the seed script for demo data.'
+              }
+            />
+          ) : emails.length === 0 ? (
+            <StateEmpty
+              title="No emails match this filter"
+              description="Nothing is at this priority right now."
+              icon={<FilterXIcon />}
+              action={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => selectFilter("all")}
+                >
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            emails.slice(0, visible).map((email) => renderEmail(email))
+          )}
+        </Card>
+      )}
+
+      {!searchParams && emails.length > visible && (
         <div className="flex flex-col items-center gap-1">
           <Button
             variant="outline"
@@ -316,7 +372,7 @@ export function PriorityInbox() {
           </span>
         </div>
       )}
-      {data?.truncated && (
+      {!searchParams && data?.truncated && (
         <p className="text-center text-xs text-muted-foreground">
           Only the 500 most recent analyzed emails are ranked here; the top 200
           are listed.
@@ -329,11 +385,13 @@ export function PriorityInbox() {
 function TriageRow({
   email,
   open,
+  similarity,
   recalculating,
   onToggle,
 }: {
   email: TriageEmail;
   open: boolean;
+  similarity?: number;
   recalculating: boolean;
   onToggle: () => void;
 }) {
@@ -342,8 +400,12 @@ function TriageRow({
     email.categoryName &&
     !email.isReviewedByUser &&
     email.confidence < LOW_CONFIDENCE_SIMILARITY;
-  const vipPinned =
-    (email.priorityFactors as { vip_pin?: number } | null)?.vip_pin ?? 0;
+  const factors = email.priorityFactors as {
+    vip_pin?: number;
+    calendar?: number;
+  } | null;
+  const vipPinned = factors?.vip_pin ?? 0;
+  const calendarConflict = (factors?.calendar ?? 0) > 0;
 
   return (
     <button
@@ -394,6 +456,9 @@ function TriageRow({
           {email.snippet}
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5">
+          {similarity !== undefined && (
+            <Badge color="gray">Match {similarity.toFixed(2)}</Badge>
+          )}
           {email.categoryName ? (
             <Badge color="indigo">
               {email.categoryName} · {email.confidence.toFixed(2)}
@@ -410,6 +475,9 @@ function TriageRow({
             </Badge>
           )}
           {lowConfidence && <Badge color="yellow">Review label</Badge>}
+          {calendarConflict && (
+            <Badge color="purple">Deadline during a calendar event</Badge>
+          )}
           {email.deadlineAt && (
             <Badge
               color={

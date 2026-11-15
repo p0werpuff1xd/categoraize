@@ -37,5 +37,9 @@ async function getData({
       _count: { select: { classifications: true } },
     },
   });
-  return { categories };
+  const calendarConnections = await prisma.calendarConnection.count({
+    where: { emailAccountId, isConnected: true },
+  });
+  // The priority panels say whether a calendar could have added a boost.
+  return { categories, calendarConnected: calendarConnections > 0 };
 }

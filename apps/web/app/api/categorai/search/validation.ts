@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const categoraizeSearch = z.object({
   query: z.string().trim().min(1).max(500),
+  // A label id, or "uncategorized".
   categoryId: z.string().min(1).optional(),
   minimumPriority: z.number().int().min(1).max(5).optional(),
   hasDeadline: z.boolean().optional(),

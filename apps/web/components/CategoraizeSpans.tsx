@@ -87,6 +87,59 @@ export function DeadlineStatus({
   return <Badge color="green">Deadline</Badge>;
 }
 
+/**
+ * Pre-filled Google Calendar link (no calendar write permission needed): a
+ * 30-minute event ending at the deadline, opened in a new tab for the user
+ * to review and save.
+ */
+export function googleCalendarLink({
+  title,
+  deadline,
+  details,
+}: {
+  title: string;
+  deadline: string | Date;
+  details?: string;
+}) {
+  const end = new Date(deadline);
+  const start = new Date(end.getTime() - 30 * 60 * 1000);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    dates: `${toCalendarTime(start)}/${toCalendarTime(end)}`,
+    details: details ?? "",
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+export function AddToCalendarLink({
+  title,
+  deadline,
+  details,
+}: {
+  title: string;
+  deadline: string | Date;
+  details?: string;
+}) {
+  return (
+    <a
+      href={googleCalendarLink({ title, deadline, details })}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-xs font-medium text-blue-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-blue-300"
+    >
+      Add to Google Calendar
+    </a>
+  );
+}
+
+function toCalendarTime(date: Date) {
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
+}
+
 export function formatDeadline(value: string | Date, timezone?: string) {
   return new Intl.DateTimeFormat("en-PH", {
     weekday: "short",

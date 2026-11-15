@@ -4,6 +4,7 @@ import { withEmailAccount } from "@/utils/middleware";
 import prisma from "@/utils/prisma";
 import { embedTexts } from "@/utils/categoraize/client";
 import { toVectorLiteral } from "@/utils/categoraize/vectors";
+import { loadTriageRows } from "@/utils/categoraize/triage-rows";
 import { type CategoraizeSearchBody, categoraizeSearch } from "./validation";
 
 export type CategoraizeSearchResponse = Awaited<ReturnType<typeof getData>>;
@@ -16,6 +17,12 @@ export const POST = withEmailAccount("categorai/search", async (request) => {
   );
 });
 
+/**
+ * Semantic search: the query is embedded with Sentence-BERT and compared with
+ * each stored email embedding through pgvector (<=>), combined with the
+ * label, priority and deadline filters. Returns full Priority Inbox rows,
+ * best match first.
+ */
 async function getData({
   emailAccountId,
   body,
@@ -23,13 +30,17 @@ async function getData({
   emailAccountId: string;
   body: CategoraizeSearchBody;
 }) {
-  const [queryVector] = await embedTexts([body.query]);
+  // Short Filipino queries match the language more than the topic, so the
+  // service embeds a Filipino/Taglish query as its English gloss.
+  const [queryVector] = await embedTexts([body.query], { gloss: true });
   const vector = toVectorLiteral(queryVector);
   const filters = [
     Prisma.sql`c."emailAccountId" = ${emailAccountId}`,
     Prisma.sql`c."embedding" IS NOT NULL`,
   ];
-  if (body.categoryId) {
+  if (body.categoryId === "uncategorized") {
+    filters.push(Prisma.sql`c."categoryId" IS NULL`);
+  } else if (body.categoryId) {
     filters.push(Prisma.sql`c."categoryId" = ${body.categoryId}`);
   }
   if (body.minimumPriority) {
@@ -45,25 +56,10 @@ async function getData({
     );
   }
 
-  const results = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      threadId: string;
-      messageId: string;
-      subject: string | null;
-      fromEmail: string | null;
-      categoryId: string | null;
-      categoryName: string | null;
-      priority: number;
-      deadlineAt: Date | null;
-      similarity: number;
-    }>
+  const matches = await prisma.$queryRaw<
+    Array<{ id: string; similarity: number }>
   >`
-    SELECT c."id", c."threadId", c."messageId", c."subject", c."fromEmail",
-           c."categoryId", c."categoryName",
-           COALESCE(c."manualPriority", c."computedPriority") AS "priority",
-           c."deadlineAt",
-           1 - (c."embedding" <=> ${vector}::vector) AS "similarity"
+    SELECT c."id", 1 - (c."embedding" <=> ${vector}::vector) AS "similarity"
     FROM "CategorizeClassification" c
     WHERE ${Prisma.join(filters, " AND ")}
     ORDER BY c."embedding" <=> ${vector}::vector ASC
@@ -71,5 +67,18 @@ async function getData({
     OFFSET ${body.offset}
   `;
 
-  return { results };
+  const similarityById = new Map(
+    matches.map((match) => [match.id, Number(match.similarity)]),
+  );
+  const rows = await loadTriageRows({
+    emailAccountId,
+    where: { id: { in: matches.map((match) => match.id) } },
+    take: matches.length,
+  });
+
+  return {
+    results: rows
+      .map((row) => ({ ...row, similarity: similarityById.get(row.id) ?? 0 }))
+      .sort((a, b) => b.similarity - a.similarity),
+  };
 }

@@ -71,11 +71,13 @@ export function PriorityFactorBreakdown({
   level,
   computedLevel,
   deadlineState,
+  calendarConnected = false,
 }: {
   factors: CategoraizePriorityFactors;
   level: number;
   computedLevel?: number;
   deadlineState: DeadlineState;
+  calendarConnected?: boolean;
 }) {
   const rows = [
     {
@@ -131,12 +133,28 @@ export function PriorityFactorBreakdown({
           </li>
         )}
         <li>
-          Calendar is not connected, so there is no calendar boost. Missing
-          calendar data never lowers priority.
+          {calendarNote(calendarConnected, factors.calendar, deadlineState)}
         </li>
       </ul>
     </div>
   );
+}
+
+function calendarNote(
+  connected: boolean,
+  calendarBoost: number,
+  deadlineState: DeadlineState,
+) {
+  if (!connected) {
+    return "Calendar is not connected, so there is no calendar boost. Missing calendar data never lowers priority.";
+  }
+  if (calendarBoost > 0) {
+    return "The deadline falls during an event on your calendar (+1).";
+  }
+  if (deadlineState === "validated") {
+    return "No calendar event overlaps the deadline (calendar checked for the next 14 days).";
+  }
+  return "Calendar is connected; it adds +1 only when a validated deadline falls during a busy time.";
 }
 
 /** Deadline wording for the breakdown, from the stored spans. */

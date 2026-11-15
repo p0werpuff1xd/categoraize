@@ -185,10 +185,13 @@ export async function getCategoraizeServiceStatus(): Promise<CategoraizeServiceS
   }
 }
 
-export async function embedTexts(texts: string[]) {
+export async function embedTexts(
+  texts: string[],
+  options?: { gloss?: boolean },
+) {
   const result = await callService(
     "/api/v1/embed",
-    { texts },
+    { texts, gloss: options?.gloss ?? false },
     embedResponseSchema,
   );
   return result.vectors;

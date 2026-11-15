@@ -5,6 +5,17 @@ import type { CategoraizeClassificationsResponse } from "@/app/api/categorai/cla
 import type { CategoraizeLatestResponse } from "@/app/api/categorai/classifications/latest/route";
 import type { CategoraizeStatusResponse } from "@/app/api/categorai/status/route";
 import type { CategoraizeConsentResponse } from "@/app/api/user/categoraize-consent/route";
+import type { CategoraizeSearchResponse } from "@/app/api/categorai/search/route";
+import type { CategoraizeSearchBody } from "@/app/api/categorai/search/validation";
+import type { CategoraizeTaskSheetResponse } from "@/app/api/categorai/task-sheet/route";
+import { swrFetcher } from "@/providers/swr-fetcher";
+import { useAccount } from "@/providers/EmailAccountProvider";
+
+export function useCategoraizeTaskSheet(open: boolean) {
+  return useSWR<CategoraizeTaskSheetResponse>(
+    open ? "/api/categorai/task-sheet" : null,
+  );
+}
 
 export function useCategoraizeConsent() {
   return useSWR<CategoraizeConsentResponse>("/api/user/categoraize-consent");
@@ -22,6 +33,25 @@ export function useCategoraizeClassifications() {
   return useSWR<CategoraizeClassificationsResponse>(
     "/api/categorai/classifications?limit=200",
     { revalidateOnFocus: false, revalidateOnReconnect: false },
+  );
+}
+
+/** Semantic search over analyzed emails (POST); null params means no search. */
+export function useCategoraizeSearch(params: CategoraizeSearchBody | null) {
+  const { emailAccountId } = useAccount();
+  return useSWR<CategoraizeSearchResponse>(
+    params ? ["/api/categorai/search", JSON.stringify(params)] : null,
+    ([url, body]: [string, string]) =>
+      swrFetcher(
+        url,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body,
+        },
+        emailAccountId,
+      ),
+    { revalidateOnFocus: false },
   );
 }
 

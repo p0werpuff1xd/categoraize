@@ -28,6 +28,7 @@ export async function getCategoraizeDraftContext({
     orderBy: { updatedAt: "desc" },
     select: {
       detectedLang: true,
+      priorityFactors: true,
       spans: {
         where: { dismissedAt: null },
         orderBy: [{ source: "asc" }, { start: "asc" }],
@@ -63,6 +64,16 @@ export async function getCategoraizeDraftContext({
         : "date unclear";
       lines.push(`- "${date.text}": ${when} (${dateKind(date)})`);
     }
+  }
+
+  // Only the fact of a clash, never event titles or other calendar details.
+  const calendarBoost =
+    (classification.priorityFactors as { calendar?: number } | null)
+      ?.calendar ?? 0;
+  if (calendarBoost > 0) {
+    lines.push(
+      "Calendar: the deadline falls during a busy time on the user's calendar, so they may need a different time or more time.",
+    );
   }
 
   return lines.length ? lines.join("\n") : null;

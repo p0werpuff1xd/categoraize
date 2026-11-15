@@ -53,12 +53,26 @@ export const confirmCategoraizeDeadlineAction = actionClient
 export const dismissCategoraizeSpanAction = actionClient
   .metadata({ name: "dismissCategoraizeSpan" })
   .inputSchema(dismissCategoraizeSpan)
-  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
-    const result = await prisma.categorizeExtractedSpan.updateMany({
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
+    const span = await prisma.categorizeExtractedSpan.findFirst({
       where: { id: parsedInput.spanId, emailAccountId },
+      select: { id: true, label: true, classificationId: true },
+    });
+    if (!span) throw new SafeError("Item not found");
+
+    await prisma.categorizeExtractedSpan.update({
+      where: { id: span.id },
       data: { dismissedAt: new Date() },
     });
-    if (result.count === 0) throw new SafeError("Item not found");
+
+    // A dismissed deadline no longer counts, so the priority is recomputed.
+    if (span.label === "DATE" && isCategoraizeEnabled()) {
+      await reclassifyStoredEmail({
+        emailAccountId,
+        classificationId: span.classificationId,
+        logger,
+      });
+    }
 
     revalidatePath(prefixPath(emailAccountId, "/categoraize"), "layout");
   });
