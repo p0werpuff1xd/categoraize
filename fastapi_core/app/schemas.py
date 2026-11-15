@@ -177,6 +177,50 @@ class MatchResponse(BaseModel):
     timings_ms: dict[str, float]
 
 
+class RuleCandidate(StrictModel):
+    id: CategoryId
+    name: str = Field(min_length=1, max_length=200)
+    instructions: str = Field(default="", max_length=4_000)
+    # The rule that means "someone needs my reply" (To Reply / Conversations).
+    reply_needed: bool = False
+    # Built-in rule kind (NEWSLETTER, RECEIPT, ...); adds bilingual descriptions.
+    system_type: str | None = Field(default=None, max_length=64)
+
+
+class ChooseRuleRequest(StrictModel):
+    subject: str = Field(default="", max_length=2_000)
+    body: str = Field(default="", max_length=50_000)
+    rules: list[RuleCandidate] = Field(min_length=1, max_length=100)
+    allow_multiple: bool = False
+
+
+class ChooseRuleResponse(BaseModel):
+    ranked: list[CategoryMatch]
+    matched: list[str]
+    confident: bool
+    reasons: list[str]
+    has_request: bool
+    params: dict[str, float]
+
+
+class ThreadMessageInput(StrictModel):
+    from_user: bool
+    subject: str = Field(default="", max_length=2_000)
+    body: str = Field(default="", max_length=20_000)
+    automated: bool = False
+
+
+class ThreadStatusRequest(StrictModel):
+    messages: list[ThreadMessageInput] = Field(min_length=1, max_length=30)
+
+
+class ThreadStatusResponse(BaseModel):
+    status: Literal["TO_REPLY", "AWAITING_REPLY", "FYI", "ACTIONED"]
+    confident: bool
+    reason: str
+    signals: dict[str, bool]
+
+
 class SummarizeRequest(StrictModel):
     subject: str = Field(default="", max_length=2_000)
     body: str = Field(max_length=50_000)

@@ -1,0 +1,43 @@
+{
+ "rules": {
+  "threshold": 0.5,
+  "request_boost": 0.15,
+  "request_floor": 0.0,
+  "secondary_margin": 0.05,
+  "confident_band": 0.01,
+  "confident_margin": 0.02
+ },
+ "tuned_on": "data/matching dev half",
+ "dev": {
+  "rules": {
+   "accuracy": 0.7292,
+   "coverage": 0.75,
+   "confident_accuracy": 0.8611,
+   "cascade_upper_bound": 0.8958,
+   "by_language": {
+    "en": 0.75,
+    "taglish": 0.75,
+    "tl": 0.6875
+   }
+  }
+ },
+ "test": {
+  "rules": {
+   "accuracy": 0.5625,
+   "coverage": 0.625,
+   "confident_accuracy": 0.7,
+   "cascade_upper_bound": 0.8125,
+   "by_language": {
+    "en": 0.5625,
+    "taglish": 0.5625,
+    "tl": 0.5625
+   }
+  },
+  "threads": {
+   "accuracy": 0.9167,
+   "coverage": 0.9167,
+   "confident_accuracy": 0.9091,
+   "cascade_upper_bound": 0.9167
+  }
+ }
+}

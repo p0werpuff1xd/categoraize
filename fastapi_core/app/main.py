@@ -18,6 +18,8 @@ from fastapi.responses import JSONResponse
 from .algorithms.classifier import choose_category, cosine, rank_categories
 from .algorithms.feedback import FeedbackError, update_centroids
 from .algorithms.label_library import LABEL_TEMPLATES
+from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict
+from .algorithms.thread_status import ThreadMessage, asks_question, determine_status
 from .ml.priority_rules import compute_priority
 from .nlp.extractor import resolve_date
 from .nlp.language import detect_language
@@ -27,6 +29,8 @@ from .schemas import (
     CategoryInput,
     CategoryMatch,
     CentroidOutput,
+    ChooseRuleRequest,
+    ChooseRuleResponse,
     ClassifyRequest,
     ClassifyResponse,
     EmbedRequest,
@@ -41,6 +45,8 @@ from .schemas import (
     SuggestedLabel,
     SummarizeRequest,
     SummarizeResponse,
+    ThreadStatusRequest,
+    ThreadStatusResponse,
 )
 from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, model_manager
 from .services.tagger import tagger_manager
@@ -200,6 +206,53 @@ def match(request: MatchRequest) -> MatchResponse:
 
 
 @app.post(
+    "/api/v1/choose-rule",
+    response_model=ChooseRuleResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def choose_rule_endpoint(request: ChooseRuleRequest) -> ChooseRuleResponse:
+    params = load_rule_params()
+    _name, tag, _version = tagger_manager.active()
+    has_request = asks_question(request.body) or any(
+        span.label == "TASK" for text in (request.subject, request.body) for span in tag(text)
+    )
+    decision = choose_rule(
+        model_manager.embed_email(request.subject, request.body),
+        [
+            RuleInput(rule.id, rule.name, rule.instructions, rule.reply_needed, rule.system_type)
+            for rule in request.rules
+        ],
+        has_request=has_request,
+        allow_multiple=request.allow_multiple,
+        embed=_embed_cached,
+        params=params,
+    )
+    return ChooseRuleResponse(
+        ranked=[CategoryMatch(id=rule_id, similarity=score) for rule_id, score in decision.ranked],
+        matched=decision.matched,
+        confident=decision.confident,
+        reasons=decision.reasons,
+        has_request=has_request,
+        params=params_dict(params),
+    )
+
+
+@app.post(
+    "/api/v1/thread-status",
+    response_model=ThreadStatusResponse,
+    dependencies=[Depends(require_internal_key)],
+)
+def thread_status_endpoint(request: ThreadStatusRequest) -> ThreadStatusResponse:
+    _name, tag, _version = tagger_manager.active()
+    decision = determine_status(
+        [ThreadMessage(m.from_user, m.subject, m.body, m.automated) for m in request.messages], tag
+    )
+    return ThreadStatusResponse(
+        status=decision.status, confident=decision.confident, reason=decision.reason, signals=decision.signals
+    )
+
+
+@app.post(
     "/api/v1/summarize",
     response_model=SummarizeResponse,
     dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
@@ -240,6 +293,20 @@ def feedback(request: FeedbackRequest) -> FeedbackResponse:
         alpha=request.alpha,
         beta=request.beta,
     )
+
+
+_DESCRIPTION_CACHE: dict[str, list[float]] = {}
+_DESCRIPTION_CACHE_LIMIT = 5000
+
+
+def _embed_cached(texts: list[str]) -> list[list[float]]:
+    """Rule descriptions repeat on every email; embed each one once."""
+    missing = [text for text in dict.fromkeys(texts) if text not in _DESCRIPTION_CACHE]
+    if missing:
+        if len(_DESCRIPTION_CACHE) + len(missing) > _DESCRIPTION_CACHE_LIMIT:
+            _DESCRIPTION_CACHE.clear()
+        _DESCRIPTION_CACHE.update(zip(missing, model_manager.embed(missing)))
+    return [_DESCRIPTION_CACHE[text] for text in texts]
 
 
 def _category_text(category: CategoryInput) -> str:
