@@ -1,7 +1,6 @@
 import type { EmailAccountWithAI } from "@/utils/llms/types";
-import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
+import { determineThreadStatusCascade } from "@/utils/categoraize/thread-status";
 import type { ParsedMessage } from "@/utils/types";
-import { aiDetermineThreadStatus } from "@/utils/ai/reply/determine-thread-status";
 import prisma from "@/utils/prisma";
 import type { Logger } from "@/utils/logger";
 import { internalDateToDate, sortByInternalDate } from "@/utils/date";
@@ -105,15 +104,11 @@ export async function handleOutboundReply({
       return;
     }
 
-    if (!(await isExternalLlmAllowed(emailAccount.userId))) {
-      logger.info("Skipping Reply Zero status: external AI is turned off");
-      return;
-    }
-
-    const aiResult = await aiDetermineThreadStatus({
+    const aiResult = await determineThreadStatusCascade({
       emailAccount,
       threadMessages: threadMessagesForLLM,
       userSentLastEmail: true,
+      logger,
     });
 
     logger.info("AI determined thread status", { status: aiResult.status });

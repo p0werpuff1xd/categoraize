@@ -81,6 +81,7 @@ const parsedEnv = createEnv({
     CATEGORAIZE_SMART_CATEGORIES: booleanString.optional().default(true),
     CATEGORAIZE_COLD_EMAIL: booleanString.optional().default(true),
     CATEGORAIZE_SUMMARIES: booleanString.optional().default(true),
+    CATEGORAIZE_REPLY_STATUS: booleanString.optional().default(true),
 
     AUTH_SECRET: z.string().optional(),
     SCIM_CREDENTIAL_HASH_SECRET: z.string().min(32).optional(),

@@ -50,28 +50,3 @@ export async function matchDescriptionGroups({
     hasTask: result.has_task,
   };
 }
-
-/**
- * Short descriptions from a rule: its name, its text without the "Name:"
- * prefix, and each listed item. Exclusion sentences ("Exclude…", "Except…")
- * are dropped because similarity cannot express "not".
- */
-export function ruleDescriptions(name: string, instructions: string) {
-  const sentences = instructions
-    .split(/(?<=[.!?])\s+/)
-    .map((sentence) => sentence.trim())
-    .filter(
-      (sentence) =>
-        sentence && !/^(exclude|except|do not|don't|not)\b/i.test(sentence),
-    );
-  const text = sentences
-    .join(" ")
-    .replace(/^[^:]{1,40}:\s*/, "")
-    .trim()
-    .replace(/[.\s]+$/, "");
-  const items = text
-    .split(/,|;|:|\bor\b|\band\b/i)
-    .map((item) => item.trim().replace(/[.\s]+$/, ""))
-    .filter((item) => item.length > 2);
-  return [...new Set([name, text, ...items].filter(Boolean))];
-}

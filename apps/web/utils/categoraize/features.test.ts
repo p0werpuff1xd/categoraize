@@ -22,7 +22,9 @@ vi.mock("@/utils/categoraize/consent", () => ({
   hasExternalLlmConsent: async () => mocks.consent,
 }));
 
-const { runCategoraizeOrLlm } = await import("./features");
+const { runCategoraizeOrLlm, runCategoraizeCascade } = await import(
+  "./features"
+);
 const { CategoraizeServiceError } = await import("@/utils/categoraize/client");
 
 const logger = createScopedLogger("features-test");
@@ -83,6 +85,64 @@ describe("runCategoraizeOrLlm", () => {
       }),
     ).rejects.toThrow("external AI processing is turned off");
     expect(llm).not.toHaveBeenCalled();
+  });
+
+  it("cascade: a confident local answer never reaches the LLM", async () => {
+    mocks.consent = true;
+    const llm = vi.fn(async () => "llm");
+    await expect(
+      runCategoraizeCascade({
+        feature: "ruleMatching",
+        userId: "user-1",
+        logger,
+        local: async () => ({ result: "local", confident: true }),
+        llm,
+      }),
+    ).resolves.toBe("local");
+    expect(llm).not.toHaveBeenCalled();
+  });
+
+  it("cascade: an unsure answer goes to the LLM only with consent", async () => {
+    const llm = vi.fn(async () => "llm");
+    const unsure = async () => ({ result: "local", confident: false });
+
+    await expect(
+      runCategoraizeCascade({
+        feature: "ruleMatching",
+        userId: "u",
+        logger,
+        local: unsure,
+        llm,
+      }),
+    ).resolves.toBe("local");
+    expect(llm).not.toHaveBeenCalled();
+
+    mocks.consent = true;
+    await expect(
+      runCategoraizeCascade({
+        feature: "ruleMatching",
+        userId: "u",
+        logger,
+        local: unsure,
+        llm,
+      }),
+    ).resolves.toBe("llm");
+    expect(llm).toHaveBeenCalledWith("local");
+  });
+
+  it("cascade: keeps the local answer when the LLM fails", async () => {
+    mocks.consent = true;
+    await expect(
+      runCategoraizeCascade({
+        feature: "ruleMatching",
+        userId: "u",
+        logger,
+        local: async () => ({ result: "local", confident: false }),
+        llm: async () => {
+          throw new Error("provider down");
+        },
+      }),
+    ).resolves.toBe("local");
   });
 
   it("does not hide bugs: non-service errors are rethrown", async () => {

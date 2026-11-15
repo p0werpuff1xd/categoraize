@@ -1,12 +1,8 @@
 import type { EmailAccountWithAI } from "@/utils/llms/types";
-import {
-  EXTERNAL_LLM_OFF_MESSAGE,
-  isExternalLlmAllowed,
-} from "@/utils/categoraize/consent";
+import { determineThreadStatusCascade } from "@/utils/categoraize/thread-status";
 import type { ModelType } from "@/utils/llms/model";
 import type { ParsedMessage, RuleWithActions } from "@/utils/types";
 import type { EmailProvider } from "@/utils/email/types";
-import { aiDetermineThreadStatus } from "@/utils/ai/reply/determine-thread-status";
 import { createScopedLogger } from "@/utils/logger";
 import { SystemType, ThreadTrackerType } from "@/generated/prisma/enums";
 import prisma from "@/utils/prisma";
@@ -74,11 +70,6 @@ export async function determineConversationStatus({
     };
   }
 
-  if (!(await isExternalLlmAllowed(emailAccount.userId))) {
-    logger.info("Skipping Reply Zero status: external AI is turned off");
-    return { rule: null, reason: EXTERNAL_LLM_OFF_MESSAGE };
-  }
-
   const threadMessagesForLLM = buildThreadStatusMessagesForLLM(sortedMessages);
 
   // Check if the user sent the last email in the thread
@@ -87,12 +78,13 @@ export async function determineConversationStatus({
     ? provider.isSentMessage(lastMessage)
     : false;
 
-  const { status, rationale } = await aiDetermineThreadStatus({
+  const { status, rationale } = await determineThreadStatusCascade({
     emailAccount,
     threadMessages: threadMessagesForLLM,
     modelType,
     userSentLastEmail,
     conversationRules,
+    logger,
   });
 
   logger.info("AI determined thread status", {

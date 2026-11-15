@@ -90,6 +90,22 @@ const summarizeResponseSchema = z.object({
   method: z.string(),
 });
 
+const chooseRuleResponseSchema = z.object({
+  ranked: z.array(categoryMatchSchema),
+  matched: z.array(z.string()),
+  confident: z.boolean(),
+  reasons: z.array(z.string()),
+  has_request: z.boolean(),
+  params: z.record(z.string(), z.number()),
+});
+
+const threadStatusResponseSchema = z.object({
+  status: z.enum(["TO_REPLY", "AWAITING_REPLY", "FYI", "ACTIONED"]),
+  confident: z.boolean(),
+  reason: z.string(),
+  signals: z.record(z.string(), z.boolean()),
+});
+
 export type CategoraizeMatch = z.infer<typeof matchResponseSchema>;
 export type CategoraizeClassification = z.infer<typeof classifyResponseSchema>;
 export type CategoraizeSpan = z.infer<typeof spanSchema>;
@@ -206,6 +222,47 @@ export async function matchEmail(request: {
   threshold?: number;
 }) {
   return callService("/api/v1/match", request, matchResponseSchema);
+}
+
+/** Rule matching with a confidence verdict (the service's tuned settings). */
+export async function chooseRuleLocally(request: {
+  subject: string;
+  body: string;
+  rules: Array<{
+    id: string;
+    name: string;
+    instructions: string;
+    reply_needed: boolean;
+    system_type: string | null;
+  }>;
+  allowMultiple: boolean;
+}) {
+  return callService(
+    "/api/v1/choose-rule",
+    {
+      subject: request.subject,
+      body: request.body,
+      rules: request.rules,
+      allow_multiple: request.allowMultiple,
+    },
+    chooseRuleResponseSchema,
+  );
+}
+
+/** Reply Zero status from tagger signals, with a confidence verdict. */
+export async function threadStatusLocally(
+  messages: Array<{
+    from_user: boolean;
+    subject: string;
+    body: string;
+    automated: boolean;
+  }>,
+) {
+  return callService(
+    "/api/v1/thread-status",
+    { messages },
+    threadStatusResponseSchema,
+  );
 }
 
 /** Extractive summary: up to maxSentences original sentences. */

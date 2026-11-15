@@ -12,7 +12,7 @@ import { getUserInfoPrompt, getUserRulesPrompt } from "@/utils/ai/helpers";
 import { sortRulesByCanonicalOrder } from "@/utils/rule/sort";
 import type { Logger } from "@/utils/logger";
 import type { ClassificationFeedbackItem } from "@/utils/rule/classification-feedback";
-import { runCategoraizeOrLlm } from "@/utils/categoraize/features";
+import { runCategoraizeCascade } from "@/utils/categoraize/features";
 import { semanticChooseRule } from "@/utils/categoraize/rule-matching";
 
 type GetAiResponseOptions = {
@@ -47,28 +47,39 @@ export async function aiChooseRule<
 
   const orderedRules = sortRulesByCanonicalOrder(rules);
 
-  return runCategoraizeOrLlm({
+  // Local first; the LLM sees only emails CategorAIze is unsure about, and
+  // only for users who opted in to external AI.
+  return runCategoraizeCascade({
     feature: "ruleMatching",
     userId: emailAccount.userId,
     logger,
-    categoraize: () =>
-      semanticChooseRule({
+    local: async () => {
+      const { confident, ...result } = await semanticChooseRule({
         email,
         rules: orderedRules,
         allowMultiple: shouldSelectMultipleRules({
           rules: orderedRules,
           emailAccount,
         }),
-      }),
-    llm: () =>
-      llmChooseRule({
+      });
+      return { result, confident };
+    },
+    llm: async (localResult) => {
+      const result = await llmChooseRule({
         email,
         orderedRules,
         emailAccount,
         modelType,
         logger,
         classificationFeedback,
-      }),
+      });
+      return localResult
+        ? {
+            ...result,
+            reason: `CategorAIze was unsure, so the external AI decided: ${result.reason}`,
+          }
+        : result;
+    },
   });
 }
 

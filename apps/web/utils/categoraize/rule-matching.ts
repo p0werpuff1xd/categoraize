@@ -1,23 +1,15 @@
-import {
-  matchDescriptionGroups,
-  ruleDescriptions,
-} from "@/utils/categoraize/multi-match";
-import type { EmailForLLM } from "@/utils/types";
 import { SystemType } from "@/generated/prisma/enums";
+import { chooseRuleLocally } from "@/utils/categoraize/client";
 import { CONVERSATION_TRACKING_META_RULE_ID } from "@/utils/reply-tracker/conversation-status-config";
+import type { EmailForLLM } from "@/utils/types";
 
-// Same starting threshold as label classification (plan section 2).
-export const RULE_MATCH_THRESHOLD = 0.35;
-// "To Reply" means "someone is asking me for something", which the TASK
-// tagger detects directly; similarity to a description alone misses it.
-export const TO_REPLY_TASK_BOOST = 0.15;
-// With multi-rule selection, a second rule must be this close to the best one.
-const SECONDARY_MARGIN = 0.05;
+const MAX_BODY_CHARS = 8000;
 
 /**
- * Sentence-BERT replacement for the LLM rule selector. Each rule is matched
- * by its best short description (its name and each listed item), and the
- * To Reply rule gets a boost when the Bi-LSTM-CRF finds a request.
+ * Local rule matching on the CategorAIze service (Sentence-BERT with several
+ * short descriptions per rule; the reply rule competes only when the
+ * Bi-LSTM-CRF finds a request or question). Returns a confidence verdict so
+ * the caller can escalate unsure emails to the external LLM.
  *
  * Limits compared with the LLM: exclusions ("except newsletters") are dropped,
  * and a catch-all rule ("anything that doesn't match the others") has no
@@ -38,61 +30,54 @@ export async function semanticChooseRule<
   email: Pick<EmailForLLM, "subject" | "content">;
   rules: T[];
   allowMultiple: boolean;
-}): Promise<{ rules: { rule: T; isPrimary?: boolean }[]; reason: string }> {
-  const groups = rules
-    .map((rule, index) => ({
-      id: String(index),
-      descriptions: ruleDescriptions(rule.name, rule.instructions ?? ""),
-    }))
-    .filter((group) => group.descriptions.length > 0);
-  if (!groups.length) {
-    return { rules: [], reason: "No rule has instructions to match against" };
-  }
-
-  const result = await matchDescriptionGroups({
+}): Promise<{
+  rules: { rule: T; isPrimary?: boolean }[];
+  reason: string;
+  confident: boolean;
+}> {
+  const result = await chooseRuleLocally({
     subject: email.subject,
-    body: email.content,
-    groups,
+    body: email.content.slice(0, MAX_BODY_CHARS),
+    rules: rules.map((rule, index) => ({
+      id: String(index),
+      name: rule.name,
+      instructions: rule.instructions ?? "",
+      reply_needed: isReplyNeededRule(rule),
+      system_type: rule.systemType ?? null,
+    })),
+    allowMultiple,
   });
+
+  const nameOf = (id: string) => rules[Number(id)]?.name ?? id;
   const ranked = result.ranked
-    .map(({ id, similarity }) => {
-      const rule = rules[Number(id)];
-      const boost =
-        result.hasTask && isReplyNeededRule(rule) ? TO_REPLY_TASK_BOOST : 0;
-      return { rule, similarity: similarity + boost };
-    })
-    .sort((a, b) => b.similarity - a.similarity);
-
-  const top = ranked
     .slice(0, 3)
-    .map(({ rule, similarity }) => `"${rule.name}" ${similarity.toFixed(2)}`)
+    .map(({ id, similarity }) => `"${nameOf(id)}" ${similarity.toFixed(2)}`)
     .join(", ");
-  const requestNote = result.hasTask
-    ? " A request was found in the email."
-    : "";
-  const [primary, ...rest] = ranked;
+  const threshold = result.params.threshold ?? 0;
+  const notes = [
+    result.has_request ? "a request or question was found" : null,
+    result.confident ? null : `unsure: ${result.reasons.join("; ")}`,
+  ]
+    .filter(Boolean)
+    .join("; ");
+  const suffix = notes ? ` (${notes})` : "";
 
-  if (!primary || primary.similarity < RULE_MATCH_THRESHOLD) {
+  if (!result.matched.length) {
     return {
       rules: [],
-      reason: `CategorAIze (Sentence-BERT): no rule reached the ${RULE_MATCH_THRESHOLD} similarity threshold. Closest: ${top}.${requestNote}`,
+      confident: result.confident,
+      reason: `CategorAIze (Sentence-BERT): no rule reached the ${threshold} threshold. Closest: ${ranked}${suffix}.`,
     };
   }
 
-  const secondary = allowMultiple
-    ? rest.filter(
-        ({ similarity }) =>
-          similarity >= RULE_MATCH_THRESHOLD &&
-          similarity >= primary.similarity - SECONDARY_MARGIN,
-      )
-    : [];
-
+  const [primaryId, ...others] = result.matched;
   return {
     rules: [
-      { rule: primary.rule, isPrimary: true },
-      ...secondary.slice(0, 1).map(({ rule }) => ({ rule, isPrimary: false })),
+      { rule: rules[Number(primaryId)], isPrimary: true },
+      ...others.map((id) => ({ rule: rules[Number(id)], isPrimary: false })),
     ],
-    reason: `CategorAIze (Sentence-BERT): matched "${primary.rule.name}" with similarity ${primary.similarity.toFixed(2)} (threshold ${RULE_MATCH_THRESHOLD}). Ranked: ${top}.${requestNote}`,
+    confident: result.confident,
+    reason: `CategorAIze (Sentence-BERT): matched "${nameOf(primaryId)}" (threshold ${threshold}). Ranked: ${ranked}${suffix}.`,
   };
 }
 
