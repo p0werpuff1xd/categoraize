@@ -120,7 +120,14 @@ python -m training.evaluate --version v3 --file data/test/holdout_claude.md
 | v2 | 0.969 | 0.939 | 0.792 |
 | v3 | 0.993 | 0.940 | 0.775 |
 | v4 | n/a | 0.981 | 0.765 |
-| v5 (current) | 1.000 | 0.981 | **0.828** |
+| v5 | 1.000 | 0.981 | 0.828 |
+| v6 (current) | 0.997 | 0.988 | **0.863** |
+
+v6 adds 1,263 LLM-written emails (`data/llm`, English/Filipino/Taglish from a
+free OpenRouter model) to the 5,000 template emails. On the LLM-written
+holdout (142 emails never trained on) it scores entity F1 0.858 against 0.655
+for the regex baseline; Filipino on the hand-written held-out set rose to
+0.875.
 
 v5 comes from `python -m training.tune_tagger`, a grid search over 16 settings
 (training size 2,000/5,000, hidden 128/256, dropout 0.3/0.5, 12/20 epochs). The
@@ -131,64 +138,33 @@ the first version above the regex baseline in every language (Filipino 0.788 vs
 
 ## Rule matching and Reply Zero (cascade)
 
-`python -m training.eval_matching --test` tunes rule matching on the dev half
-of `data/matching` and scores the test half once. These are invented emails
-against the default Inbox Zero rules:
+`python -m training.eval_matching --test` builds the learned rule centroids,
+tunes the settings and reports scores:
 
-| | Dev (tuned on) | Test (scored once) |
+1. **Learned centroids:** averaged over 80% of the LLM-written rule emails
+   (`data/llm/rules.jsonl`), one per built-in rule plus "NONE", overall and per
+   language. They are saved to `app/data/rule_prototypes.json`.
+2. **Tuning:** the settings are tuned on that same 80%.
+3. **Scoring:** the other 20% is an LLM holdout, and the hand-written sets in
+   `data/matching` (a different author) are the test.
+
+Custom rules and edited built-in rules never use the centroids, only the
+user's wording.
+
+| Rule matching (default Inbox Zero rules) | Descriptions only | With learned centroids |
 | --- | --- | --- |
-| Rule matching, local only | 0.729 | 0.562 |
-| Decided locally (confident) | 75%, accuracy 0.861 | 62%, accuracy 0.700 |
-| If the external AI got every unsure email right | 0.896 | 0.812 |
-| Reply Zero status | 0.958 | 0.917 |
+| Hand-written test, local only | 0.604 | **0.792** (en 0.875, Taglish 0.844, Filipino 0.656) |
+| LLM holdout, local only | 0.544 | **0.824** |
+| Confident (local) answers: accuracy | 0.830 | **0.941** (53% of test emails) |
+| If the external AI got every unsure email right | 0.906 | **0.969** |
 
-The dev-to-test drop shows the tuned rule settings fit the 48 dev emails better
-than new ones. That is why unsure emails escalate. Reply Zero holds up. Both
-sets were written by the same author as the rule descriptions, so treat them as
-optimistic.
+Reply Zero status: **0.917** on the hand-written test, 0.923 on the LLM holdout.
 
-v4 adds subject lines to the synthetic data: v3 tagged words in plain
-subjects ("Your receipt from Grab") as requests. The held-out score is the
-same within noise, and the subject false positives are gone. The provisional
-column is a development number from v2 on.
-
-Held-out set, v3 against regex, per label:
-
-| | Bi-LSTM-CRF v3 | Regex |
-| --- | --- | --- |
-| TASK F1 | 0.744 | 0.588 |
-| DATE F1 | 0.800 | 0.885 |
-
-How to read these numbers honestly:
-- **Synthetic dev scores are inflated.** The dev set comes from the same
-  generator as the training data.
-- **The provisional set was used to diagnose v1's errors.** The generator was
-  broadened afterwards: numbers outside dates, longer objects, `pa-` forms,
-  clauses after a request, plain news sentences. From v2 on, that set is a
-  development set, not a clean test.
-- **The held-out set was written after v2 and never used for tuning.** It is
-  still small, and its author also wrote the generator.
-- **The clean numbers will come from the team's hand-labeled set**
-  (`data/test/hand_labeled.md`, about 100 emails).
-- **Current picture:** the tagger is clearly better at finding tasks than the
-  regex, slightly worse at dates, and weakest on Filipino.
-
-## Docker (CPU only)
-
-```powershell
-docker build -t categoraize-nlp .
-docker run --rm -p 8000:8000 -e CATEGORAIZE_INTERNAL_KEY=... categoraize-nlp
-```
-
-The image bakes in the model weights, so it is large (about 2 GB).
-
-## Tuning notes
-
-`0.35` is the plan's starting threshold. With this model, short emails that
-match score 0.33 to 0.45 against a one-sentence category description, and
-some non-matching emails reach about 0.33. Borderline transactional emails
-(a short bill notice) can therefore come back Uncategorized. The ranking is
-still right, and one Rocchio correction moves the category over the
-threshold (covered in the tests). Richer category descriptions help more
-than lowering the threshold.
-
+How to read these numbers:
+- The hand-written test was scored three times during this work (before the
+  centroids, with overall centroids, then per-language ones), so it is no
+  longer fully untouched.
+- On it, the confidence cut-off tuned on LLM emails flags more emails as
+  unsure (47%) than on LLM data (about 25%).
+- With external AI off, the unsure emails still get the local answer.
+- Filipino remains the weakest language.

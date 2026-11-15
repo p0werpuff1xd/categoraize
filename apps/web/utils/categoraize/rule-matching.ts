@@ -1,6 +1,7 @@
 import { SystemType } from "@/generated/prisma/enums";
 import { chooseRuleLocally } from "@/utils/categoraize/client";
 import { CONVERSATION_TRACKING_META_RULE_ID } from "@/utils/reply-tracker/conversation-status-config";
+import { isDefaultRuleInstructions } from "@/utils/rule/consts";
 import type { EmailForLLM } from "@/utils/types";
 
 const MAX_BODY_CHARS = 8000;
@@ -43,7 +44,7 @@ export async function semanticChooseRule<
       name: rule.name,
       instructions: rule.instructions ?? "",
       reply_needed: isReplyNeededRule(rule),
-      system_type: rule.systemType ?? null,
+      system_type: builtInKind(rule),
     })),
     allowMultiple,
   });
@@ -79,6 +80,23 @@ export async function semanticChooseRule<
     confident: result.confident,
     reason: `CategorAIze (Sentence-BERT): matched "${nameOf(primaryId)}" (threshold ${threshold}). Ranked: ${ranked}${suffix}.`,
   };
+}
+
+// A built-in rule gets the service's learned centroid and bilingual
+// descriptions only while its instructions are the default; once the user
+// rewrites them, only their wording counts.
+function builtInKind(rule: {
+  systemType?: string | null;
+  instructions: string;
+}) {
+  if (!rule.systemType || !isSystemType(rule.systemType)) return null;
+  return isDefaultRuleInstructions(rule.systemType, rule.instructions)
+    ? rule.systemType
+    : null;
+}
+
+function isSystemType(value: string): value is SystemType {
+  return (Object.values(SystemType) as string[]).includes(value);
 }
 
 // With conversation tracking on, the To Reply rule is offered as the

@@ -20,6 +20,11 @@ from pathlib import Path
 from .classifier import cosine
 
 PARAMS_PATH = Path(__file__).resolve().parent.parent / "data" / "matching_params.json"
+# Learned centroids for the built-in rules (and "NONE": no rule fits), built by
+# training.eval_matching from labeled synthetic emails (Rocchio-style mean of
+# example embeddings). Custom rules never use them.
+PROTOTYPES_PATH = Path(__file__).resolve().parent.parent / "data" / "rule_prototypes.json"
+NONE_PROTOTYPE = "NONE"
 
 
 @dataclass(frozen=True)
@@ -88,6 +93,18 @@ class RuleDecision:
     reasons: list[str] = field(default_factory=list)
 
 
+_PROTOTYPES: dict[str, list[float]] | None = None
+
+
+def load_prototypes() -> dict[str, list[float]]:
+    global _PROTOTYPES
+    if _PROTOTYPES is None:
+        _PROTOTYPES = (
+            json.loads(PROTOTYPES_PATH.read_text(encoding="utf-8"))["prototypes"] if PROTOTYPES_PATH.exists() else {}
+        )
+    return _PROTOTYPES
+
+
 def load_rule_params() -> RuleParams:
     if PARAMS_PATH.exists():
         data = json.loads(PARAMS_PATH.read_text(encoding="utf-8")).get("rules", {})
@@ -119,7 +136,16 @@ def choose_rule(
     allow_multiple: bool,
     embed: Callable[[list[str]], list[list[float]]],
     params: RuleParams,
+    prototypes: dict[str, list[float]] | None = None,
+    language: str | None = None,
 ) -> RuleDecision:
+    prototypes = load_prototypes() if prototypes is None else prototypes
+
+    def prototype_vectors(kind: str) -> list[list[float]]:
+        # The overall centroid plus, when known, the email language's own one.
+        keys = [kind, f"{kind}@{language}"] if language else [kind]
+        return [prototypes[key] for key in keys if key in prototypes]
+
     scores: list[tuple[str, float]] = []
     for rule in rules:
         descriptions = rule_descriptions(rule.name, rule.instructions) + SYSTEM_DESCRIPTIONS.get(
@@ -127,7 +153,12 @@ def choose_rule(
         )
         if not descriptions or (rule.reply_needed and not has_request):
             continue
-        best = max(cosine(email_vector, vector) for vector in embed(descriptions))
+        vectors = embed(descriptions)
+        # A built-in rule also matches by its learned centroid, unless the user
+        # rewrote its instructions (then only their wording counts).
+        if rule.system_type is not None:
+            vectors = [*vectors, *prototype_vectors(rule.system_type)]
+        best = max(cosine(email_vector, vector) for vector in vectors)
         if rule.reply_needed:
             best = max(best + params.request_boost, params.threshold + params.request_floor)
         scores.append((rule.id, best))
@@ -138,6 +169,16 @@ def choose_rule(
     top_id, top = ranked[0]
     runner_up = ranked[1][1] if len(ranked) > 1 else -1.0
     reasons: list[str] = []
+    # "No rule fits" has its own centroid (personal chit-chat, greetings...).
+    none_vectors = prototype_vectors(NONE_PROTOTYPE)
+    if none_vectors:
+        none_score = max(cosine(email_vector, vector) for vector in none_vectors)
+        if none_score > top:
+            confident = none_score - top >= params.confident_margin
+            if not confident:
+                reasons.append("closest to 'no rule fits', but only barely")
+            return RuleDecision(ranked, [], confident, reasons)
+        runner_up = max(runner_up, none_score)
     if top < params.threshold:
         confident = top <= params.threshold - params.confident_band
         if not confident:
@@ -160,6 +201,13 @@ def choose_rule(
             if score >= params.threshold and score >= top - params.secondary_margin
         ]
     return RuleDecision(ranked, matched, confident, reasons)
+
+
+def prototype_language(text: str) -> str | None:
+    """Map language ID to the prototype keys: en, tl, taglish (None if unknown)."""
+    from ..nlp.language import detect_language
+
+    return {"en": "en", "tl": "tl", "mixed": "taglish"}.get(detect_language(text))
 
 
 def params_dict(params: RuleParams) -> dict:

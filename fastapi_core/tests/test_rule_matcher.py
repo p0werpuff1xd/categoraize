@@ -29,22 +29,38 @@ RULES = [
 
 def test_reply_rule_competes_only_when_a_request_was_found():
     embed = _fake_embed({"To Reply": 0.9, "Receipt": 0.5, "OTP": 0.2})
-    without = choose_rule([1.0, 0.0], RULES, has_request=False, allow_multiple=False, embed=embed, params=PARAMS)
+    without = choose_rule([1.0, 0.0], RULES, has_request=False, allow_multiple=False, embed=embed, params=PARAMS, prototypes={})
     assert without.matched == ["receipt"]
-    with_request = choose_rule([1.0, 0.0], RULES, has_request=True, allow_multiple=False, embed=embed, params=PARAMS)
+    with_request = choose_rule([1.0, 0.0], RULES, has_request=True, allow_multiple=False, embed=embed, params=PARAMS, prototypes={})
     assert with_request.matched == ["reply"]
 
 
 def test_close_scores_are_not_confident_and_clear_wins_are():
     close = choose_rule([1.0, 0.0], RULES, has_request=False, allow_multiple=False,
-                        embed=_fake_embed({"Receipt": 0.6, "OTP": 0.58}), params=PARAMS)
+                        embed=_fake_embed({"Receipt": 0.6, "OTP": 0.58}), params=PARAMS, prototypes={})
     assert close.matched == ["receipt"] and close.confident is False
     clear = choose_rule([1.0, 0.0], RULES, has_request=False, allow_multiple=False,
-                        embed=_fake_embed({"Receipt": 0.6, "OTP": 0.3}), params=PARAMS)
+                        embed=_fake_embed({"Receipt": 0.6, "OTP": 0.3}), params=PARAMS, prototypes={})
     assert clear.confident is True
     just_below = choose_rule([1.0, 0.0], RULES, has_request=False, allow_multiple=False,
-                             embed=_fake_embed({"Receipt": 0.39, "OTP": 0.1}), params=PARAMS)
+                             embed=_fake_embed({"Receipt": 0.39, "OTP": 0.1}), params=PARAMS, prototypes={})
     assert just_below.matched == [] and just_below.confident is False
+
+
+def test_learned_prototypes_help_built_in_rules_and_none_means_no_rule():
+    rules = [RuleInput("receipt", "Receipt", "", system_type="RECEIPT"), RuleInput("otp", "OTP", "", system_type="OTP")]
+    embed = _fake_embed({"Receipt": 0.1, "OTP": 0.2})
+    receipt_like = [0.8, 0.6]  # cosine 0.8 with the email vector [1, 0]
+    decision = choose_rule([1.0, 0.0], rules, has_request=False, allow_multiple=False, embed=embed,
+                           params=PARAMS, prototypes={"RECEIPT": receipt_like})
+    assert decision.matched == ["receipt"]
+    # A per-language centroid counts only for that language.
+    by_language = choose_rule([1.0, 0.0], rules, has_request=False, allow_multiple=False, embed=embed,
+                              params=PARAMS, prototypes={"RECEIPT@tl": receipt_like}, language="en")
+    assert by_language.matched == []
+    none_wins = choose_rule([1.0, 0.0], rules, has_request=False, allow_multiple=False, embed=embed,
+                            params=PARAMS, prototypes={"RECEIPT": receipt_like, "NONE": [1.0, 0.0]})
+    assert none_wins.matched == []
 
 
 def test_choose_rule_endpoint(client):

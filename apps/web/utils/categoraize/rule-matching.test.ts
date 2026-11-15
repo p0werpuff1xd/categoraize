@@ -17,8 +17,15 @@ const { CONVERSATION_TRACKING_META_RULE_ID } = await import(
   "@/utils/reply-tracker/conversation-status-config"
 );
 
+const { getRuleConfig } = await import("@/utils/rule/consts");
+
 const RULES = [
-  { name: "Newsletter", instructions: "Newsletters", systemType: "NEWSLETTER" },
+  {
+    name: "Newsletter",
+    instructions: getRuleConfig("NEWSLETTER").instructions,
+    systemType: "NEWSLETTER",
+  },
+  // Rewritten by the user: only their wording counts, no built-in kind.
   {
     name: "Receipt",
     instructions: "Receipts and invoices",
@@ -51,7 +58,7 @@ function local(overrides: Record<string, unknown>) {
 describe("semanticChooseRule", () => {
   beforeEach(() => mocks.chooseRuleLocally.mockReset());
 
-  it("sends each rule's kind and marks the Conversations meta-rule as the reply rule", async () => {
+  it("sends the built-in kind only for unedited rules and marks Conversations as the reply rule", async () => {
     mocks.chooseRuleLocally.mockResolvedValue(local({}));
     await semanticChooseRule({
       email: EMAIL,
@@ -61,7 +68,7 @@ describe("semanticChooseRule", () => {
     const sent = mocks.chooseRuleLocally.mock.calls[0][0].rules;
     expect(
       sent.map((r: { system_type: string | null }) => r.system_type),
-    ).toEqual(["NEWSLETTER", "RECEIPT", null]);
+    ).toEqual(["NEWSLETTER", null, null]);
     expect(sent.map((r: { reply_needed: boolean }) => r.reply_needed)).toEqual([
       false,
       false,

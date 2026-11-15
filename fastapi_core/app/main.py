@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from .algorithms.classifier import choose_category, cosine, rank_categories
 from .algorithms.feedback import FeedbackError, update_centroids
 from .algorithms.label_library import LABEL_TEMPLATES
-from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict
+from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict, prototype_language
 from .algorithms.thread_status import ThreadMessage, asks_question, determine_status
 from .ml.priority_rules import compute_priority
 from .nlp.extractor import resolve_date
@@ -226,6 +226,7 @@ def choose_rule_endpoint(request: ChooseRuleRequest) -> ChooseRuleResponse:
         allow_multiple=request.allow_multiple,
         embed=_embed_cached,
         params=params,
+        language=prototype_language(f"{request.subject}\n{request.body}"),
     )
     return ChooseRuleResponse(
         ranked=[CategoryMatch(id=rule_id, similarity=score) for rule_id, score in decision.ranked],

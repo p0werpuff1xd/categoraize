@@ -17,13 +17,25 @@ from collections import Counter, defaultdict
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from app.algorithms.rule_matcher import PARAMS_PATH, RuleInput, RuleParams, choose_rule
+from app.algorithms.rule_matcher import (
+    PARAMS_PATH,
+    PROTOTYPES_PATH,
+    RuleInput,
+    RuleParams,
+    choose_rule,
+    prototype_language,
+)
 from app.algorithms.thread_status import ThreadMessage, asks_question, determine_status
 from app.services.embeddings import model_manager
 from app.services.tagger import tagger_manager
 
 DATA = Path(__file__).resolve().parent.parent / "data" / "matching"
+LLM_DIR = Path(__file__).resolve().parent.parent / "data" / "llm"
 MIN_COVERAGE = 0.75
+LABEL_KINDS = {
+    "To Reply": "TO_REPLY", "Newsletter": "NEWSLETTER", "Marketing": "MARKETING", "Calendar": "CALENDAR",
+    "Receipt": "RECEIPT", "Notification": "NOTIFICATION", "OTP": "OTP", "NONE": "NONE",
+}
 
 # Inbox Zero's default rules (apps/web/utils/rule/consts.ts).
 DEFAULT_RULES = [
@@ -48,7 +60,11 @@ def split(rows: list[dict]) -> tuple[list[dict], list[dict]]:
 
 
 def load(name: str) -> list[dict]:
-    return [json.loads(line) for line in (DATA / name).read_text(encoding="utf-8").splitlines() if line.strip()]
+    return load_path(DATA / name)
+
+
+def load_path(path: Path) -> list[dict]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 class RuleScorer:
@@ -61,6 +77,9 @@ class RuleScorer:
             for row in rows
         ]
         self.cache: dict[str, list[float]] = {}
+        self.prototypes: dict[str, list[float]] = {}
+        # Detected (not labeled) language, as the service would see it.
+        self.languages = [prototype_language(row["subject"] + "\n" + row["body"]) for row in rows]
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         missing = [text for text in texts if text not in self.cache]
@@ -72,9 +91,11 @@ class RuleScorer:
         correct = confident = confident_correct = 0
         by_lang: dict[str, list[int]] = defaultdict(lambda: [0, 0])
         errors = []
-        for row, vector, has_request in zip(self.rows, self.vectors, self.requests, strict=True):
+        for row, vector, has_request, language in zip(
+            self.rows, self.vectors, self.requests, self.languages, strict=True
+        ):
             decision = choose_rule(vector, DEFAULT_RULES, has_request=has_request, allow_multiple=False,
-                                   embed=self.embed, params=params)
+                                   embed=self.embed, params=params, prototypes=self.prototypes, language=language)
             predicted = decision.matched[0] if decision.matched else "NONE"
             hit = predicted == row["label"]
             correct += hit
@@ -94,6 +115,23 @@ class RuleScorer:
             "by_language": {lang: round(hit / total, 4) for lang, (hit, total) in sorted(by_lang.items())},
             "errors": errors,
         }
+
+
+def build_prototypes(scorer: RuleScorer) -> dict[str, list[float]]:
+    """Rocchio-style centroid per built-in rule (and NONE) from labeled tuning emails."""
+    by_key: dict[str, list[list[float]]] = defaultdict(list)
+    for row, vector in zip(scorer.rows, scorer.vectors, strict=True):
+        kind = LABEL_KINDS.get(row["label"])
+        if kind is None:
+            continue
+        by_key[kind].append(vector)
+        by_key[f"{kind}@{row['lang']}"].append(vector)
+    prototypes = {}
+    for key, vectors in by_key.items():
+        mean = [sum(column) / len(vectors) for column in zip(*vectors)]
+        norm = sum(value * value for value in mean) ** 0.5
+        prototypes[key] = [round(value / norm, 6) for value in mean]
+    return prototypes
 
 
 def tune_rules(scorer: RuleScorer) -> RuleParams:
@@ -158,11 +196,31 @@ def main() -> None:
     args = parser.parse_args()
 
     model_manager.load()
-    rule_dev, rule_test = split(load("rules.jsonl"))
-    thread_dev, thread_test = split(load("threads.jsonl"))
+    llm_rules, llm_threads = LLM_DIR / "rules.jsonl", LLM_DIR / "threads.jsonl"
+    if llm_rules.exists() and llm_threads.exists():
+        # Tune on 80% of the LLM-written sets; the other 20% is an LLM holdout.
+        # The hand-written sets (a different author) are the test, in full.
+        rules_llm, threads_llm = load_path(llm_rules), load_path(llm_threads)
+        rule_dev = [row for index, row in enumerate(rules_llm) if index % 5]
+        thread_dev = [row for index, row in enumerate(threads_llm) if index % 5]
+        extra_holdouts = {
+            "Rules (LLM holdout)": [row for index, row in enumerate(rules_llm) if not index % 5],
+            "Threads (LLM holdout)": [row for index, row in enumerate(threads_llm) if not index % 5],
+        }
+        rule_test, thread_test = load("rules.jsonl"), load("threads.jsonl")
+        print(f"tuning on {len(rule_dev)} LLM rule emails and {len(thread_dev)} LLM threads; "
+              f"testing on {len(rule_test)} hand-written emails and {len(thread_test)} threads")
+    else:
+        rule_dev, rule_test = split(load("rules.jsonl"))
+        thread_dev, thread_test = split(load("threads.jsonl"))
+        extra_holdouts = {}
 
     dev_scorer = RuleScorer(rule_dev)
-    report("Rules, default settings (dev)", dev_scorer.score(RuleParams()))
+    report("Rules, default settings, descriptions only (dev)", dev_scorer.score(RuleParams()))
+    prototypes = build_prototypes(dev_scorer) if extra_holdouts else {}
+    dev_scorer.prototypes = prototypes
+    if prototypes:
+        report("Rules, default settings, with learned prototypes (dev)", dev_scorer.score(RuleParams()))
     params = tune_rules(dev_scorer)
     dev_result = dev_scorer.score(params)
     print(f"\nTuned settings: {asdict(params)}")
@@ -172,14 +230,34 @@ def main() -> None:
     output = {"rules": asdict(params), "tuned_on": "data/matching dev half",
               "dev": {"rules": {k: v for k, v in dev_result.items() if k != "errors"}}}
     if args.test:
-        test_rules = RuleScorer(rule_test).score(params)
+        test_scorer = RuleScorer(rule_test)
+        if prototypes:
+            report("Rules, descriptions only (TEST, ablation)", {**test_scorer.score(params), "errors": []})
+        test_scorer.prototypes = prototypes
+        test_rules = test_scorer.score(params)
         test_threads = score_threads(thread_test)
         print()
+        for name, rows in extra_holdouts.items():
+            if name.startswith("Rules"):
+                holdout_scorer = RuleScorer(rows)
+                holdout_scorer.prototypes = prototypes
+                result = holdout_scorer.score(params)
+            else:
+                result = score_threads(rows)
+            result["errors"] = []
+            report(name, result)
+            output.setdefault("llm_holdout", {})[name] = result
         report("Rules (TEST, scored once)", test_rules)
         report("Threads (TEST, scored once)", test_threads)
         output["test"] = {"rules": {k: v for k, v in test_rules.items() if k != "errors"},
                           "threads": {k: v for k, v in test_threads.items() if k != "errors"}}
     PARAMS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if prototypes:
+        PROTOTYPES_PATH.write_text(
+            json.dumps({"built_from": f"{len(rule_dev)} LLM-written rule emails (tuning split)",
+                        "prototypes": prototypes}) + "\n",
+            encoding="utf-8",
+        )
     PARAMS_PATH.write_text(json.dumps(output, indent=1) + "\n", encoding="utf-8")
     print(f"\nwrote {PARAMS_PATH}")
 
