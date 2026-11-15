@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import prisma from "@/utils/prisma";
+import { rescoreClassifications } from "@/utils/categoraize/rescore";
 import { actionClient } from "@/utils/actions/safe-action";
 import { isDuplicateError } from "@/utils/prisma-helpers";
 import { SafeError } from "@/utils/error";
@@ -18,6 +19,7 @@ import {
 } from "./categoraize.validation";
 
 const suggestedLabelSchema = z.object({
+  key: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
 });
@@ -128,22 +130,40 @@ export const createCategoryFromSuggestionAction = actionClient
       classificationId: parsedInput.classificationId,
       logger,
     });
+    // Every other Uncategorized email with the same suggestion gets a chance
+    // to match the new label.
+    const rescored = await rescoreClassifications({
+      emailAccountId,
+      where: {
+        categoryId: null,
+        id: { not: parsedInput.classificationId },
+        suggestedLabel: { path: ["key"], equals: suggestion.data.key },
+      },
+      logger,
+    });
 
     revalidateCategoraize(emailAccountId);
-    return { id: category.id };
+    return { id: category.id, rescored: rescored + 1 };
   });
 
 export const upsertCategoraizeContactAction = actionClient
   .metadata({ name: "upsertCategoraizeContact" })
   .inputSchema(upsertCategoraizeContact)
-  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
     const { email, ...data } = parsedInput;
     await prisma.categorizeContact.upsert({
       where: { emailAccountId_email: { emailAccountId, email } },
       create: { emailAccountId, email, ...data },
       update: data,
     });
+    // Role and VIP feed the priority rules, so this sender's emails are re-scored.
+    const rescored = await rescoreClassifications({
+      emailAccountId,
+      where: { fromEmail: { equals: email, mode: "insensitive" } },
+      logger,
+    });
     revalidateCategoraize(emailAccountId);
+    return { rescored };
   });
 
 async function createCategory({

@@ -290,6 +290,7 @@ model EmailAccount {
   categorizePriorityOverrides CategorizePriorityOverrideLog[]
   categorizeSenderCentroids   CategorizeSenderCategoryCentroid[]
   categorizeSenderEmbeddings  CategorizeSenderEmbedding[]
+  categorizeProposalDecisions CategorizeProposalDecision[]
 
   @@index([userId])
   @@index([lastSummaryEmailAt])
@@ -3228,6 +3229,21 @@ model CategorizeSenderEmbedding {
   emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
 
   @@unique([emailAccountId, sender])
+}
+
+/// The user's answer to a priority suggestion (plan section 7), so the same
+/// suggestion is not shown again. The key includes the newest override that
+/// triggered it, so fresh overrides can raise it again later.
+model CategorizeProposalDecision {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  key       String
+  accepted  Boolean
+
+  emailAccountId String
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([emailAccountId, key])
 }
 
 /// FR-1.8 consent record. A new row per acceptance keeps the history; the

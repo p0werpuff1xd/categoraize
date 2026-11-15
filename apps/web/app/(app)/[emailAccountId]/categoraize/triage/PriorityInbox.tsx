@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAction } from "next-safe-action/hooks";
 import { useLocalStorage } from "usehooks-ts";
+import { useSWRConfig } from "swr";
 import {
   ArrowUpIcon,
   FilterXIcon,
@@ -43,6 +44,7 @@ import { cn } from "@/utils";
 import type { CategoraizeClassificationsResponse } from "@/app/api/categorai/classifications/route";
 import type { CategoraizeSearchBody } from "@/app/api/categorai/search/validation";
 import { LOW_CONFIDENCE_SIMILARITY, TriageDetail } from "./TriageDetail";
+import { PrioritySuggestions } from "./PrioritySuggestions";
 import { TaskSheet } from "./TaskSheet";
 import { TriageSearch } from "./TriageSearch";
 
@@ -72,6 +74,7 @@ export function PriorityInbox() {
     useState<CategoraizeSearchBody | null>(null);
   const search = useCategoraizeSearch(searchParams);
   const [taskSheetOpen, setTaskSheetOpen] = useState(false);
+  const { mutate: globalMutate } = useSWRConfig();
 
   const actionCallbacks = {
     onError: ({
@@ -158,6 +161,8 @@ export function PriorityInbox() {
     mutate();
     categories.mutate();
     if (searchParams) search.mutate();
+    // A manual override can complete a pattern worth suggesting.
+    globalMutate("/api/categorai/proposals");
   };
 
   // One row plus its detail panel; shared by the triage list and search results.
@@ -200,6 +205,7 @@ export function PriorityInbox() {
   return (
     <div className="mt-6 space-y-4">
       <ServiceStatusBanner />
+      <PrioritySuggestions onChange={refreshAll} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div

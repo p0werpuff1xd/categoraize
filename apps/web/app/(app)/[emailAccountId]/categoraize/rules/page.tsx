@@ -4,6 +4,7 @@ import { ServiceStatusBanner } from "@/components/CategoraizeStates";
 import { checkUserOwnsEmailAccount } from "@/utils/email-account";
 import { CategoryTaxonomy } from "./CategoryTaxonomy";
 import { ClassificationSandbox } from "./ClassificationSandbox";
+import { SuggestedLabels } from "./SuggestedLabels";
 
 export default async function CategoraizeRulesPage({
   params,
@@ -23,7 +24,10 @@ export default async function CategoraizeRulesPage({
         <ServiceStatusBanner />
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <CategoryTaxonomy />
+        <div className="space-y-6">
+          <SuggestedLabels />
+          <CategoryTaxonomy />
+        </div>
         <ClassificationSandbox />
       </div>
     </PageWrapper>

@@ -32,6 +32,7 @@ import {
   ListOrderedIcon,
   SparklesIcon,
   TagsIcon,
+  ContactIcon,
   Users2Icon,
   ZapIcon,
 } from "lucide-react";
@@ -119,6 +120,12 @@ export const useNavigation = () => {
         label: msg`Label Studio`,
         href: prefixPath(currentEmailAccountId, "/categoraize/rules"),
         icon: TagsIcon,
+      },
+      {
+        name: "Contacts",
+        label: msg`Contacts`,
+        href: prefixPath(currentEmailAccountId, "/categoraize/contacts"),
+        icon: ContactIcon,
       },
       {
         name: "Rules",

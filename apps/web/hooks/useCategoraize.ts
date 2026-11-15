@@ -8,8 +8,25 @@ import type { CategoraizeConsentResponse } from "@/app/api/user/categoraize-cons
 import type { CategoraizeSearchResponse } from "@/app/api/categorai/search/route";
 import type { CategoraizeSearchBody } from "@/app/api/categorai/search/validation";
 import type { CategoraizeTaskSheetResponse } from "@/app/api/categorai/task-sheet/route";
+import type { CategoraizeContactsResponse } from "@/app/api/categorai/contacts/route";
+import type { CategoraizeProposalsResponse } from "@/app/api/categorai/proposals/route";
+import type { CategoraizeSuggestedLabelsResponse } from "@/app/api/categorai/suggested-labels/route";
 import { swrFetcher } from "@/providers/swr-fetcher";
 import { useAccount } from "@/providers/EmailAccountProvider";
+
+export function useCategoraizeContacts() {
+  return useSWR<CategoraizeContactsResponse>("/api/categorai/contacts");
+}
+
+export function useCategoraizeProposals() {
+  return useSWR<CategoraizeProposalsResponse>("/api/categorai/proposals");
+}
+
+export function useCategoraizeSuggestedLabels() {
+  return useSWR<CategoraizeSuggestedLabelsResponse>(
+    "/api/categorai/suggested-labels",
+  );
+}
 
 export function useCategoraizeTaskSheet(open: boolean) {
   return useSWR<CategoraizeTaskSheetResponse>(
