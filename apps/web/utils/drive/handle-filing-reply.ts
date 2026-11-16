@@ -1,4 +1,5 @@
 import prisma from "@/utils/prisma";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 import type { ParsedMessage } from "@/utils/types";
 import type { EmailProvider } from "@/utils/email/types";
 import type { Logger } from "@/utils/logger";
@@ -83,6 +84,12 @@ export async function processFilingReply({
   const messages: { role: "user" | "assistant"; content: string }[] = [
     { role: "user", content: replyContent },
   ];
+
+  // Reading the reply uses the external LLM: only with external-AI consent.
+  if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+    logger.info("Filing reply skipped: external AI processing is turned off");
+    return;
+  }
 
   const knownFolders = await getKnownFilingFolders(emailAccountId);
 

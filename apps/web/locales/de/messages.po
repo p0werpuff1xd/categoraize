@@ -2177,6 +2177,10 @@ msgstr "Kategorisiere automatisch, wer dir schreibt – für einen besser verwal
 msgid "Automatically draft replies written in your tone to emails needing a reply."
 msgstr "Entwirf automatisch Antworten in deinem Ton für E-Mails, die eine Antwort brauchen."
 
+#: app/(app)/[emailAccountId]/assistant/settings/DraftReplies.tsx
+msgid "Automatically draft replies written in your tone to emails needing a reply. Unavailable while external AI processing is off; you can still write replies yourself."
+msgstr ""
+
 #: app/(app)/premium/config-messages.ts
 msgid "Automatically organize and file email attachments to your preferred storage."
 msgstr "Organisiere E-Mail-Anhänge automatisch und lege sie in deinem bevorzugten Speicher ab."
@@ -3597,6 +3601,7 @@ msgid "Consultant"
 msgstr "Berater"
 
 #: app/(app)/config/page.tsx
+#: components/SideNav.tsx
 msgid "Contacts"
 msgstr "Kontakte"
 
@@ -4918,6 +4923,10 @@ msgstr "E-Mail-Aktionen"
 msgid "Email address"
 msgstr "E-Mail-Adresse"
 
+#: app/(app)/accounts/page.tsx
+msgid "Email address already connected"
+msgstr "E-Mail-Adresse bereits verbunden"
+
 #: components/InviteMemberModal.tsx
 msgid "Email addresses"
 msgstr "E-Mail-Adressen"
@@ -5553,6 +5562,18 @@ msgstr "Auswahl nach unten erweitern"
 #: lib/shortcuts/registry.ts
 msgid "Extend the selection up"
 msgstr "Auswahl nach oben erweitern"
+
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "External AI processing"
+msgstr ""
+
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "External AI processing is off. Nothing is sent to the external AI provider."
+msgstr ""
+
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "External AI processing is on. AI drafts and Reply Zero can run."
+msgstr ""
 
 #: utils/action-item.ts
 msgid "Extra Content"
@@ -7728,6 +7749,10 @@ msgstr "Labele Sponsoring-Anfragen als @[Sponsorship] und erstelle einen Antwort
 msgid "Label Stripe emails as @[Stripe]"
 msgstr "Labele E-Mails von Stripe als @[Stripe]"
 
+#: components/SideNav.tsx
+msgid "Label Studio"
+msgstr ""
+
 #: app/(app)/[emailAccountId]/assistant/examples.ts
 msgid "Label urgent emails as @[Urgent]"
 msgstr "Labele dringende E-Mails als @[Urgent]"
@@ -9588,6 +9613,10 @@ msgstr "E-Mail wird auf dem Bildschirm geöffnet"
 msgid "Operation completed successfully."
 msgstr "Vorgang erfolgreich abgeschlossen."
 
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "Optional, off by default. When on, AI drafts and Reply Zero send the email thread to your configured AI provider (OpenRouter) to write replies. Smart sorting, labels, priorities and summaries always run on CategorAIze's own service and never need this."
+msgstr ""
+
 #: app/(app)/[emailAccountId]/setup/SetupContent.tsx
 msgid "Optional: Install the {BRAND_NAME} Tabs extension"
 msgstr "Optional: Installiere die {BRAND_NAME} Tabs-Erweiterung"
@@ -10001,6 +10030,10 @@ msgstr "Primär"
 #: app/(app)/[emailAccountId]/mail/ThreadActionsMenu.tsx
 msgid "Print"
 msgstr "Drucken"
+
+#: components/SideNav.tsx
+msgid "Priority Inbox"
+msgstr ""
 
 #: app/(app)/premium/config-messages.ts
 msgid "Priority support"
@@ -12547,6 +12580,10 @@ msgstr "Dieses Konto ist nicht berechtigt, die Verbindung abzuschließen. Bitte 
 msgid "This account isn't in an organization. Switch to an account that is to see conversations your teammates share with you."
 msgstr "Dieses Konto gehört zu keiner Organisation. Wechsle zu einem Konto, das dazugehört, um Unterhaltungen zu sehen, die dein Team mit dir teilt."
 
+#: app/(app)/accounts/page.tsx
+msgid "This account uses the same email address as a mailbox you already connected. Use an account with its own address."
+msgstr "Dieses Konto verwendet dieselbe E-Mail-Adresse wie ein bereits verbundenes Postfach. Verwende ein Konto mit einer eigenen Adresse."
+
 #: app/(app)/[emailAccountId]/onboarding-brief/StepSendTestBrief.tsx
 msgid "This brief is already being prepared"
 msgstr "Dieses Briefing wird bereits vorbereitet"
@@ -12634,6 +12671,10 @@ msgstr "Dieses Meeting wurde nicht aufgezeichnet"
 #: app/(app)/organization/[organizationId]/Members.tsx
 msgid "This member has not allowed org admin analytics."
 msgstr "Dieses Mitglied hat Statistiken für Organisations-Admins nicht freigegeben."
+
+#: app/(app)/accounts/page.tsx
+msgid "This Microsoft or Google account uses the same email address as a mailbox you already connected with the other provider, and each address can be connected only once. To add an Outlook mailbox, sign in to Microsoft with its own Outlook.com or work address (for example, make an Outlook.com alias your primary sign-in address)."
+msgstr "Dieses Microsoft- oder Google-Konto verwendet dieselbe E-Mail-Adresse wie ein Postfach, das du bereits mit dem anderen Anbieter verbunden hast, und jede Adresse kann nur einmal verbunden werden. Um ein Outlook-Postfach hinzuzufügen, melde dich bei Microsoft mit einer eigenen Outlook.com- oder Arbeitsadresse an (zum Beispiel, indem du einen Outlook.com-Alias zu deiner primären Anmeldeadresse machst)."
 
 #: app/(app)/[emailAccountId]/settings/DeleteSection.tsx
 msgid "This permanently deletes your Inbox Zero data and disconnects {connectedEmailList}. Your emails aren't affected."
@@ -12997,6 +13038,10 @@ msgstr "Tab ausschalten"
 #: app/(app)/[emailAccountId]/mail/NewSplitDialog.tsx
 msgid "Turn off the {0} split"
 msgstr "Tab {0} ausschalten"
+
+#: app/(app)/[emailAccountId]/assistant/settings/DraftReplies.tsx
+msgid "Turn on External AI processing to use AI drafts"
+msgstr ""
 
 #: app/(app)/[emailAccountId]/mail/NewSplitDialog.tsx
 msgid "Turn on split"

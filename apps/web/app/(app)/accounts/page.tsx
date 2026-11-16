@@ -349,6 +349,15 @@ function getAccountErrorMessage(
         msg`This account is already linked to another ${BRAND_NAME} profile. Sign in to that profile, use a different email account, or contact support if you need help.`,
       ),
     },
+    email_in_use_by_other_provider: {
+      title: i18n._(msg`Email address already connected`),
+      description: i18n._(
+        msg`This Microsoft or Google account uses the same email address as a mailbox you already connected with the other provider, and each address can be connected only once. To add an Outlook mailbox, sign in to Microsoft with its own Outlook.com or work address (for example, make an Outlook.com alias your primary sign-in address).`,
+      ),
+      toastDescription: i18n._(
+        msg`This account uses the same email address as a mailbox you already connected. Use an account with its own address.`,
+      ),
+    },
     reconnect_account_mismatch: {
       title: i18n._(msg`Wrong account signed in`),
       description: i18n._(

@@ -5,6 +5,7 @@ import { CategorizeContactRole } from "@/generated/prisma/enums";
 import { createScopedLogger, type Logger } from "@/utils/logger";
 import prisma from "@/utils/prisma";
 import { getCalendarBusyForPriority } from "@/utils/categoraize/calendar-busy";
+import { resolveMailboxTimezone } from "@/utils/categoraize/mailbox-timezone";
 import {
   type CategoraizeClassifyRequest,
   type CategoraizeContactRoleLabel,
@@ -274,10 +275,10 @@ export async function reclassifyStoredEmail({
 }
 
 async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
-  const [emailAccount, categories, contact] = await Promise.all([
-    prisma.emailAccount.findUnique({
-      where: { id: emailAccountId },
-      select: { timezone: true },
+  const [timezone, categories, contact] = await Promise.all([
+    resolveMailboxTimezone({
+      emailAccountId,
+      logger: createScopedLogger("categoraize/timezone"),
     }),
     getCategoryVectors(emailAccountId),
     fromEmail
@@ -289,7 +290,7 @@ async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
   ]);
 
   const request = {
-    timezone: emailAccount?.timezone || "UTC",
+    timezone,
     sender: {
       email: fromEmail,
       role: contact?.role ? ROLE_LABELS[contact.role] : null,
@@ -305,10 +306,10 @@ async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
     threshold: categories.length
       ? Math.min(...categories.map((category) => category.threshold))
       : undefined,
-    // Free/busy from connected calendars; null (no boost) when none is connected.
+    // Free/busy from the user's connected calendars; null (no boost) when none.
     calendar_busy: await getCalendarBusyForPriority({
       emailAccountId,
-      timezone: emailAccount?.timezone || "UTC",
+      timezone,
       logger: createScopedLogger("categoraize/calendar"),
     }),
   } satisfies Partial<CategoraizeClassifyRequest>;

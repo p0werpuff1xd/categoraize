@@ -27,6 +27,9 @@ vi.mock("@/utils/drive/filing-notifications", () => ({
 vi.mock("@/utils/drive/filing-messaging-notifications", () => ({
   sendFilingMessagingNotifications: vi.fn(),
 }));
+vi.mock("@/utils/categoraize/consent", () => ({
+  isExternalLlmAllowed: vi.fn(),
+}));
 vi.mock("@/utils/drive/folder-utils", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/utils/drive/folder-utils")>()),
   createAndSaveFilingFolder: vi.fn(),
@@ -41,12 +44,14 @@ import {
 } from "@/utils/drive/filing-notifications";
 import { sendFilingMessagingNotifications } from "@/utils/drive/filing-messaging-notifications";
 import { createDriveProviderWithRefresh } from "@/utils/drive/provider";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 
 const logger = createTestLogger();
 
 describe("processAttachment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isExternalLlmAllowed).mockResolvedValue(true);
 
     prisma.driveConnection.findMany.mockResolvedValue([
       {
@@ -94,6 +99,28 @@ describe("processAttachment", () => {
         path: parent ? `${parent.path}/${folderPath}` : folderPath,
       }),
     );
+  });
+
+  describe("external AI consent", () => {
+    it("skips filing without calling the AI when external AI is off", async () => {
+      vi.mocked(isExternalLlmAllowed).mockResolvedValue(false);
+      const { attachment, emailAccount, emailProvider, message } =
+        setupSuccessfulFiling({ confidence: 0.95 });
+
+      const result = await processAttachment({
+        attachment,
+        emailAccount,
+        emailProvider,
+        logger,
+        message,
+      });
+
+      expect(result).toMatchObject({ success: false, skipped: true });
+      expect(isExternalLlmAllowed).toHaveBeenCalledWith(emailAccount.userId);
+      expect(analyzeDocument).not.toHaveBeenCalled();
+      expect(extractTextFromDocument).not.toHaveBeenCalled();
+      expect(prisma.documentFiling.create).not.toHaveBeenCalled();
+    });
   });
 
   describe("creating folders", () => {

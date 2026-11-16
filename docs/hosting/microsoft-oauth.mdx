@@ -9,6 +9,7 @@ Go to [Microsoft Azure Portal](https://portal.azure.com/) and create a new app r
 2. Choose a name and select a supported account type:
    - **Multitenant** (default): allows any Microsoft account
    - **Single tenant**: restricts to your organization
+   - For personal Outlook.com accounts, choose **"Accounts in any organizational directory and personal Microsoft accounts"** and leave `MICROSOFT_TENANT_ID` empty. With an organization-only app, personal accounts fail with "not enabled for consumers".
 3. Set the Redirect URI:
    - Platform: Web
    - URL: `http://localhost:3000/api/auth/callback/microsoft` (replace with your domain in production)

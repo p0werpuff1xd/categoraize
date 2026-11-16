@@ -28,6 +28,7 @@ Everything below runs only while `CATEGORAIZE_ENABLED` is on. With it off, the a
 | Smart categories (senders) | `CATEGORAIZE_SMART_CATEGORIES` | The sender's address plus up to 3 recent subjects and snippets are matched against category centroids, or descriptions until a centroid exists. A manual recategorization runs Rocchio, stored in `CategorizeSenderCategoryCentroid` / `CategorizeSenderEmbedding`. | `utils/categoraize/sender-categories.ts` |
 | Summaries (Summarise button, digest) | `CATEGORAIZE_SUMMARIES` | Extractive: up to 2 original sentences (`/api/v1/summarize`). | `app/api/ai/summarise/route.ts`, `utils/ai/digest/summarize-email-for-digest.ts` |
 | Drafts and follow-up drafts (R2) | n/a | They stay on OpenRouter. They need the user's optional external-AI consent (off by default; Settings → External AI processing). The draft prompt gets a short `categoraize_analysis` block (language, requests, dates found in the newest email). | `utils/categoraize/consent.ts`, `draft-context.ts`, `utils/reply-tracker/generate-draft.ts`, `utils/follow-up/generate-draft.ts` |
+| Attachment filing (Drive / OneDrive) | n/a | Stays on OpenRouter. Needs the same external-AI consent: with it off, attachments are skipped before download and filing replies are not sent to the LLM. | `utils/drive/filing-engine.ts`, `utils/drive/handle-filing-reply.ts` |
 
 **When the service fails:** an R1 feature falls back to the original LLM path only for users who turned on external AI. For everyone else it errors instead, so no email goes to the external provider without consent (`utils/categoraize/features.ts`).
 
@@ -72,7 +73,7 @@ Everything below runs only while `CATEGORAIZE_ENABLED` is on. With it off, the a
 | `ai/calendar/availability.ts` | `CalendarAvailability` | Calendar availability text for drafts |
 | `ai/meeting-briefs/generate-briefing.ts`, `ai/public-contact-context.ts` | meeting briefing, web search | Meeting briefs |
 | `ai/meeting-recorder/summarize-meeting.ts`, `draft-meeting-follow-up.ts` | meeting summary/follow-up | Meeting recorder |
-| `ai/document-filing/analyze-document.ts`, `parse-filing-reply.ts` | document filing | Drive filing |
+| `ai/document-filing/analyze-document.ts`, `parse-filing-reply.ts` | document filing | Drive filing (consent-gated, see above) |
 | `ai/report/*.ts` (7 files) | `EmailReport*` | Email report / analytics insights |
 | `ai/senders/unsubscribe-page.ts` | `UnsubscribePageState` | Reads unsubscribe pages (bulk unsubscribe helper) |
 | `ai/automation-jobs/generate-check-in-message.ts` | `AutomationCheckInMessage` | Scheduled check-in messages |

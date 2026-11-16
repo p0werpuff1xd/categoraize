@@ -1,0 +1,12 @@
+=== failOnCalendarError=false (app's CategorAIze path uses false) ===
+[33m[test-multi-account/failure]: Error refreshing Calendar access token {
+  google (fake token)                rejected: invalid_grant
+  microsoft (fake token)             rejected: Your Microsoft calendar authorization has expired. Please reconnect your calendar.
+  google real (ja***@gmail.com)      ok, 0 period(s)
+=== failOnCalendarError=true (app's CategorAIze path uses false) ===
+[33m[test-multi-account/failure]: Error refreshing Calendar access token {
+  google (fake token)                rejected: invalid_grant
+  microsoft (fake token)             rejected: Your Microsoft calendar authorization has expired. Please reconnect your calendar.
+  google real (ja***@gmail.com)      ok, 0 period(s)
+=== Safety: no real connection was marked disconnected ===
+  calendar connections with isConnected=false: 0

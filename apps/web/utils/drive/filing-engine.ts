@@ -21,6 +21,7 @@ import {
 import { sendFilingMessagingNotifications } from "@/utils/drive/filing-messaging-notifications";
 import { extractEmailAddress } from "@/utils/email";
 import { isCalendarInviteAttachment } from "@/utils/parse/calender-event";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 
 // ============================================================================
 // Types
@@ -56,6 +57,9 @@ export interface ProcessAttachmentOptions {
   message: ParsedMessage;
   sendNotification?: boolean;
 }
+
+export const EXTERNAL_AI_OFF_FILING_REASON =
+  "Attachment filing uses an external AI provider, which is turned off for this account.";
 
 const DUPLICATE_FILING_FIELDS = ["emailAccountId", "messageId", "attachmentId"];
 const PROCESSING_FILING_STALE_MS = 30 * 60 * 1000;
@@ -93,6 +97,18 @@ export async function processAttachment({
     if (!emailAccount.filingEnabled || !emailAccount.filingPrompt) {
       log.info("Filing not enabled or no prompt configured");
       return { success: false, error: "Filing not enabled" };
+    }
+
+    // Filing reads the document with the external LLM, so it needs the user's
+    // external-AI consent (off by default) before anything is downloaded.
+    if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+      log.info("Filing skipped: external AI processing is turned off");
+      return {
+        success: false,
+        skipped: true,
+        skipReason: EXTERNAL_AI_OFF_FILING_REASON,
+        error: EXTERNAL_AI_OFF_FILING_REASON,
+      };
     }
 
     const attachmentLookup = {

@@ -1,0 +1,35 @@
+PASS  service reachable /healthz  -- status 200
+
+-- calendar boost and neutrality (deadline Fri 17:00 Asia/Manila)
+  null (no calendar)               status=200 level=3 calendar=0 deadline=2026-11-20T17:00:00+08:00
+  [] (calendar empty/failed)       status=200 level=3 calendar=0 deadline=2026-11-20T17:00:00+08:00
+  Google busy Fri 16-18            status=200 level=4 calendar=1 deadline=2026-11-20T17:00:00+08:00
+  Microsoft busy Fri 16-18         status=200 level=4 calendar=1 deadline=2026-11-20T17:00:00+08:00
+  same meeting in both calendars   status=200 level=4 calendar=1 deadline=2026-11-20T17:00:00+08:00
+  busy at another time             status=200 level=3 calendar=0 deadline=2026-11-20T17:00:00+08:00
+PASS  deadline resolved to Fri 20 Nov 17:00 +08:00  -- 2026-11-20T17:00:00+08:00
+PASS  no calendar -> calendar factor 0
+PASS  empty/failed calendar -> factor 0, same level
+PASS  Google busy -> +1
+PASS  Microsoft busy (7-digit fraction + Z) -> +1
+PASS  Google and Microsoft give the same level
+PASS  duplicate meeting counted once (+1, not +2)
+PASS  busy elsewhere -> 0
+PASS  no variant lowers priority below the no-calendar level
+
+-- time zone (C-3): same email, mailbox timezone missing -> UTC
+  UTC: deadline=2026-11-20T17:00:00Z calendar=0 level=3
+PASS  UTC mailbox resolves 'Friday 5pm' 8 h later than Asia/Manila (expected defect if timezone is NULL)
+PASS  ...and loses the calendar boost for the Manila meeting
+
+-- credentials and strict schema
+PASS  busy period with an extra token field is rejected (422)  -- status 422
+PASS  top-level token field is rejected (422)  -- status 422
+PASS  naive (no-offset) busy times are rejected (422) -- the fork must always send Z/offset  -- status 422
+PASS  wrong X-Internal-Key is refused  -- status 401
+
+-- statelessness: account A, account B, account A again
+PASS  A before and after B is identical (no state carried between accounts)
+PASS  same category name in two accounts does not collide (ids echoed per request)
+
+all PASS

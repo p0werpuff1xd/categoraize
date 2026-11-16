@@ -2177,6 +2177,10 @@ msgstr "Automatically categorize who emails you for better inbox management and 
 msgid "Automatically draft replies written in your tone to emails needing a reply."
 msgstr "Automatically draft replies written in your tone to emails needing a reply."
 
+#: app/(app)/[emailAccountId]/assistant/settings/DraftReplies.tsx
+msgid "Automatically draft replies written in your tone to emails needing a reply. Unavailable while external AI processing is off; you can still write replies yourself."
+msgstr "Automatically draft replies written in your tone to emails needing a reply. Unavailable while external AI processing is off; you can still write replies yourself."
+
 #: app/(app)/premium/config-messages.ts
 msgid "Automatically organize and file email attachments to your preferred storage."
 msgstr "Automatically organize and file email attachments to your preferred storage."
@@ -3597,6 +3601,7 @@ msgid "Consultant"
 msgstr "Consultant"
 
 #: app/(app)/config/page.tsx
+#: components/SideNav.tsx
 msgid "Contacts"
 msgstr "Contacts"
 
@@ -4918,6 +4923,10 @@ msgstr "Email Actions"
 msgid "Email address"
 msgstr "Email address"
 
+#: app/(app)/accounts/page.tsx
+msgid "Email address already connected"
+msgstr "Email address already connected"
+
 #: components/InviteMemberModal.tsx
 msgid "Email addresses"
 msgstr "Email addresses"
@@ -5553,6 +5562,18 @@ msgstr "Extend the selection down"
 #: lib/shortcuts/registry.ts
 msgid "Extend the selection up"
 msgstr "Extend the selection up"
+
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "External AI processing"
+msgstr "External AI processing"
+
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "External AI processing is off. Nothing is sent to the external AI provider."
+msgstr "External AI processing is off. Nothing is sent to the external AI provider."
+
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "External AI processing is on. AI drafts and Reply Zero can run."
+msgstr "External AI processing is on. AI drafts and Reply Zero can run."
 
 #: utils/action-item.ts
 msgid "Extra Content"
@@ -7728,6 +7749,10 @@ msgstr "Label sponsorship inquiries as @[Sponsorship] and draft a reply as follo
 msgid "Label Stripe emails as @[Stripe]"
 msgstr "Label Stripe emails as @[Stripe]"
 
+#: components/SideNav.tsx
+msgid "Label Studio"
+msgstr "Label Studio"
+
 #: app/(app)/[emailAccountId]/assistant/examples.ts
 msgid "Label urgent emails as @[Urgent]"
 msgstr "Label urgent emails as @[Urgent]"
@@ -9588,6 +9613,10 @@ msgstr "Opening the email on screen"
 msgid "Operation completed successfully."
 msgstr "Operation completed successfully."
 
+#: app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting.tsx
+msgid "Optional, off by default. When on, AI drafts and Reply Zero send the email thread to your configured AI provider (OpenRouter) to write replies. Smart sorting, labels, priorities and summaries always run on CategorAIze's own service and never need this."
+msgstr "Optional, off by default. When on, AI drafts and Reply Zero send the email thread to your configured AI provider (OpenRouter) to write replies. Smart sorting, labels, priorities and summaries always run on CategorAIze's own service and never need this."
+
 #: app/(app)/[emailAccountId]/setup/SetupContent.tsx
 msgid "Optional: Install the {BRAND_NAME} Tabs extension"
 msgstr "Optional: Install the {BRAND_NAME} Tabs extension"
@@ -10001,6 +10030,10 @@ msgstr "Primary"
 #: app/(app)/[emailAccountId]/mail/ThreadActionsMenu.tsx
 msgid "Print"
 msgstr "Print"
+
+#: components/SideNav.tsx
+msgid "Priority Inbox"
+msgstr "Priority Inbox"
 
 #: app/(app)/premium/config-messages.ts
 msgid "Priority support"
@@ -12547,6 +12580,10 @@ msgstr "This account isn't authorized to complete the connection. Please try aga
 msgid "This account isn't in an organization. Switch to an account that is to see conversations your teammates share with you."
 msgstr "This account isn't in an organization. Switch to an account that is to see conversations your teammates share with you."
 
+#: app/(app)/accounts/page.tsx
+msgid "This account uses the same email address as a mailbox you already connected. Use an account with its own address."
+msgstr "This account uses the same email address as a mailbox you already connected. Use an account with its own address."
+
 #: app/(app)/[emailAccountId]/onboarding-brief/StepSendTestBrief.tsx
 msgid "This brief is already being prepared"
 msgstr "This brief is already being prepared"
@@ -12634,6 +12671,10 @@ msgstr "This meeting was not recorded"
 #: app/(app)/organization/[organizationId]/Members.tsx
 msgid "This member has not allowed org admin analytics."
 msgstr "This member has not allowed org admin analytics."
+
+#: app/(app)/accounts/page.tsx
+msgid "This Microsoft or Google account uses the same email address as a mailbox you already connected with the other provider, and each address can be connected only once. To add an Outlook mailbox, sign in to Microsoft with its own Outlook.com or work address (for example, make an Outlook.com alias your primary sign-in address)."
+msgstr "This Microsoft or Google account uses the same email address as a mailbox you already connected with the other provider, and each address can be connected only once. To add an Outlook mailbox, sign in to Microsoft with its own Outlook.com or work address (for example, make an Outlook.com alias your primary sign-in address)."
 
 #: app/(app)/[emailAccountId]/settings/DeleteSection.tsx
 msgid "This permanently deletes your Inbox Zero data and disconnects {connectedEmailList}. Your emails aren't affected."
@@ -12997,6 +13038,10 @@ msgstr "Turn off split"
 #: app/(app)/[emailAccountId]/mail/NewSplitDialog.tsx
 msgid "Turn off the {0} split"
 msgstr "Turn off the {0} split"
+
+#: app/(app)/[emailAccountId]/assistant/settings/DraftReplies.tsx
+msgid "Turn on External AI processing to use AI drafts"
+msgstr "Turn on External AI processing to use AI drafts"
 
 #: app/(app)/[emailAccountId]/mail/NewSplitDialog.tsx
 msgid "Turn on split"

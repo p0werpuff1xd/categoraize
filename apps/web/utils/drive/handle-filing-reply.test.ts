@@ -26,6 +26,9 @@ vi.mock("@/utils/ai/content-sanitizer", () => ({
 vi.mock("@/utils/drive/provider", () => ({
   createDriveProviderWithRefresh: vi.fn(),
 }));
+vi.mock("@/utils/categoraize/consent", () => ({
+  isExternalLlmAllowed: vi.fn(),
+}));
 vi.mock("@/utils/drive/folder-utils", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/utils/drive/folder-utils")>()),
   createAndSaveFilingFolder: vi.fn(),
@@ -33,6 +36,7 @@ vi.mock("@/utils/drive/folder-utils", async (importOriginal) => ({
 
 import { createDriveProviderWithRefresh } from "@/utils/drive/provider";
 import { createAndSaveFilingFolder } from "@/utils/drive/folder-utils";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 
 const logger = createTestLogger();
 const emailAccountId = "email-account-id";
@@ -41,11 +45,24 @@ const userEmail = "user@example.com";
 describe("processFilingReply", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isExternalLlmAllowed).mockResolvedValue(true);
     prisma.filingFolder.findMany.mockResolvedValue([]);
     vi.mocked(aiParseFilingReply).mockResolvedValue({
       actions: [],
       reply: "",
     });
+  });
+
+  it("does not send the reply to the AI when external AI is off", async () => {
+    const filings = getFilingBatch();
+    prisma.documentFiling.findFirst.mockResolvedValue(filings[0]);
+    prisma.documentFiling.findMany.mockResolvedValue(filings);
+    vi.mocked(isExternalLlmAllowed).mockResolvedValue(false);
+
+    await processFilingReply(getReplyParams());
+
+    expect(aiParseFilingReply).not.toHaveBeenCalled();
+    expect(prisma.documentFiling.update).not.toHaveBeenCalled();
   });
 
   it("applies a named action to the correct filing in a batch", async () => {

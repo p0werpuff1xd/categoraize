@@ -1,0 +1,8 @@
+=== Email accounts (1) ===
+[google] ja***@gmail.com id=cmwdqgywb00022cspotsn6dul user=cmwdqgym900002csp8sao5bkt timezone=Asia/Manila filingEnabled=false
+  categories=5 classifications=45 senderCentroids=0 overrides=5 contacts=5
+  calendar google ja***@gmail.com connected=true tokenExpires=2026-11-15T14:48:45.316Z calendars=3 enabled=3
+  drive: none
+  CATZ-TEST classifications: none stored
+=== Consent (per user) ===
+user=cmwdqgym900002csp8sao5bkt accounts=1 externalLlm=false withdrawn=false
