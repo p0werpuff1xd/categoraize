@@ -5,60 +5,20 @@
   "request_floor": 0.0,
   "secondary_margin": 0.05,
   "confident_band": 0.0,
-  "confident_margin": 0.06
+  "confident_margin": 0.04
  },
  "tuned_on": "data/matching dev half",
  "dev": {
   "rules": {
-   "accuracy": 0.9104,
-   "coverage": 0.7836,
-   "confident_accuracy": 0.9619,
-   "cascade_upper_bound": 0.9701,
+   "accuracy": 0.8856,
+   "coverage": 0.7925,
+   "confident_accuracy": 0.9443,
+   "cascade_upper_bound": 0.9559,
    "by_language": {
-    "en": 0.9425,
-    "taglish": 0.8925,
-    "tl": 0.8977
+    "en": 0.8929,
+    "taglish": 0.8884,
+    "tl": 0.8756
    }
-  }
- },
- "llm_holdout": {
-  "Rules (LLM holdout)": {
-   "accuracy": 0.8235,
-   "coverage": 0.7059,
-   "confident_accuracy": 0.9583,
-   "cascade_upper_bound": 0.9706,
-   "by_language": {
-    "en": 0.913,
-    "taglish": 0.913,
-    "tl": 0.6364
-   },
-   "errors": []
-  },
-  "Threads (LLM holdout)": {
-   "accuracy": 0.9231,
-   "coverage": 0.8654,
-   "confident_accuracy": 0.9111,
-   "cascade_upper_bound": 0.9231,
-   "errors": []
-  }
- },
- "test": {
-  "rules": {
-   "accuracy": 0.7917,
-   "coverage": 0.5312,
-   "confident_accuracy": 0.9412,
-   "cascade_upper_bound": 0.9688,
-   "by_language": {
-    "en": 0.875,
-    "taglish": 0.8438,
-    "tl": 0.6562
-   }
-  },
-  "threads": {
-   "accuracy": 0.9167,
-   "coverage": 0.9583,
-   "confident_accuracy": 0.913,
-   "cascade_upper_bound": 0.9167
   }
  }
 }
