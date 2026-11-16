@@ -1,13 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
+  "framework": null,
+  "buildCommand": "cd ../.. && bash scripts/vercel-build.sh",
+  "installCommand": "cd ../.. && node scripts/install-private-build.mjs && unset PRIVATE_BUILD_TOKEN && bash clone-marketing.sh && corepack pnpm install --filter '!@inboxzero/desktop' --no-frozen-lockfile",
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
+  "outputDirectory": ".vercel/output",
+  "rewrites": [
     {
-      "path": "/api/watch/all",
-      "schedule": "0 3 * * *"
+      "source": "/tools",
+      "destination": "https://mini-apps-cyan.vercel.app/tools"
     },
     {
-      "path": "/api/cron/scheduled-actions",
-      "schedule": "0 4 * * *"
+      "source": "/tools/:path+",
+      "destination": "https://mini-apps-cyan.vercel.app/tools/:path+"
     }
   ]
 }
