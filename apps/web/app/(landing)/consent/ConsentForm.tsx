@@ -36,6 +36,7 @@ export function ConsentForm({ next }: { next: string }) {
           id="accept-terms"
           checked={acceptTerms}
           onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+          aria-label="I have read and accept the Terms and the Privacy Notice (required)"
           aria-describedby="accept-terms-hint"
         />
         <Label htmlFor="accept-terms" className="leading-snug font-normal">
