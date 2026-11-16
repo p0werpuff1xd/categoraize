@@ -100,10 +100,10 @@ export default function PrivacyPage() {
           and are deleted when you delete your account.
         </li>
         <li>
-          Encrypted backups of settings, labels and analysis results (never
-          email bodies or access tokens) are kept for up to 7 daily and 4 weekly
-          copies. If you delete your account, your data is removed from any
-          backup that is restored later.
+          Encrypted backups of your account details, settings, labels and
+          analysis results (never email text or access tokens) are kept for up
+          to 7 daily and 4 weekly copies. If you delete your account, your data
+          is removed from any backup that is restored later.
         </li>
         <li>The security log is kept for the life of the project.</li>
       </ul>
@@ -147,12 +147,16 @@ export default function PrivacyPage() {
         </li>
         <li>Sign-in uses signed OAuth state and PKCE.</li>
         <li>An append-only security log.</li>
+        <li>
+          Encrypted backups that leave out email text and access tokens, with a
+          restore test that also rejects altered backup files.
+        </li>
       </ul>
       <p>
         Planned and not yet in place: encryption of stored email text, masking
         of phone and ID numbers before analysis, database row-level security,
-        tested encrypted backups, and a self-service data download. This notice
-        will be updated when they are.
+        running the backups automatically every day on separate drives, and a
+        self-service data download. This notice will be updated when they are.
       </p>
 
       <h2>7. Breaches</h2>
