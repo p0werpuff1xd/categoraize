@@ -9,6 +9,8 @@ export type RevokeSummary = {
   googleFailed: number;
   /** Microsoft has no token-revocation endpoint for personal accounts. */
   microsoftNotRevocable: number;
+  /** The token lookup itself failed; nothing could be revoked. */
+  lookupFailed?: boolean;
 };
 
 /**
@@ -26,6 +28,31 @@ export async function revokeProviderTokens({
   userId: string;
   logger: Logger;
   fetchImpl?: typeof fetch;
+}): Promise<RevokeSummary> {
+  try {
+    return await revokeAll({ userId, logger, fetchImpl });
+  } catch (error) {
+    // A lookup failure must never block the erasure itself.
+    logger.error("Token revocation lookup failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      googleRevoked: 0,
+      googleFailed: 0,
+      microsoftNotRevocable: 0,
+      lookupFailed: true,
+    };
+  }
+}
+
+async function revokeAll({
+  userId,
+  logger,
+  fetchImpl,
+}: {
+  userId: string;
+  logger: Logger;
+  fetchImpl: typeof fetch;
 }): Promise<RevokeSummary> {
   const [accounts, calendars, drives] = await Promise.all([
     prisma.account.findMany({

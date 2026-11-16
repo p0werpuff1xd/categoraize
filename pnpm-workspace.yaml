@@ -38,7 +38,15 @@ overrides:
   # (CVE-2026-90711). 2.0.8 rejects those prefixes.
   proxy-addr: "2.0.8"
   prosemirror-model: "1.25.11"
-  prosemirror-view: "1.42.2"
+  # 1.42.3 fixes the XSS in paste handling (pnpm audit, high).
+  prosemirror-view: "1.42.3"
+  # jsdom > css-tree resolves 1.2.1; 1.2.2 fixes the event-loop DoS through
+  # indexed source-map section offsets (pnpm audit, high).
+  source-map-js: "1.2.2"
+  # Several workspace packages pin zod 4.2.1 and @serwist/build resolves 4.6.5;
+  # 4.6.6 fixes memory exhaustion on oversized constrained collections
+  # (pnpm audit, high). Same major, already used by apps/web.
+  "zod@>=4.0.0 <4.6.6": "4.6.6"
   svelte: "5.55.5"
   # @actions/* and node-gyp resolve undici 6; other deps resolve undici 7.
   # 6.29.1 and 7.30.2 are the first patched releases for the undici advisories

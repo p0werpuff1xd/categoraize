@@ -109,7 +109,12 @@ export const deleteAccountAction = actionClientUser
     await recordAuditEvent({
       eventType: "data_deletion_completed",
       userId,
-      metadata: { ...revoked },
+      metadata: {
+        googleRevoked: revoked.googleRevoked,
+        googleFailed: revoked.googleFailed,
+        microsoftNotRevocable: revoked.microsoftNotRevocable,
+        lookupFailed: revoked.lookupFailed ?? false,
+      },
     });
   });
 

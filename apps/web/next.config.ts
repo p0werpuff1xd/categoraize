@@ -119,6 +119,13 @@ const nextConfig: NextConfig = {
         value: "strict-origin-when-cross-origin",
       },
       {
+        // IAS Phase 10 H: the app never uses these browser features. Clipboard,
+        // autoplay and fullscreen stay allowed (copy buttons, video embeds).
+        key: "Permissions-Policy",
+        value:
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), browsing-topics=()",
+      },
+      {
         key: "Content-Security-Policy",
         value: [
           "default-src 'self'",

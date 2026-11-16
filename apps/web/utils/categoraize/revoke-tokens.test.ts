@@ -104,6 +104,14 @@ describe("revokeProviderTokens", () => {
     });
   });
 
+  it("never throws when the token lookup fails, so deletion goes ahead", async () => {
+    prisma.account.findMany.mockRejectedValue(new Error("db down"));
+    prisma.calendarConnection.findMany.mockResolvedValue([] as never);
+    prisma.driveConnection.findMany.mockResolvedValue([] as never);
+    const summary = await revokeProviderTokens({ userId: "u1", logger });
+    expect(summary).toMatchObject({ googleRevoked: 0, lookupFailed: true });
+  });
+
   it("skips grants with no token", async () => {
     setGrants({
       accounts: [
