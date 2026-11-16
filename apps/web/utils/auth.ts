@@ -54,6 +54,7 @@ import { getAppleClientSecret } from "@/utils/auth/apple-client-secret";
 import { reconcileMicrosoftAccountSubject } from "@/utils/auth/microsoft-account-subject";
 import { getScimOptions, assertScimUserActive } from "@/utils/auth/scim";
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import {
   getAuthProviderFromContext,
   isNewUserAuthContext,
@@ -389,6 +390,11 @@ export const betterAuthConfig = betterAuth({
       create: {
         after: async (account: Account) => {
           await handleLinkAccount(account);
+          await recordAuditEvent({
+            eventType: "account_connected",
+            userId: account.userId,
+            metadata: { provider: account.providerId },
+          });
         },
       },
       update: {
@@ -423,6 +429,16 @@ export const betterAuthConfig = betterAuth({
       try {
         const authenticatedSession = context.context.newSession;
         if (!authenticatedSession) return;
+
+        const loginUserId = authenticatedSession.user.id;
+        const loginProvider = getAuthProviderFromContext(context);
+        after(() =>
+          recordAuditEvent({
+            eventType: "login",
+            userId: loginUserId,
+            metadata: { provider: loginProvider },
+          }),
+        );
 
         const provider = getAuthProviderFromContext(context);
         if (provider === "unknown") return;

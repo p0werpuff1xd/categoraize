@@ -4,6 +4,7 @@ import { z } from "zod";
 import { after } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import { withThreadPageBufferDeletion } from "@/utils/redis/thread-page-buffer";
 import { deleteUser } from "@/utils/user/delete";
 import { stopWatchingEmailAccount } from "@/utils/email/watch-manager";
@@ -88,6 +89,7 @@ export const deleteAccountAction = actionClientUser
   .metadata({ name: "deleteAccount" })
   .action(async ({ ctx: { userId, logger } }) => {
     await assertUserAccountCanBeDeleted(userId);
+    await recordAuditEvent({ eventType: "data_deletion_requested", userId });
 
     await clearLastEmailAccountCookie().catch((error) => {
       logger.error("Failed to clear last email account cookie", { error });
@@ -101,6 +103,7 @@ export const deleteAccountAction = actionClientUser
         logger.error("Failed to sign out", { error });
       });
     await deleteUser({ userId, logger });
+    await recordAuditEvent({ eventType: "data_deletion_completed", userId });
   });
 
 export const cleanupAIDraftsAction = actionClient
@@ -148,6 +151,16 @@ export const deleteEmailAccountAction = actionClientUser
 
       if (!emailAccount) throw new SafeError("Email account not found");
       if (!emailAccount.accountId) throw new SafeError("Account id not found");
+      await recordAuditEvent({
+        eventType: "account_disconnected",
+        userId,
+        emailAccountId,
+        metadata: {
+          kind: "mailbox",
+          reason: "removed",
+          provider: emailAccount.account?.provider ?? null,
+        },
+      });
       const organizationIdsToDelete =
         await assertEmailAccountCanBeDeleted(emailAccountId);
       const notifyConversations = await prepareMemberRemovalNotifications(

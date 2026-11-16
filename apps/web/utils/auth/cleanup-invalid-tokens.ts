@@ -1,4 +1,5 @@
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import type { Logger } from "@/utils/logger";
 import { sendReconnectionEmail } from "@inboxzero/transactional-email";
 import { env } from "@/env";
@@ -125,6 +126,13 @@ export async function cleanupInvalidTokens({
     logger.info("Account changed before credential cleanup");
     return { status: "skipped" as const };
   }
+
+  await recordAuditEvent({
+    eventType: "account_disconnected",
+    userId: emailAccount.userId,
+    emailAccountId: emailAccount.id,
+    metadata: { kind: "mailbox", reason: "invalid_token" },
+  });
 
   await skipDraftCleanupForDisconnectedAccount({
     emailAccountId: emailAccount.id,

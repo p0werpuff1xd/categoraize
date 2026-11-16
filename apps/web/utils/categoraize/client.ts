@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { env } from "@/env";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 
 const VECTOR_DIMENSION = 384;
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -314,6 +315,13 @@ async function callService<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // A wrong or missing internal key: counted for the weekly audit review.
+      await recordAuditEvent({
+        eventType: "nlp_auth_failure_count",
+        metadata: { count: 1, path },
+      });
+    }
     const detail = await response.text().catch(() => "");
     throw new CategoraizeServiceError(
       `CategorAIze service returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 300)}` : ""}`,

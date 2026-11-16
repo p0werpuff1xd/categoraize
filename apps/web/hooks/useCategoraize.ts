@@ -9,10 +9,15 @@ import type { CategoraizeSearchResponse } from "@/app/api/categorai/search/route
 import type { CategoraizeSearchBody } from "@/app/api/categorai/search/validation";
 import type { CategoraizeTaskSheetResponse } from "@/app/api/categorai/task-sheet/route";
 import type { CategoraizeContactsResponse } from "@/app/api/categorai/contacts/route";
+import type { AuditEventsResponse } from "@/app/api/user/audit-events/route";
 import type { CategoraizeProposalsResponse } from "@/app/api/categorai/proposals/route";
 import type { CategoraizeSuggestedLabelsResponse } from "@/app/api/categorai/suggested-labels/route";
 import { swrFetcher } from "@/providers/swr-fetcher";
 import { useAccount } from "@/providers/EmailAccountProvider";
+
+export function useAuditEvents() {
+  return useSWR<AuditEventsResponse>("/api/user/audit-events");
+}
 
 export function useCategoraizeContacts() {
   return useSWR<CategoraizeContactsResponse>("/api/categorai/contacts");

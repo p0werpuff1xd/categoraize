@@ -3263,6 +3263,21 @@ model CategorizeUserConsent {
   @@index([userId, createdAt])
 }
 
+/// Append-only security audit log (IAS Phase 7 B). IDs and flags only: never
+/// email content, tokens or IP addresses. A database trigger rejects UPDATE,
+/// DELETE and TRUNCATE. No foreign keys, so the trail outlives deleted accounts.
+model CategorizeAuditEvent {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  eventType      String
+  userId         String?
+  emailAccountId String?
+  metadata       Json?
+
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+}
+
 /// Time-sensitive deadlines and action items detected by AI from emails.
 model CategorizeDeadlineAlert {
   id        String   @id @default(cuid())
