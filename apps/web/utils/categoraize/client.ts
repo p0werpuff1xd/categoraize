@@ -169,7 +169,7 @@ export type CategoraizeServiceStatus =
 export async function getCategoraizeServiceStatus(): Promise<CategoraizeServiceStatus> {
   if (!isCategoraizeEnabled()) return "disabled";
   try {
-    const response = await fetch(`${env.CATEGORAIZE_SERVICE_URL}/healthz`, {
+    const response = await fetch(`${env.CATEGORAIZE_SERVICE_URL}/health`, {
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
       cache: "no-store",
     });
