@@ -6,6 +6,7 @@ import {
   premiumEntitlementSelect,
 } from "@/utils/premium";
 import type { Logger } from "@/utils/logger";
+import { acceptedTermsUserFilter } from "@/utils/categoraize/consent";
 import { createEmailProvider } from "@/utils/email/provider";
 import { captureException, isInvalidGrantError } from "@/utils/error";
 import { cleanupInvalidTokens } from "@/utils/auth/cleanup-invalid-tokens";
@@ -58,6 +59,8 @@ async function getEmailAccountsToWatch(userIds: string[] | null) {
       ...(userIds ? { userId: { in: userIds } } : {}),
       ...getPremiumUserFilter(),
       account: { disconnectedAt: null },
+      // FR-1.8: never watch a mailbox before the Terms are accepted.
+      AND: [{ user: acceptedTermsUserFilter() }],
     },
     select: {
       id: true,

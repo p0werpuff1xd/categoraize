@@ -5,6 +5,7 @@ import { DigestSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/D
 import { DraftConfidenceSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/DraftConfidenceSetting";
 import { DraftReplies } from "@/app/(app)/[emailAccountId]/assistant/settings/DraftReplies";
 import { ExternalAiSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting";
+import { ConsentSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/ConsentSetting";
 import { DraftKnowledgeSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/DraftKnowledgeSetting";
 import { FollowUpRemindersSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/FollowUpRemindersSetting";
 import { HiddenAiDraftLinksSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/HiddenAiDraftLinksSetting";
@@ -62,6 +63,13 @@ export function SettingsTab() {
           <LearnedPatternsSetting />
         </div>
       )}
+
+      <div className="space-y-2">
+        <SectionHeader>
+          <Trans>Privacy</Trans>
+        </SectionHeader>
+        <ConsentSetting />
+      </div>
 
       <div className="space-y-2">
         <SectionHeader>

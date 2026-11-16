@@ -12,6 +12,8 @@ import {
   CHAT_SIDEBAR_WIDTH_COOKIE,
 } from "@/components/chat-sidebar-width";
 import { auth } from "@/utils/auth";
+import { hasAcceptedCurrentTerms } from "@/utils/categoraize/consent";
+import { CONSENT_PATH } from "@/utils/categoraize/consent-paths";
 import { PostHogIdentify } from "@/providers/PostHogProvider";
 import { CommandK } from "@/components/CommandK";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
@@ -73,6 +75,8 @@ export default async function AppLayout({
   const session = await auth();
 
   if (!session?.user.email) redirect("/login");
+  // FR-1.8: no mailbox is read until the Terms and Privacy Notice are accepted.
+  if (!(await hasAcceptedCurrentTerms(session.user.id))) redirect(CONSENT_PATH);
 
   const locale = await getLocale();
   const cookieStore = await cookies();

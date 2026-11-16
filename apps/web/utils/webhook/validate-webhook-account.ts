@@ -7,6 +7,7 @@ import {
   premiumEntitlementSelect,
 } from "@/utils/premium";
 import { unwatchEmails } from "@/utils/email/watch-manager";
+import { hasAcceptedCurrentTerms } from "@/utils/categoraize/consent";
 import { createEmailProvider } from "@/utils/email/provider";
 import {
   getGmailClientForEmail,
@@ -220,6 +221,12 @@ export async function validateWebhookAccount(
 
   if (emailAccount.account?.disconnectedAt) {
     logger.info("Skipping disconnected account");
+    return { success: false, response: NextResponse.json({ ok: true }) };
+  }
+
+  // FR-1.8: no mail is read for a user who has not accepted (or withdrew) consent.
+  if (!(await hasAcceptedCurrentTerms(emailAccount.userId))) {
+    logger.info("Skipping account without accepted Terms");
     return { success: false, response: NextResponse.json({ ok: true }) };
   }
 
