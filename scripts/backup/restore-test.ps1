@@ -34,7 +34,10 @@ param(
   [string]$Database = 'inboxzero',
   [string]$WorkDir = 'E:\tmp\categoraize-restore-work',
   [string]$LogDir = 'E:\backups\logs',
-  [string]$ReportPath = ''
+  [string]$ReportPath = '',
+  # Leave the scratch container running (for reapply-deletions.ps1 drills).
+  # Stop it afterwards with: docker stop <name>
+  [switch]$KeepScratch
 )
 
 $ErrorActionPreference = 'Continue'
@@ -162,8 +165,10 @@ try {
   } $timings $logFile
 
   Measure-Step 'stop-scratch-db' {
-    Invoke-Tool docker @('stop', $scratch) | Out-Null
-    $script:scratchStarted = $false
+    if (-not $KeepScratch) {
+      Invoke-Tool docker @('stop', $scratch) | Out-Null
+      $script:scratchStarted = $false
+    }
     Remove-Item -LiteralPath $dumpPath -Force
   } $timings $logFile
 
@@ -198,7 +203,9 @@ try {
   $errorText = $_.Exception.Message
   Write-Log "ERROR $errorText" $logFile
 } finally {
-  if ($scratchStarted) { & docker stop $scratch 2>$null | Out-Null }
+  if ($scratchStarted -and $KeepScratch) {
+    Write-Log "Scratch container kept running: $scratch (127.0.0.1:$ScratchPort)" $logFile
+  } elseif ($scratchStarted) { & docker stop $scratch 2>$null | Out-Null }
   if (Test-Path -LiteralPath $WorkDir) { Remove-Item -LiteralPath $WorkDir -Recurse -Force -ErrorAction SilentlyContinue }
   $total.Stop()
   $timings['total'] = [math]::Round($total.Elapsed.TotalSeconds, 2)

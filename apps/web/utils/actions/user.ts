@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import prisma from "@/utils/prisma";
 import { recordAuditEvent } from "@/utils/categoraize/audit";
+import { revokeProviderTokens } from "@/utils/categoraize/revoke-tokens";
 import { withThreadPageBufferDeletion } from "@/utils/redis/thread-page-buffer";
 import { deleteUser } from "@/utils/user/delete";
 import { stopWatchingEmailAccount } from "@/utils/email/watch-manager";
@@ -90,6 +91,8 @@ export const deleteAccountAction = actionClientUser
   .action(async ({ ctx: { userId, logger } }) => {
     await assertUserAccountCanBeDeleted(userId);
     await recordAuditEvent({ eventType: "data_deletion_requested", userId });
+    // RA 10173 erasure: revoke provider access before the tokens are deleted.
+    const revoked = await revokeProviderTokens({ userId, logger });
 
     await clearLastEmailAccountCookie().catch((error) => {
       logger.error("Failed to clear last email account cookie", { error });
@@ -103,7 +106,11 @@ export const deleteAccountAction = actionClientUser
         logger.error("Failed to sign out", { error });
       });
     await deleteUser({ userId, logger });
-    await recordAuditEvent({ eventType: "data_deletion_completed", userId });
+    await recordAuditEvent({
+      eventType: "data_deletion_completed",
+      userId,
+      metadata: { ...revoked },
+    });
   });
 
 export const cleanupAIDraftsAction = actionClient

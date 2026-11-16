@@ -98,18 +98,26 @@ the off-site sync folder. Check it with
    the mailbox, open CategorAIze: categories, contacts and priorities are back;
    Settings > Privacy > Security log shows the old events.
 7. **Re-apply erasures.** The Privacy Notice promises that deleted accounts stay
-   deleted after a restore. Find accounts deleted after the backup was taken
-   and delete them again (Settings > Delete account, or `deleteUser` for that
-   user ID):
+   deleted after a restore. Accounts deleted after the backup was taken are
+   only in the **old** database's audit log (the restored copy predates
+   them), so read them from there and delete them from the restored one:
 
-   ```sql
-   select "userId", "createdAt" from "CategorizeAuditEvent"
-   where "eventType" in ('data_deletion_requested', 'data_deletion_completed')
-     and "createdAt" > '<backup createdAt from the manifest>';
+   ```powershell
+   # Dry run first; -Since is the backup's createdAt from its manifest.
+   .\scripts\backup\reapply-deletions.ps1 -TargetContainer <restored> `
+     -SourceContainer <old> -Since '<backup createdAt>' -DryRun
+   .\scripts\backup\reapply-deletions.ps1 -TargetContainer <restored> `
+     -SourceContainer <old> -Since '<backup createdAt>'
    ```
 
-   Run it on the **old** database if it is still readable (events after the
-   backup are not in the restored copy), otherwise check the incident notes.
+   If the old database cannot be read, pass the IDs you collected from the
+   incident notes with `-UserIds id1,id2`. The script refuses the live
+   container unless `-AllowLiveTarget` is given (only after the restore has
+   replaced it), deletes each `User` row (cascading to its email accounts and
+   all CategorAIze rows), and fails if any row is left. Drilled on
+   2026-11-17 against a restored scratch copy: 1 user, 1 email account,
+   1 category, 5 classifications and 1 consent row removed; the other user's
+   rows untouched.
 8. **Record it.** Note the stop time (RTO), the backup time used (RPO), and the
    steps that went wrong in the incident record; keep the old container until
    the restored one has run for a week.

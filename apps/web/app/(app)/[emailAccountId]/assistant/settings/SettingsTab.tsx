@@ -6,6 +6,7 @@ import { DraftConfidenceSetting } from "@/app/(app)/[emailAccountId]/assistant/s
 import { DraftReplies } from "@/app/(app)/[emailAccountId]/assistant/settings/DraftReplies";
 import { ExternalAiSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/ExternalAiSetting";
 import { ConsentSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/ConsentSetting";
+import { DataExportSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/DataExportSetting";
 import { DraftKnowledgeSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/DraftKnowledgeSetting";
 import { FollowUpRemindersSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/FollowUpRemindersSetting";
 import { HiddenAiDraftLinksSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/HiddenAiDraftLinksSetting";
@@ -69,6 +70,7 @@ export function SettingsTab() {
           <Trans>Privacy</Trans>
         </SectionHeader>
         <ConsentSetting />
+        <DataExportSetting />
       </div>
 
       <div className="space-y-2">
