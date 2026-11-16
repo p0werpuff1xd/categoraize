@@ -101,9 +101,13 @@ decision (2026-11-15).
   image has 16.15). The Supabase server version is unknown; `pg_dump` must be
   the same major version or newer.
 - (g) `pnpm audit --prod`: 3 high (zod, prosemirror-view, source-map-js),
-  4 moderate, 1 low. `gitleaks` and `pip-audit` are not installed (need your
-  approval). A pattern scan of the current tree found only the Supabase URL
-  above.
+  4 moderate, 1 low. `pip-audit`: only tooling packages (pip, setuptools,
+  pytest) have advisories. `gitleaks` 8.30.1 (installed to `E:\tools\gitleaks`,
+  checksum verified) over the full history: 6 findings, all example values from
+  upstream contributors. It has no rule for Postgres URLs and missed the
+  Supabase password, which a pattern scan found; that password is the live
+  production one (same value as the commented production URLs in
+  `apps/web/.env`). Replaced with a placeholder in `c32fc7689`.
 
 ## Where the revised plan meets work already done
 
