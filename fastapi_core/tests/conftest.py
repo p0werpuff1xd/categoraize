@@ -2,6 +2,8 @@ import os
 
 os.environ["CATEGORAIZE_INTERNAL_KEY"] = "test-internal-key"
 os.environ["CATEGORAIZE_SKIP_MODEL_LOAD"] = "1"
+# The suite sends many requests quickly; test_hardening.py turns the limiter on itself.
+os.environ["CATEGORAIZE_RATE_LIMIT_PER_MINUTE"] = "0"
 
 import pytest
 from fastapi.testclient import TestClient

@@ -42,8 +42,26 @@ rejected (fail closed).
   Extractive: up to N original sentences, ranked by similarity to the email's
   Sentence-BERT centroid, with a small boost for sentences with a request or a date.
 
-Errors: 401 bad or missing key, 422 invalid payload or an impossible
-correction, 503 while the model loads.
+Errors: 401 bad or missing key, 411 POST without Content-Length, 413 payload
+over the size limit, 422 invalid payload or an impossible correction, 429 rate
+limit (with `Retry-After`), 503 while the model loads.
+
+### Hardening (`app/security.py`)
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `CATEGORAIZE_MAX_BODY_BYTES` | 4194304 (4 MB) | Enough for 200 label centroids. |
+| `CATEGORAIZE_RATE_LIMIT_PER_MINUTE` | 1200 | Per client address, sliding 60 s window, in memory; `0` turns it off. `/healthz` is exempt. |
+
+- The key check uses `secrets.compare_digest` and fails closed when
+  `CATEGORAIZE_INTERNAL_KEY` is unset. Failed checks are counted
+  (`auth_failures` on `/healthz`) and logged without the presented key.
+- No CORS middleware: browsers cannot call the service; only the web app's
+  server does.
+- Request bodies and email text are never logged (tested in
+  `tests/test_hardening.py`).
+- Uvicorn binds to 127.0.0.1 by default. Only the container image binds to
+  0.0.0.0, because Cloud Run needs it; there the internal key protects it.
 
 ## Run on Windows (PowerShell)
 

@@ -49,6 +49,7 @@ from .schemas import (
     ThreadStatusRequest,
     ThreadStatusResponse,
 )
+from .security import auth_failures, harden_request
 from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, model_manager
 from .services.tagger import tagger_manager
 
@@ -64,12 +65,15 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="CategorAIze NLP Service", version=SERVICE_VERSION, lifespan=lifespan)
+# Size and rate limits (IAS Phase 10 H). No CORS middleware on purpose.
+app.middleware("http")(harden_request)
 
 
 def require_internal_key(x_internal_key: str | None = Header(default=None)) -> None:
     expected = os.getenv("CATEGORAIZE_INTERNAL_KEY")
     # Fail closed: without a configured key no request is trusted.
     if not expected or not x_internal_key or not secrets.compare_digest(x_internal_key, expected):
+        auth_failures.record()
         raise HTTPException(status_code=401, detail="missing or invalid X-Internal-Key")
 
 
@@ -93,6 +97,7 @@ def healthz() -> JSONResponse:
         "model": MODEL_NAME,
         "dimension": VECTOR_DIMENSION,
         "tagger": tagger_manager.describe(),
+        "auth_failures": auth_failures.count,
     }
     return JSONResponse(status_code=200 if model_manager.ready else 503, content=body)
 
