@@ -2,6 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { encryptedTokens } from "@/utils/prisma-extensions";
+import { encryptedEmailFields } from "@/utils/categoraize/field-encryption-extension";
 import { auditPrismaQueries } from "@/utils/audit/prisma-extension";
 
 declare global {
@@ -17,6 +18,7 @@ const _prisma =
     }),
   })
     .$extends(encryptedTokens)
+    .$extends(encryptedEmailFields)
     .$extends(auditPrismaQueries) as unknown as PrismaClient);
 
 if (env.NODE_ENV === "development") global.prisma = _prisma;

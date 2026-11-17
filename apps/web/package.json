@@ -9,6 +9,7 @@
     "check-enums": "node scripts/check-enum-imports.js",
     "check-server-actions": "node scripts/check-server-action-exports.js",
     "categoraize:seed": "cross-env NODE_ENV=development TSX_TSCONFIG_PATH=scripts/categoraize-seed.tsconfig.json node --env-file=.env --import tsx scripts/categoraize-seed.ts",
+    "categoraize:encrypt-fields": "cross-env NODE_ENV=development TSX_TSCONFIG_PATH=scripts/categoraize-seed.tsconfig.json node --env-file=.env --import tsx scripts/categoraize-encrypt-fields.ts",
     "check-test-fixtures": "tsx scripts/check-test-fixtures.ts",
     "dev": "cross-env NODE_OPTIONS=--max_old_space_size=6144 next dev --turbopack",
     "dev:e2e": "dotenv run -q -f .env.e2e -- cross-env NODE_OPTIONS=--max_old_space_size=6144 next dev --turbopack",
