@@ -40,6 +40,7 @@ export async function loadTriageRows({
       deadlineAt: true,
       detectedLang: true,
       isReviewedByUser: true,
+      piiMaskedCount: true,
       _count: { select: { feedbackEvents: true } },
       spans: {
         where: { dismissedAt: null },

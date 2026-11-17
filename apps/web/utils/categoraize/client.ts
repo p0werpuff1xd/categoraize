@@ -63,6 +63,8 @@ const classifyResponseSchema = z.object({
   }),
   embedding: vectorSchema,
   timings_ms: z.record(z.string(), z.number()),
+  // Counts of numbers the service masked (it masks again as a safety net).
+  pii_masked: z.record(z.string(), z.number()).optional(),
 });
 
 const centroidOutputSchema = z.object({
@@ -141,6 +143,8 @@ export type CategoraizeClassifyRequest = {
   confirmed_deadlines?: string[];
   now?: string;
   pinned_category_id?: string | null;
+  /** False only for a user who turned PII masking off (IAS Phase 11 J). */
+  mask_pii?: boolean;
 };
 
 export class CategoraizeServiceError extends Error {

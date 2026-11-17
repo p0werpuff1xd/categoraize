@@ -5,6 +5,7 @@ import {
   CATEGORAIZE_TERMS_VERSION,
   getActiveConsent,
 } from "@/utils/categoraize/consent";
+import { isPiiMaskingEnabled } from "@/utils/categoraize/pii-settings";
 import { withAuth } from "@/utils/middleware";
 
 export type CategoraizeConsentResponse = Awaited<ReturnType<typeof getData>>;
@@ -14,7 +15,10 @@ export const GET = withAuth("user/categoraize-consent", async (request) =>
 );
 
 async function getData(userId: string) {
-  const consent = await getActiveConsent(userId);
+  const [consent, piiMaskingEnabled] = await Promise.all([
+    getActiveConsent(userId),
+    isPiiMaskingEnabled(userId),
+  ]);
   return {
     // Without CategorAIze the app behaves like the original and is not gated.
     gated: isCategoraizeEnabled(),
@@ -23,5 +27,6 @@ async function getData(userId: string) {
     acceptedAt: consent?.acceptedAt ?? null,
     termsVersion: CATEGORAIZE_TERMS_VERSION,
     privacyVersion: CATEGORAIZE_PRIVACY_VERSION,
+    piiMaskingEnabled,
   };
 }

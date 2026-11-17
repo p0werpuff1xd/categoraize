@@ -74,6 +74,8 @@ class ClassifyRequest(StrictModel):
     # A category the user already chose for this email: it stays the category and
     # supplies the priority base, while ranking is still reported.
     pinned_category_id: str | None = Field(default=None, max_length=200)
+    # IAS Phase 11 J: false only for a user who turned PII masking off.
+    mask_pii: bool = True
 
     @field_validator("timezone")
     @classmethod
@@ -134,6 +136,8 @@ class ClassifyResponse(BaseModel):
     priority: Priority
     embedding: list[float]
     timings_ms: dict[str, float]
+    # Counts only ({phone, card, gov_id}); the masked values are never returned.
+    pii_masked: dict[str, int] = Field(default_factory=dict)
 
 
 class MatchCandidate(StrictModel):

@@ -1,0 +1,149 @@
+{
+  "description": "Shared PII masking vectors (IAS Phase 11 J). The TypeScript (apps/web/utils/categoraize/pii.ts) and Python (fastapi_core/app/nlp/pii.py) maskers must both pass every case.",
+  "cases": [
+    {
+      "name": "mobile with dashes",
+      "input": "Call me at 0917-123-4567 tomorrow.",
+      "expected": "Call me at [PHONE] tomorrow.",
+      "counts": { "phone": 1, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "mobile plain",
+      "input": "Text 09171234567 po.",
+      "expected": "Text [PHONE] po.",
+      "counts": { "phone": 1, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "mobile with spaces and dots",
+      "input": "0917 123 4567 or 0998.765.4321",
+      "expected": "[PHONE] or [PHONE]",
+      "counts": { "phone": 2, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "mobile with +63",
+      "input": "Reach me at +639171234567.",
+      "expected": "Reach me at [PHONE].",
+      "counts": { "phone": 1, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "mobile with +63 and spaces",
+      "input": "+63 917 123 4567",
+      "expected": "[PHONE]",
+      "counts": { "phone": 1, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "mobile with 63 prefix",
+      "input": "Number: 639171234567",
+      "expected": "Number: [PHONE]",
+      "counts": { "phone": 1, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "Visa test card with spaces",
+      "input": "Card 4111 1111 1111 1111 exp 12/27",
+      "expected": "Card [CARD] exp 12/27",
+      "counts": { "phone": 0, "card": 1, "gov_id": 0 }
+    },
+    {
+      "name": "Mastercard test card with dashes",
+      "input": "5555-5555-5555-4444",
+      "expected": "[CARD]",
+      "counts": { "phone": 0, "card": 1, "gov_id": 0 }
+    },
+    {
+      "name": "card digits run together",
+      "input": "pay with 4012888888881881 please",
+      "expected": "pay with [CARD] please",
+      "counts": { "phone": 0, "card": 1, "gov_id": 0 }
+    },
+    {
+      "name": "Amex test card 4-6-5",
+      "input": "Amex 3782 822463 10005",
+      "expected": "Amex [CARD]",
+      "counts": { "phone": 0, "card": 1, "gov_id": 0 }
+    },
+    {
+      "name": "SSS number",
+      "input": "SSS no. 34-1234567-8",
+      "expected": "SSS no. [GOV_ID]",
+      "counts": { "phone": 0, "card": 0, "gov_id": 1 }
+    },
+    {
+      "name": "PhilHealth number",
+      "input": "PhilHealth: 12-345678901-2",
+      "expected": "PhilHealth: [GOV_ID]",
+      "counts": { "phone": 0, "card": 0, "gov_id": 1 }
+    },
+    {
+      "name": "TIN",
+      "input": "TIN 123-456-789",
+      "expected": "TIN [GOV_ID]",
+      "counts": { "phone": 0, "card": 0, "gov_id": 1 }
+    },
+    {
+      "name": "TIN with branch code",
+      "input": "TIN 123-456-789-000 ng kompanya",
+      "expected": "TIN [GOV_ID] ng kompanya",
+      "counts": { "phone": 0, "card": 0, "gov_id": 1 }
+    },
+    {
+      "name": "Taglish request keeps the task and the deadline",
+      "input": "Paki-tawagan si Ana sa 0917-123-4567 bago bukas ng 5pm.",
+      "expected": "Paki-tawagan si Ana sa [PHONE] bago bukas ng 5pm.",
+      "counts": { "phone": 1, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "several kinds at once",
+      "input": "SSS 34-1234567-8, card 4111-1111-1111-1111, mobile +639181112222.",
+      "expected": "SSS [GOV_ID], card [CARD], mobile [PHONE].",
+      "counts": { "phone": 1, "card": 1, "gov_id": 1 }
+    },
+    {
+      "name": "NOT masked: ISO date",
+      "input": "Deadline is 2026-11-30.",
+      "expected": "Deadline is 2026-11-30.",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "NOT masked: two dates in a row",
+      "input": "From 2026-11-30 2026-12-01 only",
+      "expected": "From 2026-11-30 2026-12-01 only",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "NOT masked: amount with separators",
+      "input": "Total due: PHP 1,234,567.89",
+      "expected": "Total due: PHP 1,234,567.89",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "NOT masked: order and tracking numbers",
+      "input": "Order #8812, tracking SPX123456, ref PH-20240315-MNL-004",
+      "expected": "Order #8812, tracking SPX123456, ref PH-20240315-MNL-004",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "NOT masked: 16 digits that fail the Luhn check",
+      "input": "Invoice 1234 5678 9012 3456",
+      "expected": "Invoice 1234 5678 9012 3456",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "NOT masked: landline-length and short numbers",
+      "input": "Room 3-12, extension 8123-4567, year 2026",
+      "expected": "Room 3-12, extension 8123-4567, year 2026",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "NOT masked: digits inside a longer number",
+      "input": "Account 1091712345678",
+      "expected": "Account 1091712345678",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    },
+    {
+      "name": "already masked text is unchanged",
+      "input": "Call [PHONE] about [CARD] and [GOV_ID].",
+      "expected": "Call [PHONE] about [CARD] and [GOV_ID].",
+      "counts": { "phone": 0, "card": 0, "gov_id": 0 }
+    }
+  ]
+}

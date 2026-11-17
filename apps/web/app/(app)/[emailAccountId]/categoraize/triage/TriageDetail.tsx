@@ -212,6 +212,13 @@ export function TriageDetail({
                 : []
             }
           />
+          {email.piiMaskedCount > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {email.piiMaskedCount} personal number
+              {email.piiMaskedCount === 1 ? " was" : "s were"} masked before
+              analysis ([PHONE], [CARD], [GOV_ID]).
+            </p>
+          )}
         </section>
 
         {dates.length > 0 && (

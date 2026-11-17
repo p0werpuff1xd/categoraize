@@ -14,6 +14,7 @@ import prisma from "@/utils/prisma";
 import {
   acceptCategoraizeConsent,
   setExternalLlmConsent,
+  setPiiMasking,
 } from "./categoraize-consent.validation";
 
 /**
@@ -86,6 +87,28 @@ export const setExternalLlmConsentAction = actionClientUser
     });
     logger.info("External LLM consent changed", { enabled });
     return { externalLlmEnabled: enabled };
+  });
+
+/**
+ * IAS Phase 11 J: per-user PII masking (on by default). Applies to emails
+ * analyzed from now on and to every external-LLM request.
+ */
+export const setPiiMaskingAction = actionClientUser
+  .metadata({ name: "setPiiMasking" })
+  .inputSchema(setPiiMasking)
+  .action(async ({ ctx: { userId, logger }, parsedInput: { enabled } }) => {
+    await prisma.categorizeUserSettings.upsert({
+      where: { userId },
+      create: { userId, piiMaskingEnabled: enabled },
+      update: { piiMaskingEnabled: enabled },
+    });
+    await recordAuditEvent({
+      eventType: "pii_masking_toggled",
+      userId,
+      metadata: { enabled },
+    });
+    logger.info("PII masking changed", { enabled });
+    return { piiMaskingEnabled: enabled };
   });
 
 /**

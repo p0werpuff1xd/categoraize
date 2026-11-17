@@ -87,6 +87,7 @@ import {
   redactSensitiveContentForLogging,
 } from "@/utils/llms/sensitive-content";
 import { resolveSensitiveDataPolicy } from "@/utils/dlp/policy.server";
+import { shouldMaskPiiForLlm } from "@/utils/categoraize/pii-settings";
 import {
   extractLLMErrorInfo,
   isTransientNetworkError,
@@ -295,6 +296,8 @@ export function createGenerateText({
         label,
       });
 
+    // IAS Phase 11 J: the user's PII-masking setting (on by default).
+    const maskPii = await shouldMaskPiiForLlm(emailAccount.userId);
     const generate = async (candidate: ResolvedModel) => {
       const systemText = applyPromptHardeningToSystem({
         instructions:
@@ -310,6 +313,7 @@ export function createGenerateText({
         label,
         userId: emailAccount.userId,
         emailAccountId: emailAccount.id,
+        maskPii,
       });
       const protectedTools = wrapToolsWithSensitiveDataPolicy({
         tools: protectedOptions.tools,
@@ -491,6 +495,8 @@ export function createGenerateObject({
     let latestRepairAttempt: RepairAttemptState | undefined;
     const fallbackFailures: LlmFallbackFailure[] = [];
 
+    // IAS Phase 11 J: the user's PII-masking setting (on by default).
+    const maskPii = await shouldMaskPiiForLlm(emailAccount.userId);
     const generate = async (candidate: ResolvedModel) => {
       const systemText = applyPromptHardeningToSystem({
         instructions:
@@ -507,6 +513,7 @@ export function createGenerateObject({
           label,
           userId: emailAccount.userId,
           emailAccountId: emailAccount.id,
+          maskPii,
         }),
         candidate,
         OLLAMA_STRUCTURED_OUTPUT_GUIDANCE,
@@ -775,6 +782,7 @@ export async function chatCompletionStream(
     label,
     userId,
     emailAccountId,
+    maskPii: await shouldMaskPiiForLlm(userId),
   }).messages;
 
   for (let index = 0; index < modelCandidates.length; index++) {
@@ -932,6 +940,7 @@ export async function toolCallAgentStream(options: ToolCallAgentStreamOptions) {
     label,
     userId,
     emailAccountId,
+    maskPii: await shouldMaskPiiForLlm(userId),
   }).messages;
 
   for (let index = 0; index < modelCandidates.length; index++) {

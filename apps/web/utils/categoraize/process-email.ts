@@ -17,6 +17,8 @@ import {
   setClassificationEmbedding,
 } from "@/utils/categoraize/vectors";
 import { extractEmailAddress, extractNameFromEmail } from "@/utils/email";
+import { maskPii, totalMasked } from "@/utils/categoraize/pii";
+import { isPiiMaskingEnabledForAccount } from "@/utils/categoraize/pii-settings";
 
 const SNIPPET_CHARS = 240;
 const CATEGORAIZE_SERVICE_VERSION = "0.2.0";
@@ -38,15 +40,28 @@ export type CategoraizeEmailInput = {
  */
 export async function classifyAndStoreEmail({
   emailAccountId,
-  email,
+  email: input,
   logger,
 }: {
   emailAccountId: string;
   email: CategoraizeEmailInput;
   logger: Logger;
 }) {
+  let email = input;
   const fromEmail = extractEmailAddress(email.from).toLowerCase() || email.from;
   const fromName = extractNameFromEmail(email.from);
+
+  // IAS Phase 11 J: mask phone, card and government ID numbers once, here, so
+  // the stored subject/body/snippet, the spans and the NLP request all use the
+  // same masked text (span offsets stay consistent).
+  const maskingOn = await isPiiMaskingEnabledForAccount(emailAccountId);
+  let piiMaskedCount = 0;
+  if (maskingOn) {
+    const subject = maskPii(email.subject);
+    const body = maskPii(email.body);
+    piiMaskedCount = totalMasked(subject.counts) + totalMasked(body.counts);
+    email = { ...email, subject: subject.text, body: body.text };
+  }
 
   const [context, existing] = await Promise.all([
     loadClassifyContext(emailAccountId, fromEmail),
@@ -102,6 +117,7 @@ export async function classifyAndStoreEmail({
       )
       .map((span) => (span.resolvedAt as Date).toISOString()),
     pinned_category_id: pinnedCategoryId,
+    mask_pii: maskingOn,
   };
 
   const result = await classifyEmail(request);
@@ -146,12 +162,18 @@ export async function classifyAndStoreEmail({
     },
     create: {
       ...data,
+      piiMaskedCount,
       emailAccountId,
       threadId: email.threadId,
       messageId: email.messageId,
       processingKey: `${email.threadId}:${email.messageId}`,
     },
-    update: { ...data, suggestedLabel: data.suggestedLabel ?? null },
+    update: {
+      ...data,
+      suggestedLabel: data.suggestedLabel ?? null,
+      // Re-scoring reads text that is already masked (count 0): keep the old count.
+      ...(piiMaskedCount > 0 ? { piiMaskedCount } : {}),
+    },
     select: { id: true },
   });
 
@@ -215,15 +237,22 @@ export async function previewCategoraizeEmail({
 }) {
   const fromEmail = extractEmailAddress(from).toLowerCase() || from;
   const context = await loadClassifyContext(emailAccountId, fromEmail);
+  const maskingOn = await isPiiMaskingEnabledForAccount(emailAccountId);
+  const maskedSubject = maskingOn ? maskPii(subject) : null;
+  const maskedBody = maskingOn ? maskPii(body) : null;
   const result = await classifyEmail({
     email_id: "sandbox",
-    subject,
-    body,
+    subject: maskedSubject?.text ?? subject,
+    body: maskedBody?.text ?? body,
     received_at: new Date().toISOString(),
     ...context.request,
+    mask_pii: maskingOn,
   });
   return {
     result,
+    piiMaskedCount:
+      (maskedSubject ? totalMasked(maskedSubject.counts) : 0) +
+      (maskedBody ? totalMasked(maskedBody.counts) : 0),
     timezone: context.request.timezone,
     categories: context.categories.map(({ id, name, basePriority }) => ({
       id,

@@ -13,6 +13,8 @@ export const AUDIT_EVENT_TYPES = [
   "consent_accepted",
   "consent_withdrawn",
   "external_llm_toggled",
+  "pii_masking_toggled",
+  "encryption_key_rotated",
   "oauth_scope_changed",
   "export_requested",
   "data_deletion_requested",

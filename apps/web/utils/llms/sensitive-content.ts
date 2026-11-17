@@ -6,6 +6,7 @@ import {
   type SensitiveContentFinding,
 } from "@/utils/dlp/sensitive-content";
 import { resolveSensitiveDataPolicy } from "@/utils/dlp/policy.server";
+import { maskPiiDeep } from "@/utils/categoraize/pii";
 
 type LlmSensitiveDataOptions = {
   emailAccountId?: string;
@@ -34,9 +35,28 @@ export function enforceSensitiveDataPolicy<T extends LlmRequestOptions>({
   logger,
   policy,
   userId,
-}: LlmSensitiveDataOptions & { options: T }): T {
+  maskPii = false,
+}: LlmSensitiveDataOptions & { options: T; maskPii?: boolean }): T {
+  // IAS Phase 11 J: mask Philippine phone, card and government ID numbers in
+  // everything sent to the external LLM, before the account's DLP policy runs.
+  let value = options;
+  if (maskPii) {
+    const masked = maskPiiDeep({
+      instructions: options.instructions,
+      prompt: options.prompt,
+      messages: options.messages,
+    });
+    if (masked.masked > 0) {
+      logger.info("Masked PII before the external LLM", {
+        label,
+        emailAccountId,
+        count: masked.masked,
+      });
+      value = { ...options, ...masked.value };
+    }
+  }
   return enforceSensitiveDataPolicyOnValue({
-    value: options,
+    value,
     emailAccountId,
     label,
     logger,

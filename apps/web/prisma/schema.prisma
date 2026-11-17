@@ -72,6 +72,7 @@ model User {
   sessions      Session[]
 
   categorizeConsents CategorizeUserConsent[]
+  categorizeSettings CategorizeUserSettings?
 
   // additional fields
   completedOnboardingAt   DateTime? // questions about the user. e.g. their role
@@ -3054,6 +3055,8 @@ model CategorizeClassification {
 
   isReviewedByUser Boolean @default(false)
   userCorrection   String?
+  /// Phone, card and government ID numbers masked before storage (IAS Phase 11 J).
+  piiMaskedCount   Int     @default(0)
 
   /// Dense email embedding from paraphrase-multilingual-MiniLM-L12-v2 (384-dim)
   /// Used for cosine similarity search (<=>) via pgvector HNSW index
@@ -3261,6 +3264,18 @@ model CategorizeUserConsent {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+/// Per-user CategorAIze privacy settings (IAS Phase 11). A missing row means
+/// the defaults: PII masking on.
+model CategorizeUserSettings {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  piiMaskingEnabled Boolean  @default(true)
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// Append-only security audit log (IAS Phase 7 B). IDs and flags only: never

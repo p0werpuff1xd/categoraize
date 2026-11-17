@@ -23,6 +23,7 @@ from .algorithms.thread_status import ThreadMessage, asks_question, determine_st
 from .ml.priority_rules import compute_priority
 from .nlp.extractor import resolve_date
 from .nlp.language import detect_language
+from .nlp.pii import mask_pii
 from .nlp.regex_tagger import has_deadline_marker_before
 from .nlp.summarizer import split_sentences, summarize
 from .nlp.taglish_cleaner import normalize
@@ -108,7 +109,8 @@ def healthz() -> JSONResponse:
     dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
 )
 def embed(request: EmbedRequest) -> EmbedResponse:
-    texts = [_search_gloss(text) for text in request.texts] if request.gloss else request.texts
+    texts = [_mask(text) for text in request.texts]
+    texts = [_search_gloss(text) for text in texts] if request.gloss else texts
     return EmbedResponse(model=MODEL_NAME, dimension=VECTOR_DIMENSION, vectors=model_manager.embed(texts))
 
 
@@ -120,6 +122,17 @@ def embed(request: EmbedRequest) -> EmbedResponse:
 def classify(request: ClassifyRequest) -> ClassifyResponse:
     started = time.perf_counter()
     timings: dict[str, float] = {}
+
+    # IAS Phase 11 J: mask PII before any processing. The web app masks first;
+    # it sends mask_pii=false only for a user who turned masking off, so span
+    # offsets always match the text the web app stores.
+    pii_counts: dict[str, int] = {"phone": 0, "card": 0, "gov_id": 0}
+    if request.mask_pii:
+        subject, body = mask_pii(request.subject), mask_pii(request.body)
+        for counts in (subject.counts, body.counts):
+            for key, value in counts.as_dict().items():
+                pii_counts[key] += value
+        request = request.model_copy(update={"subject": subject.text, "body": body.text})
 
     missing_centroids = [category for category in request.categories if category.centroid is None]
     email_text = f"{request.subject}\n\n{request.body}".strip()
@@ -180,6 +193,7 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         priority=Priority(level=priority.level, factors=PriorityFactors(**priority.factors), deadline=priority.deadline),
         embedding=email_vector,
         timings_ms=timings,
+        pii_masked=pii_counts,
     )
 
 
@@ -190,6 +204,7 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
 )
 def match(request: MatchRequest) -> MatchResponse:
     started = time.perf_counter()
+    request = request.model_copy(update={"subject": _mask(request.subject), "body": _mask(request.body)})
     query_vector = model_manager.embed_email(request.subject, request.body)
     needs_text = [candidate for candidate in request.candidates if candidate.centroid is None]
     text_vectors = dict(
@@ -218,6 +233,7 @@ def match(request: MatchRequest) -> MatchResponse:
     dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
 )
 def choose_rule_endpoint(request: ChooseRuleRequest) -> ChooseRuleResponse:
+    request = request.model_copy(update={"subject": _mask(request.subject), "body": _mask(request.body)})
     params = load_rule_params()
     _name, tag, _version = tagger_manager.active()
     has_request = asks_question(request.body) or any(
@@ -253,7 +269,7 @@ def choose_rule_endpoint(request: ChooseRuleRequest) -> ChooseRuleResponse:
 def thread_status_endpoint(request: ThreadStatusRequest) -> ThreadStatusResponse:
     _name, tag, _version = tagger_manager.active()
     decision = determine_status(
-        [ThreadMessage(m.from_user, m.subject, m.body, m.automated) for m in request.messages], tag
+        [ThreadMessage(m.from_user, _mask(m.subject), _mask(m.body), m.automated) for m in request.messages], tag
     )
     return ThreadStatusResponse(
         status=decision.status, confident=decision.confident, reason=decision.reason, signals=decision.signals
@@ -267,7 +283,8 @@ def thread_status_endpoint(request: ThreadStatusRequest) -> ThreadStatusResponse
 )
 def summarize_email(request: SummarizeRequest) -> SummarizeResponse:
     _name, tag, _version = tagger_manager.active()
-    sentences = split_sentences(request.body) or split_sentences(request.subject)
+    body, subject = _mask(request.body), _mask(request.subject)
+    sentences = split_sentences(body) or split_sentences(subject)
     return SummarizeResponse(
         sentences=summarize(
             sentences,
@@ -301,6 +318,11 @@ def feedback(request: FeedbackRequest) -> FeedbackResponse:
         alpha=request.alpha,
         beta=request.beta,
     )
+
+
+def _mask(text: str) -> str:
+    """IAS Phase 11 J: phone, card and government ID numbers never reach the models."""
+    return mask_pii(text).text
 
 
 def _search_gloss(text: str) -> str:
