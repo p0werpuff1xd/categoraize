@@ -11,7 +11,7 @@ import { createEmailProvider } from "@/utils/email/provider";
 import { withQstashOrInternal } from "@/utils/qstash";
 import { SafeError } from "@/utils/error";
 
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60; // 5 minutes
 
 const scheduledActionBody = z.object({
   scheduledActionId: z.string().min(1, "Scheduled action ID is required"),

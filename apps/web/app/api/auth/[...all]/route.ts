@@ -8,7 +8,7 @@ import { getMcpOAuthRateLimitResponse } from "@/utils/mcp/rate-limit";
 const logger = createScopedLogger("auth/oauth-callback");
 const handlers = toNextJsHandler(betterAuthConfig);
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 export const { PUT, PATCH, DELETE } = handlers;
 
 export const POST: typeof handlers.POST = async (...args) => {

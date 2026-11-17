@@ -16,7 +16,7 @@ import { markGmailHistoryCatchUp } from "@/utils/redis/gmail-history-catch-up";
 
 import { notifyMailboxChanged } from "@/utils/mailbox-push";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 // Google PubSub calls this endpoint each time a user recieves an email. We subscribe for updates via `api/google/watch`
 export const POST = withError("google/webhook", async (request) => {

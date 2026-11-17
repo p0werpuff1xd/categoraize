@@ -3,7 +3,7 @@ import { z } from "zod";
 import { withEmailProvider } from "@/utils/middleware";
 import { loadEmails } from "@/utils/actions/stats-loading";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const bodySchema = z.object({ loadBefore: z.boolean() });
 

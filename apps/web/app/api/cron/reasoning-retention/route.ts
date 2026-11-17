@@ -8,7 +8,7 @@ import {
   enforceDraftSentTextRetention,
 } from "@/utils/privacy/reasoning-retention";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const GET = withError("cron/reasoning-retention", async (request) => {
   if (!hasCronSecret(request)) {

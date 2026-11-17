@@ -11,7 +11,7 @@ import prisma from "@/utils/prisma";
 import { withQstashOrInternal } from "@/utils/qstash";
 import { meetingRecorderTranscriptBody } from "./validation";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const POST = withError(
   "meeting-recorder/transcript",

@@ -8,7 +8,7 @@ import {
   subscribeLocalConversationChange,
 } from "@/utils/team-comments/events";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const GET = withAuth("team-comments/stream", async (request) => {
   const query = new URL(request.url).searchParams;

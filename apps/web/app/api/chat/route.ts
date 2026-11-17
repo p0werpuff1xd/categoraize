@@ -58,7 +58,7 @@ import {
   startChatRun,
 } from "@/utils/chat/active-run";
 
-export const maxDuration = 800;
+export const maxDuration = 60;
 
 const RUN_FAILED_NOTICE =
   "Sorry, something went wrong and I couldn't finish my reply. Please try again.";

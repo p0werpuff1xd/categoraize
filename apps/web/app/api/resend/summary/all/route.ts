@@ -14,7 +14,7 @@ import { getPremiumUserFilter } from "@/utils/premium";
 import type { SendSummaryEmailBody } from "../validation";
 import { enqueueBackgroundJob } from "@/utils/queue/dispatch";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 const RESEND_SUMMARY_TOPIC = "resend-summary";
 const SEND_SPACING_SECONDS = 1;
 

@@ -10,7 +10,7 @@ import { getEmailAccountsWithStaleAIDrafts } from "@/utils/ai/draft-cleanup";
 import { enqueueBackgroundJob } from "@/utils/queue/dispatch";
 import type { DraftCleanupAccountBody } from "./account/validation";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 const DRAFT_CLEANUP_TOPIC = "draft-cleanup";
 const ENQUEUE_SPACING_SECONDS = 1;
 

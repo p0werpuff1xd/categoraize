@@ -4,7 +4,7 @@ import prisma from "@/utils/prisma";
 import { withQstashOrInternal } from "@/utils/qstash";
 import { releaseHeldEmail } from "@/utils/scheduled-email/service";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const bodySchema = z.object({ scheduledEmailId: z.string().min(1) });
 

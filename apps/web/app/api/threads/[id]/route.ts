@@ -32,7 +32,7 @@ async function getThread(
   };
 }
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const GET = withEmailProvider(
   "threads/detail",

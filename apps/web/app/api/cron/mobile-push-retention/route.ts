@@ -4,7 +4,7 @@ import { captureException } from "@/utils/error";
 import { type RequestWithLogger, withError } from "@/utils/middleware";
 import { deleteExpiredMobilePushDeliveries } from "@/utils/mobile-push-retention";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const GET = withError("cron/mobile-push-retention", async (request) => {
   if (!hasCronSecret(request)) {

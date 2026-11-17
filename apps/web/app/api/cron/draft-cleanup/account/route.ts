@@ -5,7 +5,7 @@ import { withError } from "@/utils/middleware";
 import { cleanupConfiguredAIDraftsForAccount } from "@/utils/ai/draft-cleanup";
 import { draftCleanupAccountBody } from "./validation";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const POST = withError("cron/draft-cleanup/account", async (request) => {
   if (!isAuthorizedCronOrInternalRequest(request)) {
