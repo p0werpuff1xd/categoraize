@@ -26,13 +26,9 @@ import {
 // Maintenance runs as the database owner (DIRECT_URL): it must see every
 // user's rows, which row-level security hides from the runtime role. Set it
 // before env.ts and the Prisma client load: everything that imports them is
-// loaded dynamically below.
+// loaded dynamically in main() (tsx runs this file as CommonJS, so no
+// top-level await).
 if (process.env.DIRECT_URL) process.env.DATABASE_URL = process.env.DIRECT_URL;
-const { default: prisma } = await import("@/utils/prisma");
-const { recordAuditEvent } = await import("@/utils/categoraize/audit");
-const { ENCRYPTED_EMAIL_FIELDS } = await import(
-  "@/utils/categoraize/field-encryption-extension"
-);
 
 const BATCH = 200;
 
@@ -44,6 +40,11 @@ main()
   });
 
 async function main() {
+  const { default: prisma } = await import("@/utils/prisma");
+  const { recordAuditEvent } = await import("@/utils/categoraize/audit");
+  const { ENCRYPTED_EMAIL_FIELDS } = await import(
+    "@/utils/categoraize/field-encryption-extension"
+  );
   const { values } = parseArgs({
     options: {
       backfill: { type: "boolean", default: false },
