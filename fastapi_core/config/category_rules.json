@@ -1,0 +1,46 @@
+{
+  "_note": "Keyword/rule baseline (B1) and the keyword boost in B3. Written by the team from the labeling guideline; Filipino/Taglish entries pending native-speaker review. base_priority mirrors the web app's category defaults and is not tuned.",
+  "uncategorized_base_priority": 2,
+  "categories": {
+    "work_tasks": {
+      "base_priority": 3,
+      "roles": ["manager", "director/executive", "direct report"],
+      "keywords": ["report", "deliverable", "draft", "review", "pull request", "deploy", "build", "release", "project", "client", "slides", "deck", "proposal", "status update", "task", "budget", "spreadsheet", "documentation", "sprint", "ticket", "ulat", "proyekto", "gawain", "kliyente", "trabaho", "i-review", "i-update", "suriin", "ipadala", "ihanda"]
+    },
+    "meetings": {
+      "base_priority": 3,
+      "roles": ["manager", "director/executive", "direct report", "external vendor"],
+      "keywords": ["meeting", "meet", "call", "sync", "schedule", "reschedule", "invite", "invitation", "agenda", "availability", "available", "calendar", "zoom", "google meet", "teams", "lunch", "huddle", "1:1", "one-on-one", "pulong", "miting", "magkita", "iskedyul", "bakante", "usap", "tawag"]
+    },
+    "school": {
+      "base_priority": 3,
+      "roles": [],
+      "keywords": ["class", "classes", "professor", "prof", "instructor", "assignment", "homework", "exam", "quiz", "midterm", "finals", "thesis", "enrollment", "enroll", "grades", "lecture", "syllabus", "course", "groupmates", "group project", "registrar", "semester", "klase", "guro", "takdang-aralin", "pagsusulit", "eskwela", "paaralan", "kaklase", "grupo", "pag-enroll", "marka"]
+    },
+    "job_search": {
+      "base_priority": 3,
+      "roles": [],
+      "keywords": ["application", "applicant", "interview", "recruiter", "hiring", "position", "job", "jobs", "resume", "cv", "assessment", "offer", "onboarding", "pre-employment", "requirements", "nbi clearance", "job alert", "career", "aplikasyon", "panayam", "trabahong", "posisyon", "aplikante", "kasanayan"]
+    },
+    "finance_billing": {
+      "base_priority": 3,
+      "roles": ["external vendor"],
+      "keywords": ["invoice", "bill", "billing", "payment", "pay", "paid", "receipt", "refund", "balance", "due", "overdue", "statement", "subscription", "reimbursement", "expense", "amount", "php", "₱", "charge", "tuition fee", "bayad", "bayaran", "resibo", "singil", "balanse", "halaga", "utang", "gastos"]
+    },
+    "promotions": {
+      "base_priority": 1,
+      "roles": [],
+      "keywords": ["sale", "discount", "% off", "off", "promo", "voucher", "deal", "deals", "offer ends", "limited time", "newsletter", "webinar", "subscribe", "unsubscribe", "free shipping", "cart", "shop", "exclusive", "referral", "refer", "coupon", "bawas", "libre", "diskwento", "presyo", "alok"]
+    },
+    "alerts": {
+      "base_priority": 2,
+      "roles": [],
+      "keywords": ["alert", "notification", "sign-in", "sign in", "login", "log in", "security", "password", "verification code", "otp", "delivered", "delivery", "shipped", "package", "parcel", "tracking", "storage", "server", "cpu", "disk", "outage", "downtime", "automated", "do not reply", "account", "babala", "abiso", "naihatid", "padala", "pakete"]
+    },
+    "personal": {
+      "base_priority": 2,
+      "roles": [],
+      "keywords": ["birthday", "family", "mom", "dad", "tita", "tito", "lola", "lolo", "kuya", "ate", "bes", "friend", "reunion", "dinner", "party", "photos", "pics", "weekend", "vacation", "kaarawan", "pamilya", "kaibigan", "kain", "kumain", "salu-salo", "inuman", "litrato", "nanay", "tatay", "pinsan", "barkada"]
+    }
+  }
+}
