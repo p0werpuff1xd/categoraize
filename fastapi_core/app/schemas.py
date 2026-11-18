@@ -284,3 +284,82 @@ class ClusterResult(BaseModel):
 class DiscoverResponse(BaseModel):
     clusters: list[ClusterResult]
     noise_ids: list[str]
+
+
+class _EmailText(StrictModel):
+    subject: str = Field(default="", max_length=2_000)
+    body: str = Field(default="", max_length=50_000)
+    mask_pii: bool = True
+
+
+class _TimedEmail(_EmailText):
+    received_at: AwareDatetime
+    timezone: str = "Asia/Manila"
+
+    @field_validator("timezone")
+    @classmethod
+    def _known_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as error:
+            raise ValueError(f"unknown timezone: {value}") from error
+        return value
+
+
+class TasksRequest(_TimedEmail):
+    # None means no calendar data: no conflict is reported and nothing is lowered.
+    calendar_busy: list[BusyPeriod] | None = Field(default=None, max_length=500)
+
+
+class TaskSpan(BaseModel):
+    label: Literal["TASK", "DATE"]
+    text: str
+    source: Literal["subject", "body"]
+    start: int
+    end: int
+    # ISO date ("2026-11-19") when no time was stated, ISO datetime otherwise.
+    resolved: str | None = None
+    ambiguous: bool = False
+
+
+class TasksResponse(BaseModel):
+    spans: list[TaskSpan]
+    calendar_checked: bool
+    calendar_conflict: bool
+    tagger: dict
+
+
+class RegisterRequest(_EmailText):
+    pass
+
+
+class RegisterResponse(BaseModel):
+    tone: Literal["formal", "neutral", "casual"] = Field(alias="register")
+    source: Literal["learned", "rules"]
+    probabilities: dict[str, float] | None
+    cues: dict[str, float]
+
+
+class PriorityRequest(_TimedEmail):
+    sender: Sender = Field(default_factory=Sender)
+    # Rule fallback base and the promotion cap; the web app knows the category.
+    category_base_priority: int = Field(default=3, ge=1, le=5)
+    is_promotion: bool = False
+    calendar_busy: list[BusyPeriod] | None = Field(default=None, max_length=500)
+    # A level the user set by hand; it always wins.
+    override_priority: int | None = Field(default=None, ge=1, le=5)
+
+
+class PriorityReason(BaseModel):
+    factor: str
+    contribution: float
+
+
+class PriorityResponse(BaseModel):
+    level: int
+    source: Literal["learned", "rules"]
+    why: list[PriorityReason]
+    guardrails: list[str]
+    tone: Literal["formal", "neutral", "casual"] = Field(alias="register")
+    has_task: bool
+    deadline_proximity: float
