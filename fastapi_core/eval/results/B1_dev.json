@@ -1,0 +1,906 @@
+{
+ "system": "B1",
+ "split": "dev",
+ "generated_at": "2026-11-18T10:09:44+00:00",
+ "config": {
+  "system": "B1",
+  "tagger": "regex",
+  "priority_model": "rules",
+  "register_model": "rules"
+ },
+ "label_provenance": "AI-authored labels, human_reviewed=false on every record",
+ "results": {
+  "overall": {
+   "n": 30,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.5667,
+     "low": 0.4,
+     "high": 0.7333
+    },
+    "category_macro_f1": {
+     "value": 0.653,
+     "low": 0.4482,
+     "high": 0.7737
+    },
+    "priority_exact": {
+     "value": 0.4,
+     "low": 0.2333,
+     "high": 0.5667
+    },
+    "priority_within1": {
+     "value": 0.8333,
+     "low": 0.7,
+     "high": 0.9667
+    },
+    "priority_qwk": {
+     "value": 0.5533,
+     "low": 0.2396,
+     "high": 0.7649
+    },
+    "priority_mae": {
+     "value": 0.8,
+     "low": 0.5333,
+     "high": 1.1
+    },
+    "register_accuracy": {
+     "value": 0.7667,
+     "low": 0.6,
+     "high": 0.9
+    },
+    "register_macro_f1": {
+     "value": 0.7685,
+     "low": 0.5796,
+     "high": 0.9029
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.6667,
+     "low": 0.3333,
+     "high": 1.0
+    },
+    "task_recall": {
+     "value": 0.3,
+     "low": 0.1053,
+     "high": 0.5238
+    },
+    "task_f1": {
+     "value": 0.4138,
+     "low": 0.1667,
+     "high": 0.6452
+    },
+    "date_precision": {
+     "value": 0.3333,
+     "low": 0.1427,
+     "high": 0.5455
+    },
+    "date_recall": {
+     "value": 0.4286,
+     "low": 0.2,
+     "high": 0.65
+    },
+    "date_f1": {
+     "value": 0.375,
+     "low": 0.1701,
+     "high": 0.5779
+    },
+    "span_micro_f1": {
+     "value": 0.3896,
+     "low": 0.2424,
+     "high": 0.5302
+    },
+    "date_resolution_accuracy": {
+     "value": 0.4286,
+     "low": 0.2,
+     "high": 0.65
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    }
+   }
+  },
+  "en": {
+   "n": 10,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.6,
+     "low": 0.3,
+     "high": 0.9
+    },
+    "category_macro_f1": {
+     "value": 0.6458,
+     "low": 0.3333,
+     "high": 0.8572
+    },
+    "priority_exact": {
+     "value": 0.5,
+     "low": 0.2,
+     "high": 0.8
+    },
+    "priority_within1": {
+     "value": 0.9,
+     "low": 0.7,
+     "high": 1.0
+    },
+    "priority_qwk": {
+     "value": 0.596,
+     "low": 0.0,
+     "high": 0.8598
+    },
+    "priority_mae": {
+     "value": 0.6,
+     "low": 0.2,
+     "high": 1.0
+    },
+    "register_accuracy": {
+     "value": 0.5,
+     "low": 0.2,
+     "high": 0.8
+    },
+    "register_macro_f1": {
+     "value": 0.3385,
+     "low": 0.1111,
+     "high": 0.6445
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 1.0,
+     "low": 0.0,
+     "high": 1.0
+    },
+    "task_recall": {
+     "value": 0.2,
+     "low": 0.0,
+     "high": 0.6667
+    },
+    "task_f1": {
+     "value": 0.3333,
+     "low": 0.0,
+     "high": 0.8
+    },
+    "date_precision": {
+     "value": 0.8571,
+     "low": 0.5,
+     "high": 1.0
+    },
+    "date_recall": {
+     "value": 0.8571,
+     "low": 0.5,
+     "high": 1.0
+    },
+    "date_f1": {
+     "value": 0.8571,
+     "low": 0.5714,
+     "high": 1.0
+    },
+    "span_micro_f1": {
+     "value": 0.7,
+     "low": 0.4286,
+     "high": 0.8571
+    },
+    "date_resolution_accuracy": {
+     "value": 0.8571,
+     "low": 0.5,
+     "high": 1.0
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    }
+   }
+  },
+  "mixed": {
+   "n": 10,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.6,
+     "low": 0.3,
+     "high": 0.9
+    },
+    "category_macro_f1": {
+     "value": 0.7083,
+     "low": 0.4,
+     "high": 0.8333
+    },
+    "priority_exact": {
+     "value": 0.4,
+     "low": 0.1,
+     "high": 0.7
+    },
+    "priority_within1": {
+     "value": 0.9,
+     "low": 0.7,
+     "high": 1.0
+    },
+    "priority_qwk": {
+     "value": 0.6809,
+     "low": -0.0003,
+     "high": 0.9133
+    },
+    "priority_mae": {
+     "value": 0.7,
+     "low": 0.3,
+     "high": 1.1
+    },
+    "register_accuracy": {
+     "value": 0.9,
+     "low": 0.7,
+     "high": 1.0
+    },
+    "register_macro_f1": {
+     "value": 0.9153,
+     "low": 0.6444,
+     "high": 1.0
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.5,
+     "low": 0.0,
+     "high": 1.0
+    },
+    "task_recall": {
+     "value": 0.25,
+     "low": 0.0,
+     "high": 0.5714
+    },
+    "task_f1": {
+     "value": 0.3333,
+     "low": 0.0,
+     "high": 0.6667
+    },
+    "date_precision": {
+     "value": 0.1818,
+     "low": 0.0,
+     "high": 0.5
+    },
+    "date_recall": {
+     "value": 0.2857,
+     "low": 0.0,
+     "high": 0.6667
+    },
+    "date_f1": {
+     "value": 0.2222,
+     "low": 0.0,
+     "high": 0.5556
+    },
+    "span_micro_f1": {
+     "value": 0.2667,
+     "low": 0.0,
+     "high": 0.5185
+    },
+    "date_resolution_accuracy": {
+     "value": 0.2857,
+     "low": 0.0,
+     "high": 0.6667
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    }
+   }
+  },
+  "tl": {
+   "n": 10,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.5,
+     "low": 0.2,
+     "high": 0.8
+    },
+    "category_macro_f1": {
+     "value": 0.5,
+     "low": 0.2222,
+     "high": 0.8
+    },
+    "priority_exact": {
+     "value": 0.3,
+     "low": 0.0,
+     "high": 0.6
+    },
+    "priority_within1": {
+     "value": 0.7,
+     "low": 0.4,
+     "high": 1.0
+    },
+    "priority_qwk": {
+     "value": 0.4324,
+     "low": -0.091,
+     "high": 0.8259
+    },
+    "priority_mae": {
+     "value": 1.1,
+     "low": 0.5,
+     "high": 1.7
+    },
+    "register_accuracy": {
+     "value": 0.9,
+     "low": 0.7,
+     "high": 1.0
+    },
+    "register_macro_f1": {
+     "value": 0.9048,
+     "low": 0.6111,
+     "high": 1.0
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.75,
+     "low": 0.0,
+     "high": 1.0
+    },
+    "task_recall": {
+     "value": 0.4286,
+     "low": 0.0,
+     "high": 0.8
+    },
+    "task_f1": {
+     "value": 0.5455,
+     "low": 0.0,
+     "high": 0.8571
+    },
+    "date_precision": {
+     "value": 0.1111,
+     "low": 0.0,
+     "high": 0.4
+    },
+    "date_recall": {
+     "value": 0.1429,
+     "low": 0.0,
+     "high": 0.5
+    },
+    "date_f1": {
+     "value": 0.125,
+     "low": 0.0,
+     "high": 0.4211
+    },
+    "span_micro_f1": {
+     "value": 0.2963,
+     "low": 0.0909,
+     "high": 0.4667
+    },
+    "date_resolution_accuracy": {
+     "value": 0.1429,
+     "low": 0.0,
+     "high": 0.5
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    }
+   }
+  }
+ },
+ "confusion_matrix": {
+  "work_tasks": {
+   "work_tasks": 3,
+   "meetings": 1,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 2
+  },
+  "meetings": {
+   "work_tasks": 0,
+   "meetings": 2,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 3
+  },
+  "school": {
+   "work_tasks": 1,
+   "meetings": 0,
+   "school": 3,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 0
+  },
+  "job_search": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 2,
+   "finance_billing": 0,
+   "promotions": 1,
+   "alerts": 0,
+   "personal": 0,
+   "none": 0
+  },
+  "finance_billing": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 2,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 1
+  },
+  "promotions": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 2,
+   "alerts": 0,
+   "personal": 1,
+   "none": 0
+  },
+  "alerts": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 3,
+   "personal": 0,
+   "none": 0
+  },
+  "personal": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 3
+  }
+ },
+ "per_email": [
+  {
+   "id": "dev-en-001",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-002",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-003",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-004",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-005",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-006",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "personal",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-007",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-008",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-009",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-en-010",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-001",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 5,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-002",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-003",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-004",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 4,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-005",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-006",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 1,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-007",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-008",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-009",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "meetings",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "dev-mixed-010",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-001",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 5,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-002",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-003",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-004",
+   "language": "tl",
+   "gold_category": "job_search",
+   "pred_category": "promotions",
+   "gold_priority": 4,
+   "pred_priority": 1,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-005",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-006",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 1,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-007",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-008",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-009",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "dev-tl-010",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  }
+ ]
+}
