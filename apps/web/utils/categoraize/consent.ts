@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { isCategoraizeEnabled } from "@/utils/categoraize/client";
 import { SafeError } from "@/utils/error";
 import prisma from "@/utils/prisma";
+import { withUserContext } from "@/utils/categoraize/tenant";
 
 // Bump when the Terms or Privacy Notice text changes: everyone is asked to
 // accept again. Rows saved under older versions do not count as acceptance.
@@ -19,17 +20,20 @@ const currentVersions = {
  * never come back to life.
  */
 export async function getActiveConsent(userId: string) {
-  return prisma.categorizeUserConsent.findFirst({
-    where: { userId, withdrawnAt: null, ...currentVersions },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      acceptedAt: true,
-      externalLlmEnabled: true,
-      termsVersion: true,
-      privacyVersion: true,
-    },
-  });
+  // Explicit tenant: layouts and pages run outside the request middleware.
+  return withUserContext(userId, () =>
+    prisma.categorizeUserConsent.findFirst({
+      where: { userId, withdrawnAt: null, ...currentVersions },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        acceptedAt: true,
+        externalLlmEnabled: true,
+        termsVersion: true,
+        privacyVersion: true,
+      },
+    }),
+  );
 }
 
 /**
@@ -46,12 +50,18 @@ export async function hasAcceptedCurrentTerms(userId: string) {
   return Boolean(await getActiveConsent(userId));
 }
 
-/** Prisma filter for users who accepted the current Terms (or {} when the gate is off). */
-export function acceptedTermsUserFilter(): Prisma.UserWhereInput {
+/**
+ * Filter for email accounts whose user accepted the current Terms ({} when
+ * the gate is off). Background jobs have no tenant, so the user ids come from
+ * an owner-run database function that bypasses row-level security and returns
+ * ids only (migration 20261117120000).
+ */
+export async function acceptedTermsEmailAccountFilter(): Promise<Prisma.EmailAccountWhereInput> {
   if (!isConsentGateEnabled()) return {};
-  return {
-    categorizeConsents: { some: { withdrawnAt: null, ...currentVersions } },
-  };
+  const rows = await prisma.$queryRaw<Array<{ userId: string }>>`
+    SELECT "categorize_users_with_accepted_terms" AS "userId"
+    FROM "categorize_users_with_accepted_terms"(${CATEGORAIZE_TERMS_VERSION}, ${CATEGORAIZE_PRIVACY_VERSION})`;
+  return { userId: { in: rows.map((row) => row.userId) } };
 }
 
 /** External-LLM processing is opt-in and off by default (FR-1.8). */

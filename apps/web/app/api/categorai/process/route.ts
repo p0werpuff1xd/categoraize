@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/utils/prisma";
 import { withError } from "@/utils/middleware";
+import { setAuditContext } from "@/utils/audit/context";
 import { withQstashOrInternal } from "@/utils/qstash";
 import { createEmailProvider } from "@/utils/email/provider";
 import { isCategoraizeEnabled } from "@/utils/categoraize/client";
@@ -18,6 +19,11 @@ export const POST = withError(
     }
 
     const body = processCategoraizeMessage.parse(await request.json());
+    // Row-level security tenant for this job (IAS Phase 11 K).
+    setAuditContext({
+      actorType: "email_account",
+      emailAccountId: body.emailAccountId,
+    });
     const logger = request.logger.with({
       emailAccountId: body.emailAccountId,
       messageId: body.messageId,

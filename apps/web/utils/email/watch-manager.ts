@@ -6,7 +6,7 @@ import {
   premiumEntitlementSelect,
 } from "@/utils/premium";
 import type { Logger } from "@/utils/logger";
-import { acceptedTermsUserFilter } from "@/utils/categoraize/consent";
+import { acceptedTermsEmailAccountFilter } from "@/utils/categoraize/consent";
 import { createEmailProvider } from "@/utils/email/provider";
 import { captureException, isInvalidGrantError } from "@/utils/error";
 import { cleanupInvalidTokens } from "@/utils/auth/cleanup-invalid-tokens";
@@ -54,13 +54,14 @@ export async function ensureEmailAccountsWatched({
 }
 
 async function getEmailAccountsToWatch(userIds: string[] | null) {
+  // FR-1.8: never watch a mailbox before the Terms are accepted.
+  const acceptedTerms = await acceptedTermsEmailAccountFilter();
   return prisma.emailAccount.findMany({
     where: {
       ...(userIds ? { userId: { in: userIds } } : {}),
       ...getPremiumUserFilter(),
       account: { disconnectedAt: null },
-      // FR-1.8: never watch a mailbox before the Terms are accepted.
-      AND: [{ user: acceptedTermsUserFilter() }],
+      AND: [acceptedTerms],
     },
     select: {
       id: true,

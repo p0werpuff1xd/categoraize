@@ -3,6 +3,7 @@ import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { encryptedTokens } from "@/utils/prisma-extensions";
 import { encryptedEmailFields } from "@/utils/categoraize/field-encryption-extension";
+import { tenantContext } from "@/utils/categoraize/tenant";
 import { auditPrismaQueries } from "@/utils/audit/prisma-extension";
 
 declare global {
@@ -19,7 +20,9 @@ const _prisma =
   })
     .$extends(encryptedTokens)
     .$extends(encryptedEmailFields)
-    .$extends(auditPrismaQueries) as unknown as PrismaClient);
+    .$extends(auditPrismaQueries)
+    // Last: wraps CategorAIze queries in a row-level-security tenant transaction.
+    .$extends(tenantContext) as unknown as PrismaClient);
 
 if (env.NODE_ENV === "development") global.prisma = _prisma;
 

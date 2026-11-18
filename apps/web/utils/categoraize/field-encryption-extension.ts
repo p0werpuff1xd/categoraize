@@ -5,6 +5,7 @@ import {
   FieldEncryptionError,
   newRowId,
 } from "@/utils/categoraize/field-encryption";
+import { getTenantTransaction } from "@/utils/categoraize/tenant";
 
 /**
  * Prisma Client extension that encrypts CategorAIze email text at rest
@@ -70,7 +71,10 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
 
   async function resolveId(model: ModelName, where: Data) {
     if (typeof where.id === "string") return where.id;
-    const row = await base[model].findUnique({ where, select: { id: true } });
+    // Inside a row-level-security tenant transaction, look the row up there:
+    // outside it the policies would hide the row (IAS Phase 11 K).
+    const db = (getTenantTransaction() ?? base) as typeof base;
+    const row = await db[model].findUnique({ where, select: { id: true } });
     return row?.id ?? null;
   }
 

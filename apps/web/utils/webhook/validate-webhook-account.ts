@@ -8,6 +8,7 @@ import {
 } from "@/utils/premium";
 import { unwatchEmails } from "@/utils/email/watch-manager";
 import { hasAcceptedCurrentTerms } from "@/utils/categoraize/consent";
+import { setAuditContext } from "@/utils/audit/context";
 import { createEmailProvider } from "@/utils/email/provider";
 import {
   getGmailClientForEmail,
@@ -223,6 +224,14 @@ export async function validateWebhookAccount(
     logger.info("Skipping disconnected account");
     return { success: false, response: NextResponse.json({ ok: true }) };
   }
+
+  // The rest of this webhook acts for this account's owner: CategorAIze
+  // queries use it as the row-level-security tenant (IAS Phase 11 K).
+  setAuditContext({
+    actorType: "email_account",
+    emailAccountId: emailAccount.id,
+    userId: emailAccount.userId,
+  });
 
   // FR-1.8: no mail is read for a user who has not accepted (or withdrew) consent.
   if (!(await hasAcceptedCurrentTerms(emailAccount.userId))) {

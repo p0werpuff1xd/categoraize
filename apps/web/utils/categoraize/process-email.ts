@@ -18,6 +18,7 @@ import {
 } from "@/utils/categoraize/vectors";
 import { extractEmailAddress, extractNameFromEmail } from "@/utils/email";
 import { maskPii, totalMasked } from "@/utils/categoraize/pii";
+import { withAccountContext } from "@/utils/categoraize/tenant";
 import { isPiiMaskingEnabledForAccount } from "@/utils/categoraize/pii-settings";
 
 const SNIPPET_CHARS = 240;
@@ -38,7 +39,19 @@ export type CategoraizeEmailInput = {
  * email embedding. Re-running keeps spans the user confirmed and any
  * manual priority override.
  */
-export async function classifyAndStoreEmail({
+export async function classifyAndStoreEmail(args: {
+  emailAccountId: string;
+  email: CategoraizeEmailInput;
+  logger: Logger;
+}) {
+  // Row-level security: queue jobs, re-scoring and the seed script all act for
+  // the account's owner (IAS Phase 11 K).
+  return withAccountContext(args.emailAccountId, () =>
+    classifyAndStoreEmailForTenant(args),
+  );
+}
+
+async function classifyAndStoreEmailForTenant({
   emailAccountId,
   email: input,
   logger,
@@ -177,7 +190,11 @@ export async function classifyAndStoreEmail({
     select: { id: true },
   });
 
-  await setClassificationEmbedding(classification.id, result.embedding);
+  await setClassificationEmbedding(
+    classification.id,
+    result.embedding,
+    emailAccountId,
+  );
 
   await prisma.categorizeExtractedSpan.deleteMany({
     where: { classificationId: classification.id },
