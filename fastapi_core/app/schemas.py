@@ -262,3 +262,25 @@ class FeedbackResponse(BaseModel):
     incorrect: CentroidOutput | None
     alpha: float
     beta: float
+
+
+class VectorItem(StrictModel):
+    id: str = Field(min_length=1, max_length=200)
+    vector: Vector
+
+
+class DiscoverRequest(StrictModel):
+    vectors: list[VectorItem] = Field(min_length=2, max_length=10_000)
+    min_cluster_size: int = Field(default=3, ge=2, le=100)
+
+
+class ClusterResult(BaseModel):
+    cluster_id: int
+    member_ids: list[str]
+    centroid: list[float]
+    cohesion: float
+
+
+class DiscoverResponse(BaseModel):
+    clusters: list[ClusterResult]
+    noise_ids: list[str]

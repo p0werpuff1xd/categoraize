@@ -35,6 +35,9 @@ from .schemas import (
     ChooseRuleResponse,
     ClassifyRequest,
     ClassifyResponse,
+    ClusterResult,
+    DiscoverRequest,
+    DiscoverResponse,
     EmbedRequest,
     EmbedResponse,
     FeedbackRequest,
@@ -318,6 +321,82 @@ def feedback(request: FeedbackRequest) -> FeedbackResponse:
         alpha=request.alpha,
         beta=request.beta,
     )
+
+
+@app.post(
+    "/api/v1/discover",
+    response_model=DiscoverResponse,
+    dependencies=[Depends(require_internal_key)],
+)
+def discover(request: DiscoverRequest) -> DiscoverResponse:
+    """Cluster uncategorized email vectors into candidate categories.
+
+    The web app sends only IDs and pre-computed vectors (never text). Clusters
+    are formed with agglomerative clustering using cosine distance; scikit-learn's
+    HDBSCAN is used instead when available and min_cluster_size > 2. The caller
+    derives candidate names from the user's own emails; this endpoint never
+    creates categories automatically.
+    """
+    import math
+
+    import numpy as np
+
+    vectors_np = np.array([item.vector for item in request.vectors], dtype=np.float32)
+    ids = [item.id for item in request.vectors]
+    n = len(ids)
+
+    # Normalize for cosine distance.
+    norms = np.linalg.norm(vectors_np, axis=1, keepdims=True)
+    norms = np.where(norms == 0, 1.0, norms)
+    vectors_norm = vectors_np / norms
+
+    # Choose algorithm: HDBSCAN when available (sklearn ≥ 1.3), else agglomerative.
+    labels: np.ndarray
+    try:
+        from sklearn.cluster import HDBSCAN
+
+        clusterer = HDBSCAN(
+            min_cluster_size=request.min_cluster_size,
+            min_samples=1,
+            metric="cosine",
+            cluster_selection_epsilon=0.0,
+        )
+        labels = clusterer.fit_predict(vectors_norm)
+    except ImportError:
+        from sklearn.cluster import AgglomerativeClustering
+
+        n_clusters = max(2, n // request.min_cluster_size)
+        clusterer = AgglomerativeClustering(n_clusters=n_clusters, metric="cosine", linkage="average")
+        labels = clusterer.fit_predict(vectors_norm)
+
+    # Group by label; label -1 is noise.
+    groups: dict[int, list[int]] = {}
+    for index, label in enumerate(labels.tolist()):
+        groups.setdefault(label, []).append(index)
+
+    clusters: list[ClusterResult] = []
+    noise_ids: list[str] = [ids[i] for i in groups.get(-1, [])]
+
+    for label, indices in sorted(groups.items()):
+        if label == -1 or len(indices) < request.min_cluster_size:
+            noise_ids.extend(ids[i] for i in indices)
+            continue
+        members = vectors_norm[indices]
+        centroid_raw = members.mean(axis=0)
+        c_norm = np.linalg.norm(centroid_raw)
+        centroid = (centroid_raw / c_norm if c_norm > 0 else centroid_raw).tolist()
+        # Cohesion: mean cosine similarity of members to centroid.
+        cohesion = float(np.mean(members @ np.array(centroid, dtype=np.float32)))
+        # Round to 4 decimal places; guard against non-finite from degenerate inputs.
+        cohesion = round(cohesion, 4) if math.isfinite(cohesion) else 0.0
+        clusters.append(ClusterResult(
+            cluster_id=label,
+            member_ids=[ids[i] for i in indices],
+            centroid=centroid,
+            cohesion=cohesion,
+        ))
+
+    return DiscoverResponse(clusters=clusters, noise_ids=noise_ids)
 
 
 def _mask(text: str) -> str:
