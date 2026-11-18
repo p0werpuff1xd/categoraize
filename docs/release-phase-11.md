@@ -4,7 +4,7 @@ Status: **released 2026-11-19 (about 02:15-03:30 +08:00).** Record:
 
 | Step | Result |
 |---|---|
-| 0.3 backup | `E:ackups\prod\supabase-prod-20261119-021402-pre-phase11.dump.age` (age-encrypted, 118 tables, verified) |
+| 0.3 backup | `E:\backups\prod\supabase-prod-20261119-021402-pre-phase11.dump.age` (age-encrypted, 118 tables, verified) |
 | 1 key | New key `p1` in `E:\categoraize\secrets\encryption-prod.env` (copy in `D:\categoraize-keys`); web revision `00024` |
 | 2 migrations | 3 applied; 15 policies on 14 CategorAIze tables; the live app (`postgres`) unaffected |
 | 3 deploy | `main` fast-forwarded to `0d72bfcb8`; Cloud Build deployed revision `00025` |
