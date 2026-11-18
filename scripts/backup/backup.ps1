@@ -119,6 +119,9 @@ try {
     [void]$sh.AppendLine("LIVE='psql -h 127.0.0.1 -p 5432 -U postgres -d $Database -v ON_ERROR_STOP=1 -q -X'")
     [void]$sh.AppendLine("STAGE='psql -p $StagingPort -U postgres -d $Database -v ON_ERROR_STOP=1 -q -X'")
     [void]$sh.AppendLine("pg_dump -h 127.0.0.1 -p 5432 -U postgres -d $Database --schema-only -Fc -f /work/schema.dump")
+    # The schema grants to and has policies for the runtime role (IAS Phase 11 K);
+    # a fresh staging server needs the role to exist (NOLOGIN, no password).
+    [void]$sh.AppendLine("`$STAGE -c 'CREATE ROLE categoraize_app NOLOGIN'")
     [void]$sh.AppendLine("pg_restore -p $StagingPort -U postgres -d $Database --no-owner --exit-on-error /work/schema.dump")
     $i = 0
     foreach ($table in $BackupDataTables) {

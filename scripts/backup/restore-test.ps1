@@ -116,6 +116,8 @@ try {
   } $timings $logFile
 
   Measure-Step 'pg_restore' {
+    # The dump grants to and has policies for the runtime role (IAS Phase 11 K).
+    Invoke-Tool docker @('exec', $scratch, 'psql', '-U', 'postgres', '-d', $Database, '-v', 'ON_ERROR_STOP=1', '-qXc', 'CREATE ROLE categoraize_app NOLOGIN') | Out-Null
     Invoke-Tool docker @('exec', $scratch, 'pg_restore', '-U', 'postgres', '-d', $Database, '--no-owner', '--exit-on-error', "/work/$base.dump") | Out-Null
   } $timings $logFile
 
