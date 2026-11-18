@@ -87,8 +87,8 @@ Reproduce: `python -m eval.tune_category`, `python -m eval.train_tagger`,
 | 1 | Apply the RLS migration locally (`npx prisma migrate deploy` in `apps/web/`) | user | Done: recorded in the local `_prisma_migrations` |
 | 2 | Create the `categoraize_app` role (`scripts/db/create-app-role.ps1`) | user | Done locally |
 | 3 | Verify RLS policies (`scripts/db/test-rls.sql`) | user | Done 2026-11-18: every check PASS (rolled back) |
-| 4 | RLS on production Supabase | owner | Open, needs a release: production has RLS on with no policies and lacks the three migrations after `20261116090000`. The RLS migration uses FORCE ROW LEVEL SECURITY, so it must be applied together with deploying the Phase 11 code to `main`, or the live app (no tenant context) would see no CategorAIze rows |
-| 5 | Encrypt existing rows (`scripts/categoraize-encrypt-fields.ts`) | user | Local: done (script fixed to run under tsx; dry run shows every value already encrypted under k1). Production: with the release in item 4, after setting the encryption keys on the web service |
+| 4 | RLS on production Supabase | owner | Open, planned in `docs/release-phase-11.md`: production lacks the three migrations after `20261116090000`. The app connects as Supabase `postgres`, which bypasses RLS, so applying them is safe but protects nothing until `DATABASE_URL` uses `categoraize_app` |
+| 5 | Encrypt existing rows (`scripts/categoraize-encrypt-fields.ts`) | user | Local: done (script fixed; every value already encrypted under k1). Production: right after the Phase 11 code deploys, with a new production key (`docs/release-phase-11.md`) |
 | 6 | Train learned models and set `current.json` | team | Done |
 | 7 | Single test-set evaluation | team | Done (`fastapi_core/eval/RESULTS.md`) |
 | 8 | Register the daily backup task; copy to external media | user | Done: Task Scheduler runs the backup daily 02:30 (Copy 1 `E:ackups\copy1`, Copy 2 `D:\categoraize-backups\copy2`, a separate physical disk) and a restore test weekly; scripts fixed for the new role; backup and restore test PASS. Still open: an external or off-site Copy 2 |
