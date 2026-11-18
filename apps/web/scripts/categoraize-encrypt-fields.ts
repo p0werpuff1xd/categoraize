@@ -15,8 +15,6 @@
 
 import { parseArgs } from "node:util";
 import { Prisma } from "@/generated/prisma/client";
-import prisma from "@/utils/prisma";
-import { recordAuditEvent } from "@/utils/categoraize/audit";
 import {
   decryptField,
   encryptField,
@@ -24,7 +22,17 @@ import {
   keyIdOf,
   loadKeyRing,
 } from "@/utils/categoraize/field-encryption";
-import { ENCRYPTED_EMAIL_FIELDS } from "@/utils/categoraize/field-encryption-extension";
+
+// Maintenance runs as the database owner (DIRECT_URL): it must see every
+// user's rows, which row-level security hides from the runtime role. Set it
+// before env.ts and the Prisma client load: everything that imports them is
+// loaded dynamically below.
+if (process.env.DIRECT_URL) process.env.DATABASE_URL = process.env.DIRECT_URL;
+const { default: prisma } = await import("@/utils/prisma");
+const { recordAuditEvent } = await import("@/utils/categoraize/audit");
+const { ENCRYPTED_EMAIL_FIELDS } = await import(
+  "@/utils/categoraize/field-encryption-extension"
+);
 
 const BATCH = 200;
 

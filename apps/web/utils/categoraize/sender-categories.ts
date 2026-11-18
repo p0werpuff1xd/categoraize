@@ -13,6 +13,7 @@ import { isCategoraizeFeatureOn } from "@/utils/categoraize/features";
 import { parseVector, toVectorLiteral } from "@/utils/categoraize/vectors";
 import type { Logger } from "@/utils/logger";
 import prisma from "@/utils/prisma";
+import { withAccountSql } from "@/utils/categoraize/tenant";
 
 export const SENDER_CATEGORY_THRESHOLD = 0.35;
 const MAX_EMAILS = 3;
@@ -108,20 +109,24 @@ export async function learnSenderCategoryCorrection({
       return;
     }
 
-    const categories = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        name: string;
-        description: string | null;
-        centroid: string | null;
-      }>
-    >`
+    const categories = await withAccountSql(
+      prisma,
+      emailAccountId,
+      (db) => db.$queryRaw<
+        Array<{
+          id: string;
+          name: string;
+          description: string | null;
+          centroid: string | null;
+        }>
+      >`
       SELECT c."id", c."name", c."description", sc."centroid"::text AS "centroid"
       FROM "Category" c
       LEFT JOIN "CategorizeSenderCategoryCentroid" sc ON sc."categoryId" = c."id"
       WHERE c."emailAccountId" = ${emailAccountId}
         AND c."id" IN (${toCategoryId}, ${fromCategoryId ?? toCategoryId})
-    `;
+    `,
+    );
     const target = categories.find(({ id }) => id === toCategoryId);
     if (!target) return;
     const previous = fromCategoryId
@@ -167,20 +172,24 @@ async function getCandidateCategories(
     .map(({ name }) => name)
     .filter((name) => name !== defaultCategory.OTHER.name);
   if (!names.length) return [];
-  const rows = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      name: string;
-      description: string | null;
-      centroid: string | null;
-    }>
-  >`
+  const rows = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<
+      Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        centroid: string | null;
+      }>
+    >`
     SELECT c."id", c."name", c."description", sc."centroid"::text AS "centroid"
     FROM "Category" c
     LEFT JOIN "CategorizeSenderCategoryCentroid" sc ON sc."categoryId" = c."id"
     WHERE c."emailAccountId" = ${emailAccountId} AND c."name" = ANY(${names})
     ORDER BY c."name" ASC
-  `;
+  `,
+  );
   return rows.map((row) => ({ ...row, centroid: parseVector(row.centroid) }));
 }
 
@@ -196,13 +205,17 @@ async function centroidOf(category: {
 }
 
 async function getSenderEmbedding(emailAccountId: string, sender: string) {
-  const rows = await prisma.$queryRaw<
-    Array<{ embedding: string | null; learnedCategoryId: string | null }>
-  >`
+  const rows = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<
+      Array<{ embedding: string | null; learnedCategoryId: string | null }>
+    >`
     SELECT "embedding"::text AS "embedding", "learnedCategoryId"
     FROM "CategorizeSenderEmbedding"
     WHERE "emailAccountId" = ${emailAccountId} AND "sender" = ${sender}
-  `;
+  `,
+  );
   const row = rows[0];
   return row ? { ...row, embedding: parseVector(row.embedding) } : null;
 }
@@ -212,12 +225,16 @@ async function saveSenderEmbedding(
   sender: string,
   embedding: number[],
 ) {
-  await prisma.$executeRaw`
+  await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$executeRaw`
     INSERT INTO "CategorizeSenderEmbedding" ("id", "updatedAt", "sender", "embedding", "emailAccountId")
     VALUES (${randomUUID()}, CURRENT_TIMESTAMP, ${sender}, ${toVectorLiteral(embedding)}::vector, ${emailAccountId})
     ON CONFLICT ("emailAccountId", "sender") DO UPDATE
     SET "embedding" = EXCLUDED."embedding", "updatedAt" = CURRENT_TIMESTAMP
-  `;
+  `,
+  );
 }
 
 async function saveCentroid(
@@ -225,14 +242,18 @@ async function saveCentroid(
   categoryId: string,
   centroid: number[],
 ) {
-  await prisma.$executeRaw`
+  await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$executeRaw`
     INSERT INTO "CategorizeSenderCategoryCentroid" ("id", "updatedAt", "centroid", "centroidVersion", "categoryId", "emailAccountId")
     VALUES (${randomUUID()}, CURRENT_TIMESTAMP, ${toVectorLiteral(centroid)}::vector, 1, ${categoryId}, ${emailAccountId})
     ON CONFLICT ("categoryId") DO UPDATE
     SET "centroid" = EXCLUDED."centroid",
         "centroidVersion" = "CategorizeSenderCategoryCentroid"."centroidVersion" + 1,
         "updatedAt" = CURRENT_TIMESTAMP
-  `;
+  `,
+  );
 }
 
 function normalizeSender(sender: string) {

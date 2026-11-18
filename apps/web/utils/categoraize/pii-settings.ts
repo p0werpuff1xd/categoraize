@@ -1,4 +1,5 @@
 import { isCategoraizeEnabled } from "@/utils/categoraize/client";
+import { withUserContext } from "@/utils/categoraize/tenant";
 import prisma from "@/utils/prisma";
 
 /**
@@ -8,10 +9,13 @@ import prisma from "@/utils/prisma";
  */
 export async function isPiiMaskingEnabled(userId: string): Promise<boolean> {
   if (!isCategoraizeEnabled()) return false;
-  const settings = await prisma.categorizeUserSettings.findUnique({
-    where: { userId },
-    select: { piiMaskingEnabled: true },
-  });
+  // Explicit tenant: callers include LLM requests outside the user's request.
+  const settings = await withUserContext(userId, () =>
+    prisma.categorizeUserSettings.findUnique({
+      where: { userId },
+      select: { piiMaskingEnabled: true },
+    }),
+  );
   return settings?.piiMaskingEnabled ?? true;
 }
 
@@ -36,11 +40,9 @@ export async function isPiiMaskingEnabledForAccount(
   if (!isCategoraizeEnabled()) return false;
   const account = await prisma.emailAccount.findUnique({
     where: { id: emailAccountId },
-    select: {
-      user: {
-        select: { categorizeSettings: { select: { piiMaskingEnabled: true } } },
-      },
-    },
+    select: { userId: true },
   });
-  return account?.user.categorizeSettings?.piiMaskingEnabled ?? true;
+  // Unknown account: mask (the safe default).
+  if (!account) return true;
+  return isPiiMaskingEnabled(account.userId);
 }

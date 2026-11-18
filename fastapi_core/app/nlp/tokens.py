@@ -68,10 +68,15 @@ def split_sentences(text: str, tokens: list[Token], max_tokens: int = 120) -> li
     return sentences
 
 
+# Filipino affixes kept on the token ("mag-Friday", "pa-review") but left out of
+# the span, matching the labeling guideline: "mag-" before a time means "by".
+DETACHED_PREFIXES = {"DATE": ("mag-",), "TASK": ("pa-",)}
+
+
 def spans_to_bio(tokens: list[Token], spans: list[CharSpan]) -> list[str]:
     tags = ["O"] * len(tokens)
     for span in spans:
-        inside = [i for i, token in enumerate(tokens) if token.start >= span.start and token.end <= span.end]
+        inside = [i for i, token in enumerate(tokens) if token.start < span.end and token.end > span.start]
         for position, index in enumerate(inside):
             tags[index] = f"{'B' if position == 0 else 'I'}-{span.label}"
     return tags
@@ -89,12 +94,20 @@ def bio_to_spans(tokens: list[Token], tags: list[str]) -> list[CharSpan]:
             spans.append(CharSpan(label, start, end))
             label = None
         if prefix == "B" or (prefix == "I" and not continues):
-            label, start = tag_label, token.start
+            label, start = tag_label, token.start + _detached_prefix_length(token.text, tag_label)
         if label is not None:
             end = token.end
     if label is not None:
         spans.append(CharSpan(label, start, end))
     return spans
+
+
+def _detached_prefix_length(token_text: str, label: str) -> int:
+    lowered = token_text.casefold()
+    for prefix in DETACHED_PREFIXES.get(label, ()):
+        if lowered.startswith(prefix) and len(lowered) > len(prefix):
+            return len(prefix)
+    return 0
 
 
 _MARKUP_RE = re.compile(r"\[(TASK|DATE)\](.*?)\[/\1\]", re.DOTALL)

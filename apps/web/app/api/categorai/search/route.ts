@@ -5,6 +5,7 @@ import prisma from "@/utils/prisma";
 import { embedTexts } from "@/utils/categoraize/client";
 import { toVectorLiteral } from "@/utils/categoraize/vectors";
 import { loadTriageRows } from "@/utils/categoraize/triage-rows";
+import { withAccountSql } from "@/utils/categoraize/tenant";
 import { type CategoraizeSearchBody, categoraizeSearch } from "./validation";
 
 export type CategoraizeSearchResponse = Awaited<ReturnType<typeof getData>>;
@@ -56,16 +57,18 @@ async function getData({
     );
   }
 
-  const matches = await prisma.$queryRaw<
-    Array<{ id: string; similarity: number }>
-  >`
+  const matches = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<Array<{ id: string; similarity: number }>>`
     SELECT c."id", 1 - (c."embedding" <=> ${vector}::vector) AS "similarity"
     FROM "CategorizeClassification" c
     WHERE ${Prisma.join(filters, " AND ")}
     ORDER BY c."embedding" <=> ${vector}::vector ASC
     LIMIT ${body.limit}
     OFFSET ${body.offset}
-  `;
+  `,
+  );
 
   const similarityById = new Map(
     matches.map((match) => [match.id, Number(match.similarity)]),
