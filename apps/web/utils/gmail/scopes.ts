@@ -27,9 +27,8 @@ export const SCOPES = [
 export const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.readonly", // also covers free/busy queries
   "https://www.googleapis.com/auth/calendar.events", // For writing/creating events in the future
-  "https://www.googleapis.com/auth/calendar.freebusy", // For checking free/busy status
   // "https://www.googleapis.com/auth/calendar.settings.readonly", // For reading calendar settings
   // "https://www.googleapis.com/auth/calendar.settings", // For modifying calendar settings
   // "https://www.googleapis.com/auth/calendar.calendars.readonly", // For reading calendar metadata

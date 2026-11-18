@@ -3,7 +3,7 @@ import prisma from "@/utils/__mocks__/prisma";
 import {
   CATEGORAIZE_PRIVACY_VERSION,
   CATEGORAIZE_TERMS_VERSION,
-  acceptedTermsUserFilter,
+  acceptedTermsEmailAccountFilter,
   getActiveConsent,
   hasAcceptedCurrentTerms,
 } from "./consent";
@@ -67,8 +67,9 @@ describe("consent gate", () => {
   it("is open when CategorAIze is turned off", async () => {
     mocks.enabled = false;
     expect(await hasAcceptedCurrentTerms("user_1")).toBe(true);
-    expect(acceptedTermsUserFilter()).toEqual({});
+    expect(await acceptedTermsEmailAccountFilter()).toEqual({});
     expect(prisma.categorizeUserConsent.findFirst).not.toHaveBeenCalled();
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it("accepts a current, non-withdrawn row", async () => {
@@ -114,15 +115,17 @@ describe("consent gate", () => {
     );
   });
 
-  it("builds a user filter that requires a current, non-withdrawn consent", () => {
-    expect(acceptedTermsUserFilter()).toEqual({
-      categorizeConsents: {
-        some: {
-          withdrawnAt: null,
-          termsVersion: CATEGORAIZE_TERMS_VERSION,
-          privacyVersion: CATEGORAIZE_PRIVACY_VERSION,
-        },
-      },
+  it("limits email accounts to users with a current consent from the owner-run lookup", async () => {
+    prisma.$queryRaw.mockResolvedValue([
+      { userId: "user_1" },
+      { userId: "user_2" },
+    ] as never);
+    expect(await acceptedTermsEmailAccountFilter()).toEqual({
+      userId: { in: ["user_1", "user_2"] },
     });
+    expect(prisma.$queryRaw.mock.calls[0].slice(1)).toEqual([
+      CATEGORAIZE_TERMS_VERSION,
+      CATEGORAIZE_PRIVACY_VERSION,
+    ]);
   });
 });

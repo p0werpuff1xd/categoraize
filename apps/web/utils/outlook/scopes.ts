@@ -27,6 +27,5 @@ export const CALENDAR_SCOPES = [
   "email",
   "User.Read",
   "offline_access", // Required for refresh tokens
-  "Calendars.Read", // Read user calendars
-  "Calendars.ReadWrite", // Read and write user calendars
+  "Calendars.ReadWrite", // read (busy times) and write; Calendars.Read would be redundant
 ] as const;
