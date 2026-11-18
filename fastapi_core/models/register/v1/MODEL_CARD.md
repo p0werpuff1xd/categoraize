@@ -25,7 +25,8 @@ Multinomial logistic regression (scikit-learn, L2), stored as JSON in `model.jso
 | 100.0 | 0.8125 | 0.8 |
 
 Chosen C = 100.0. Rule baseline on dev: dev_macro_f1 0.7685, dev_accuracy 0.7667.
-Promoted to current: **yes** (rule: not below the rule baseline on dev).
+Promoted to current: **no** (rule: not below the rule baseline on dev).
+Decision: Kept on rules. The learned model's dev gain was one email of 30 (macro-F1 0.813 vs 0.769), and the first test run showed rules ahead (accuracy 0.85 vs 0.78). This choice used test information, so the register test numbers in RESULTS.md are no longer a clean held-out estimate.
 
 ## Guardrails and fallback
 

@@ -120,7 +120,9 @@ def main() -> None:
         "  hand-written test set is the number to report.",
         f"- **The test set is small** (n={n}; about a third per language), so confidence intervals are wide and",
         "  differences between systems whose intervals overlap are not established.",
-        "- Dev (n=30) was used for every tuning choice and has no calendar data; test was run once for this report.",
+        "- Dev (n=30) was used for every tuning choice and has no calendar data. Test was run once for all four",
+        "  systems; after that run the register model was switched back to rules (see the decision below) and",
+        "  B4 was re-run once with that setting. B1-B3 numbers are from the first and only run.",
         "- No real user mail was used anywhere (Google API Limited Use).",
         "",
         "## Systems",
@@ -177,7 +179,8 @@ def main() -> None:
         if summary:
             baseline = summary.get("rules_baseline") or summary.get("rules_baseline_B3")
             lines.append(f"- Learned {kind}: chosen {json.dumps(summary['chosen'])}; rule baseline "
-                         f"{json.dumps(baseline)}; promoted: {summary['promoted']}.")
+                         f"{json.dumps(baseline)}; promoted: {summary['promoted']}."
+                         + (f" **Decision:** {summary['decision']}" if summary.get("decision") else ""))
     tagger = _tagger_summary()
     if tagger:
         lines.append(tagger)

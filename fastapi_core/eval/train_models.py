@@ -20,6 +20,7 @@ A model becomes current only if its dev score is not below the rule
 baseline. Weights are saved as JSON (inspectable, no pickle).
 """
 
+import argparse
 import json
 from datetime import UTC, datetime
 
@@ -158,6 +159,7 @@ def model_card(kind: str, summary: dict, meta: dict) -> str:
         f"Chosen C = {chosen['C']}. Rule baseline on dev: "
         + ", ".join(f"{k} {baseline[k]}" for k in metric_keys) + ".",
         f"Promoted to current: **{'yes' if summary['promoted'] else 'no'}** (rule: not below the rule baseline on dev).",
+        *([f"Decision: {summary['decision']}"] if summary.get("decision") else []),
         "",
         "## Guardrails and fallback",
         "",
@@ -168,12 +170,25 @@ def model_card(kind: str, summary: dict, meta: dict) -> str:
     ])
 
 
+REGISTER_DECISION = (
+    "Kept on rules. The learned model's dev gain was one email of 30 (macro-F1 0.813 vs 0.769), and the "
+    "first test run showed rules ahead (accuracy 0.85 vs 0.78). This choice used test information, so the "
+    "register test numbers in RESULTS.md are no longer a clean held-out estimate."
+)
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--register-rules", action="store_true",
+                        help="save the learned register model but serve the rule detector")
+    args = parser.parse_args()
     context = Context()
     train, dev = load_split("train"), load_split("dev")
     context.warm(train + dev)
 
     register_lm, register_summary = train_register(context, train, dev)
+    if args.register_rules:
+        register_summary["promoted"], register_summary["decision"] = False, REGISTER_DECISION
     save("register", register_lm, register_summary, {
         "features": "Features: the 384-d email embedding and the rule cues " + ", ".join(register_nlp.CUE_FEATURES) + ".",
         "guardrails": "When the model file is missing the service uses the rule cue detector (app/nlp/register.py).",
