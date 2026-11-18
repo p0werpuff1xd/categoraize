@@ -132,4 +132,6 @@ _apalache-out/
 
 # CategorAIze tagger: generated synthetic data is rebuilt by training.generate_synthetic
 fastapi_core/data/synthetic/
+# Tagger model checkpoints are large binary files trained offline; not committed.
+fastapi_core/models/tagger/
 
