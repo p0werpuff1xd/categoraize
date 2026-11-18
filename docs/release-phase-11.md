@@ -1,7 +1,22 @@
 # Release plan: Phase 11 (encryption, PII masking, RLS) and the NLP dataset work to `main`
 
-Status: **planned, not started.** Every production step below needs the owner
-at the keyboard. Facts checked read-only on 2026-11-19.
+Status: **released 2026-11-19 (about 02:15-03:30 +08:00).** Record:
+
+| Step | Result |
+|---|---|
+| 0.3 backup | `E:ackups\prod\supabase-prod-20261119-021402-pre-phase11.dump.age` (age-encrypted, 118 tables, verified) |
+| 1 key | New key `p1` in `E:\categoraize\secrets\encryption-prod.env` (copy in `D:\categoraize-keys`); web revision `00024` |
+| 2 migrations | 3 applied; 15 policies on 14 CategorAIze tables; the live app (`postgres`) unaffected |
+| 3 deploy | `main` fast-forwarded to `0d72bfcb8`; Cloud Build deployed revision `00025` |
+| 4 backfill | All CategorAIze text encrypted under `p1` (0 plaintext left); the app's client decrypts it |
+| 5 smoke test | Site, health and logs clean. The consent gate now asks for Terms acceptance: **no consent exists in production yet, so new mail is not processed until the owner accepts it** |
+| 6 role | Found that Supabase enables RLS on all 120 public tables, so the role saw no users. Added migration `20261119030000_categoraize_app_upstream_access` (full access for `categoraize_app` on non-CategorAIze tables, the access `postgres` had via BYPASSRLS), then switched `DATABASE_URL` (revision `00026`). Checked: no tenant, 0 CategorAIze rows; with a tenant, that user's rows; sign-in works; logs clean. Credentials in `supabase-prod.env` as `APP_DATABASE_URL` |
+
+Rollback now: `DATABASE_URL` back to the owner URL from `supabase-prod.env`
+(revision `00025` has it). Do not roll back to revision `00024` or earlier:
+that code cannot read the encrypted rows.
+
+The plan as written before the release follows.
 
 ## What ships
 
