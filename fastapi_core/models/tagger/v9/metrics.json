@@ -170,6 +170,7 @@
    }
   }
  },
- "promoted": true,
- "test": null
+ "promoted": false,
+ "test": null,
+ "not_promoted_reason": "Dev span F1 rose (0.506 vs 0.458, 41 spans) but v9 scored lower than v6 on the older provisional test set (0.945 vs 0.988), equal on the LLM holdout (0.854 vs 0.850), and tags sender-completed FYI statements as TASK (breaks tests/test_thread_status.py, which feeds Reply Zero). v6 stays current."
 }
