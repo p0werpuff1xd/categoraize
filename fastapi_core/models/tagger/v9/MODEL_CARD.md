@@ -35,7 +35,11 @@ Previous version v6 on the same dev set:
 | mixed | 0.444 | 0.250 | 0.353 |
 | tl | 0.667 | 0.235 | 0.438 |
 
-Promoted to current: **yes** (rule: promote only if dev micro F1 does not drop).
+Promoted to current: **no** (rule: promote only if dev micro F1 does not drop).
+
+## Why not promoted
+
+Dev span F1 rose (0.506 vs 0.458, 41 spans) but v9 scored lower than v6 on the older provisional test set (0.945 vs 0.988), equal on the LLM holdout (0.854 vs 0.850), and tags sender-completed FYI statements as TASK (breaks tests/test_thread_status.py, which feeds Reply Zero). v6 stays current.
 
 ## Test (run once, see eval/RESULTS.md)
 
