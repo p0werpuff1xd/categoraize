@@ -29,12 +29,28 @@ at the keyboard. Facts checked read-only on 2026-11-19.
 
 Run from `E:\categoraize\categoraize` unless noted. Never print secret values.
 
-### 0. Prepare (no production changes)
+### 0. Prepare (no production changes) — done 2026-11-19 except item 3
 
-1. Merge `origin/main` into `feat/phase-11-encryption-masking-rls`; resolve
-   conflicts; push the branch.
-2. On Node 24 (`fnm exec --using=24`): in `apps/web` run the type check, the
-   full Vitest suite and `next build`; in `fastapi_core` run pytest (187).
+1. **Done.** `origin/main` merged into the branch (`c6e50588c`); the only
+   conflict, `apps/web/vercel.json`, takes `main`'s version (no crons: Vercel
+   is paused and Hobby rejects sub-daily crons).
+2. **Done** on Node 24:
+   - Type check: app code clean after `60c75551d` (tenant transactions were
+     typed `unknown`, 40 errors). About 1,190 errors remain in upstream test
+     files; the production image sets `SKIP_TYPE_CHECK=true`, so they do not
+     block the build.
+   - Vitest: 9,689 passed, 24 failed in 20 files. 18 of those files fail on a
+     clean `main` too (upstream/Windows environment); the other failures were
+     flaky and passed on rerun. No regression from this branch.
+   - NLP pytest: 187 passed; `/health` from `main` merged in.
+   - Production image: `docker/Dockerfile.prod` builds (exit 0, 4.24 GB;
+     `next build` compiled and generated all 300 static pages). Built locally
+     on Docker Desktop in about 35 minutes; Cloud Build caches layers.
+   - `assistant-chat.server-action-boundary.test.ts` can exceed its 5 s
+     timeout on a cold import; it passes on both branches with more time.
+   - Local image builds must use `git -c core.autocrlf=false archive HEAD | docker build -f docker/Dockerfile.prod -`:
+     a Windows checkout turns `scripts/*.sh` into CRLF and the build stops with
+     "not found". Cloud Build checks out on Linux and is not affected.
 3. Back up production: Supabase dashboard → Database → Backups, note the
    latest daily backup time, or take a `pg_dump` with the owner URL from
    `E:\categoraize\secrets\supabase-prod.env` into an age-encrypted file.
