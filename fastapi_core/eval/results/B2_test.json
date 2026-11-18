@@ -1,0 +1,1893 @@
+{
+ "system": "B2",
+ "split": "test",
+ "generated_at": "2026-11-18T11:23:36+00:00",
+ "config": {
+  "system": "B2",
+  "category_params": {
+   "threshold": 0.35,
+   "keyword_weight": 0.0,
+   "role_weight": 0.0,
+   "rocchio_alpha": 1.0,
+   "rocchio_beta": 0.0
+  },
+  "tagger": "regex",
+  "priority_model": "rules",
+  "register_model": "rules"
+ },
+ "label_provenance": "AI-authored labels, human_reviewed=false on every record",
+ "results": {
+  "overall": {
+   "n": 100,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.19,
+     "low": 0.12,
+     "high": 0.27
+    },
+    "category_macro_f1": {
+     "value": 0.2841,
+     "low": 0.1797,
+     "high": 0.3665
+    },
+    "priority_exact": {
+     "value": 0.31,
+     "low": 0.22,
+     "high": 0.4
+    },
+    "priority_within1": {
+     "value": 0.81,
+     "low": 0.74,
+     "high": 0.88
+    },
+    "priority_qwk": {
+     "value": 0.3708,
+     "low": 0.2046,
+     "high": 0.5037
+    },
+    "priority_mae": {
+     "value": 0.91,
+     "low": 0.77,
+     "high": 1.06
+    },
+    "register_accuracy": {
+     "value": 0.85,
+     "low": 0.78,
+     "high": 0.91
+    },
+    "register_macro_f1": {
+     "value": 0.8461,
+     "low": 0.7665,
+     "high": 0.9105
+    },
+    "conflict_accuracy": {
+     "value": 0.99,
+     "low": 0.97,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.5455,
+     "low": 0.3714,
+     "high": 0.7188
+    },
+    "task_recall": {
+     "value": 0.2951,
+     "low": 0.1897,
+     "high": 0.4151
+    },
+    "task_f1": {
+     "value": 0.383,
+     "low": 0.2499,
+     "high": 0.52
+    },
+    "date_precision": {
+     "value": 0.4521,
+     "low": 0.3377,
+     "high": 0.5714
+    },
+    "date_recall": {
+     "value": 0.4714,
+     "low": 0.3571,
+     "high": 0.5938
+    },
+    "date_f1": {
+     "value": 0.4615,
+     "low": 0.3448,
+     "high": 0.5752
+    },
+    "span_micro_f1": {
+     "value": 0.4304,
+     "low": 0.3529,
+     "high": 0.5128
+    },
+    "date_resolution_accuracy": {
+     "value": 0.4714,
+     "low": 0.3571,
+     "high": 0.5938
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 0.9571,
+     "low": 0.9032,
+     "high": 1.0
+    }
+   }
+  },
+  "en": {
+   "n": 34,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.3529,
+     "low": 0.2059,
+     "high": 0.5
+    },
+    "category_macro_f1": {
+     "value": 0.4563,
+     "low": 0.2385,
+     "high": 0.5777
+    },
+    "priority_exact": {
+     "value": 0.2059,
+     "low": 0.0882,
+     "high": 0.3529
+    },
+    "priority_within1": {
+     "value": 0.8235,
+     "low": 0.6765,
+     "high": 0.9412
+    },
+    "priority_qwk": {
+     "value": 0.3902,
+     "low": 0.0595,
+     "high": 0.5961
+    },
+    "priority_mae": {
+     "value": 1.0,
+     "low": 0.7941,
+     "high": 1.2353
+    },
+    "register_accuracy": {
+     "value": 0.8235,
+     "low": 0.7059,
+     "high": 0.9412
+    },
+    "register_macro_f1": {
+     "value": 0.8177,
+     "low": 0.6503,
+     "high": 0.9383
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.3636,
+     "low": 0.0833,
+     "high": 0.6673
+    },
+    "task_recall": {
+     "value": 0.1905,
+     "low": 0.0417,
+     "high": 0.3686
+    },
+    "task_f1": {
+     "value": 0.25,
+     "low": 0.0588,
+     "high": 0.4573
+    },
+    "date_precision": {
+     "value": 0.5714,
+     "low": 0.3809,
+     "high": 0.7813
+    },
+    "date_recall": {
+     "value": 0.64,
+     "low": 0.4482,
+     "high": 0.8261
+    },
+    "date_f1": {
+     "value": 0.6038,
+     "low": 0.4137,
+     "high": 0.7907
+    },
+    "span_micro_f1": {
+     "value": 0.4706,
+     "low": 0.3158,
+     "high": 0.6234
+    },
+    "date_resolution_accuracy": {
+     "value": 0.64,
+     "low": 0.4482,
+     "high": 0.8261
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 0.92,
+     "low": 0.7998,
+     "high": 1.0
+    }
+   }
+  },
+  "mixed": {
+   "n": 33,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.1515,
+     "low": 0.0606,
+     "high": 0.2727
+    },
+    "category_macro_f1": {
+     "value": 0.2083,
+     "low": 0.0714,
+     "high": 0.2917
+    },
+    "priority_exact": {
+     "value": 0.303,
+     "low": 0.1515,
+     "high": 0.4545
+    },
+    "priority_within1": {
+     "value": 0.7879,
+     "low": 0.6364,
+     "high": 0.9091
+    },
+    "priority_qwk": {
+     "value": 0.3271,
+     "low": 0.035,
+     "high": 0.5744
+    },
+    "priority_mae": {
+     "value": 0.9394,
+     "low": 0.697,
+     "high": 1.2121
+    },
+    "register_accuracy": {
+     "value": 0.9091,
+     "low": 0.8182,
+     "high": 1.0
+    },
+    "register_macro_f1": {
+     "value": 0.8993,
+     "low": 0.7734,
+     "high": 1.0
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.6,
+     "low": 0.2996,
+     "high": 0.8889
+    },
+    "task_recall": {
+     "value": 0.2857,
+     "low": 0.1,
+     "high": 0.4783
+    },
+    "task_f1": {
+     "value": 0.3871,
+     "low": 0.1598,
+     "high": 0.6061
+    },
+    "date_precision": {
+     "value": 0.4762,
+     "low": 0.2727,
+     "high": 0.7
+    },
+    "date_recall": {
+     "value": 0.4348,
+     "low": 0.24,
+     "high": 0.6471
+    },
+    "date_f1": {
+     "value": 0.4545,
+     "low": 0.2592,
+     "high": 0.6667
+    },
+    "span_micro_f1": {
+     "value": 0.4267,
+     "low": 0.2973,
+     "high": 0.5543
+    },
+    "date_resolution_accuracy": {
+     "value": 0.4348,
+     "low": 0.24,
+     "high": 0.6471
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    }
+   }
+  },
+  "tl": {
+   "n": 33,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.0606,
+     "low": 0.0,
+     "high": 0.1515
+    },
+    "category_macro_f1": {
+     "value": 0.0833,
+     "low": 0.0,
+     "high": 0.1667
+    },
+    "priority_exact": {
+     "value": 0.4242,
+     "low": 0.2424,
+     "high": 0.6061
+    },
+    "priority_within1": {
+     "value": 0.8182,
+     "low": 0.6667,
+     "high": 0.9394
+    },
+    "priority_qwk": {
+     "value": 0.384,
+     "low": 0.0723,
+     "high": 0.653
+    },
+    "priority_mae": {
+     "value": 0.7879,
+     "low": 0.5455,
+     "high": 1.0909
+    },
+    "register_accuracy": {
+     "value": 0.8182,
+     "low": 0.6667,
+     "high": 0.9394
+    },
+    "register_macro_f1": {
+     "value": 0.8195,
+     "low": 0.6502,
+     "high": 0.9362
+    },
+    "conflict_accuracy": {
+     "value": 0.9697,
+     "low": 0.9091,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.6667,
+     "low": 0.3846,
+     "high": 0.9232
+    },
+    "task_recall": {
+     "value": 0.4211,
+     "low": 0.1905,
+     "high": 0.6471
+    },
+    "task_f1": {
+     "value": 0.5161,
+     "low": 0.2608,
+     "high": 0.7317
+    },
+    "date_precision": {
+     "value": 0.2917,
+     "low": 0.12,
+     "high": 0.48
+    },
+    "date_recall": {
+     "value": 0.3182,
+     "low": 0.1304,
+     "high": 0.5
+    },
+    "date_f1": {
+     "value": 0.3043,
+     "low": 0.1276,
+     "high": 0.4889
+    },
+    "span_micro_f1": {
+     "value": 0.3896,
+     "low": 0.2608,
+     "high": 0.5231
+    },
+    "date_resolution_accuracy": {
+     "value": 0.3182,
+     "low": 0.1304,
+     "high": 0.5
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 0.9545,
+     "low": 0.85,
+     "high": 1.0
+    }
+   }
+  }
+ },
+ "confusion_matrix": {
+  "work_tasks": {
+   "work_tasks": 0,
+   "meetings": 1,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 1,
+   "personal": 0,
+   "none": 12
+  },
+  "meetings": {
+   "work_tasks": 0,
+   "meetings": 1,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 11
+  },
+  "school": {
+   "work_tasks": 0,
+   "meetings": 2,
+   "school": 4,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 7
+  },
+  "job_search": {
+   "work_tasks": 0,
+   "meetings": 2,
+   "school": 0,
+   "job_search": 2,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 5
+  },
+  "finance_billing": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 6,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 7
+  },
+  "promotions": {
+   "work_tasks": 0,
+   "meetings": 1,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 1,
+   "alerts": 0,
+   "personal": 1,
+   "none": 10
+  },
+  "alerts": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 1,
+   "personal": 0,
+   "none": 11
+  },
+  "personal": {
+   "work_tasks": 0,
+   "meetings": 1,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 4,
+   "none": 9
+  }
+ },
+ "per_email": [
+  {
+   "id": "test-en-001",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-002",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-003",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 5,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 5,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-004",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-005",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "alerts",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-006",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-007",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-008",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-009",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-010",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-011",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-012",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-013",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-014",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-015",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-016",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 1,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-017",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-018",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-019",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-020",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-021",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-022",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-023",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-024",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 2,
+   "pred_priority": 1,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-025",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-026",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "personal",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-027",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-028",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-029",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-030",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-031",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-032",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-033",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-en-034",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "meetings",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-001",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-002",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 5,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-003",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-004",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-005",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-006",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-007",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-008",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-009",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-010",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-011",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-012",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-013",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-014",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-015",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-016",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-017",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-018",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-019",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-020",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-021",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-022",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-023",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": "meetings",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-024",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-025",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-026",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-027",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-028",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-029",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-030",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-031",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-032",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-mixed-033",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-001",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 5,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-002",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-003",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-004",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-005",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-006",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-007",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-008",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-009",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-010",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-011",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-012",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-013",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-014",
+   "language": "tl",
+   "gold_category": "job_search",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-015",
+   "language": "tl",
+   "gold_category": "job_search",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-016",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-017",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-018",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-019",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-020",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-021",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-022",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-023",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-024",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": null,
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-025",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-026",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-027",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 5,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-028",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-029",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-030",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-031",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-032",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": []
+  },
+  {
+   "id": "test-tl-033",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": null,
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": []
+  }
+ ]
+}

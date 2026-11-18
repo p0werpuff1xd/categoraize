@@ -209,7 +209,8 @@ def _update_tagger_card(b4: dict) -> None:
         return
     directory = MODELS_DIR / "tagger" / current["version"]
     metrics = _json(directory / "metrics.json")
-    if not metrics or "compared_with" not in metrics:
+    trained_here = str((metrics or {}).get("data", {}).get("train", "")).startswith("data/categoraize-dataset")
+    if not trained_here:  # older versions keep their own metrics format; RESULTS.md has their test scores
         return
     keys = ("task_precision", "task_recall", "task_f1", "date_precision", "date_recall", "date_f1", "span_micro_f1")
     metrics["test"] = {scope: {key: block["metrics"][key]["value"] for key in keys}
