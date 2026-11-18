@@ -1,0 +1,618 @@
+{
+ "version": "v2",
+ "trained_at": "2026-11-15T08:08:38+00:00",
+ "data": {
+  "synthetic_train": 2000,
+  "team": 0,
+  "synthetic_dev": 300,
+  "test": 45,
+  "test_set": "provisional_claude.md"
+ },
+ "history": [
+  {
+   "epoch": 1,
+   "loss": 4.6414,
+   "dev_entity_f1": 0.8295,
+   "seconds": 6.6
+  },
+  {
+   "epoch": 2,
+   "loss": 1.2028,
+   "dev_entity_f1": 0.9329,
+   "seconds": 6.4
+  },
+  {
+   "epoch": 3,
+   "loss": 0.6413,
+   "dev_entity_f1": 0.9492,
+   "seconds": 6.7
+  },
+  {
+   "epoch": 4,
+   "loss": 0.4192,
+   "dev_entity_f1": 0.9652,
+   "seconds": 6.6
+  },
+  {
+   "epoch": 5,
+   "loss": 0.3013,
+   "dev_entity_f1": 0.9652,
+   "seconds": 6.8
+  },
+  {
+   "epoch": 6,
+   "loss": 0.2357,
+   "dev_entity_f1": 0.9652,
+   "seconds": 6.5
+  },
+  {
+   "epoch": 7,
+   "loss": 0.177,
+   "dev_entity_f1": 0.9652,
+   "seconds": 6.5
+  },
+  {
+   "epoch": 8,
+   "loss": 0.1645,
+   "dev_entity_f1": 0.9671,
+   "seconds": 6.5
+  },
+  {
+   "epoch": 9,
+   "loss": 0.1308,
+   "dev_entity_f1": 0.9671,
+   "seconds": 7.4
+  },
+  {
+   "epoch": 10,
+   "loss": 0.1062,
+   "dev_entity_f1": 0.9691,
+   "seconds": 8.4
+  },
+  {
+   "epoch": 11,
+   "loss": 0.1073,
+   "dev_entity_f1": 0.9691,
+   "seconds": 7.9
+  },
+  {
+   "epoch": 12,
+   "loss": 0.1044,
+   "dev_entity_f1": 0.9671,
+   "seconds": 7.2
+  }
+ ],
+ "test": {
+  "overall": {
+   "examples": 45,
+   "token": {
+    "TASK": {
+     "precision": 0.9748,
+     "recall": 0.9957,
+     "f1": 0.9851,
+     "support": 233
+    },
+    "DATE": {
+     "precision": 0.9457,
+     "recall": 0.9886,
+     "f1": 0.9667,
+     "support": 88
+    },
+    "micro": {
+     "precision": 0.9667,
+     "recall": 0.9938,
+     "f1": 0.98,
+     "support": 321
+    }
+   },
+   "entity": {
+    "TASK": {
+     "precision": 0.9167,
+     "recall": 0.9706,
+     "f1": 0.9429,
+     "support": 34
+    },
+    "DATE": {
+     "precision": 0.9167,
+     "recall": 0.9565,
+     "f1": 0.9362,
+     "support": 46
+    },
+    "micro": {
+     "precision": 0.9167,
+     "recall": 0.9625,
+     "f1": 0.939,
+     "support": 80
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "examples": 15,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 0.9891,
+      "f1": 0.9945,
+      "support": 92
+     },
+     "DATE": {
+      "precision": 0.9375,
+      "recall": 1.0,
+      "f1": 0.9677,
+      "support": 30
+     },
+     "micro": {
+      "precision": 0.9837,
+      "recall": 0.9918,
+      "f1": 0.9878,
+      "support": 122
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 0.9091,
+      "recall": 0.9091,
+      "f1": 0.9091,
+      "support": 11
+     },
+     "DATE": {
+      "precision": 0.9333,
+      "recall": 0.9333,
+      "f1": 0.9333,
+      "support": 15
+     },
+     "micro": {
+      "precision": 0.9231,
+      "recall": 0.9231,
+      "f1": 0.9231,
+      "support": 26
+     }
+    }
+   },
+   "taglish": {
+    "examples": 15,
+    "token": {
+     "TASK": {
+      "precision": 0.931,
+      "recall": 1.0,
+      "f1": 0.9643,
+      "support": 81
+     },
+     "DATE": {
+      "precision": 0.9355,
+      "recall": 1.0,
+      "f1": 0.9667,
+      "support": 29
+     },
+     "micro": {
+      "precision": 0.9322,
+      "recall": 1.0,
+      "f1": 0.9649,
+      "support": 110
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 0.8667,
+      "recall": 1.0,
+      "f1": 0.9286,
+      "support": 13
+     },
+     "DATE": {
+      "precision": 0.8889,
+      "recall": 1.0,
+      "f1": 0.9412,
+      "support": 16
+     },
+     "micro": {
+      "precision": 0.8788,
+      "recall": 1.0,
+      "f1": 0.9355,
+      "support": 29
+     }
+    }
+   },
+   "tl": {
+    "examples": 15,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 60
+     },
+     "DATE": {
+      "precision": 0.9655,
+      "recall": 0.9655,
+      "f1": 0.9655,
+      "support": 29
+     },
+     "micro": {
+      "precision": 0.9888,
+      "recall": 0.9888,
+      "f1": 0.9888,
+      "support": 89
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+     },
+     "DATE": {
+      "precision": 0.9333,
+      "recall": 0.9333,
+      "f1": 0.9333,
+      "support": 15
+     },
+     "micro": {
+      "precision": 0.96,
+      "recall": 0.96,
+      "f1": 0.96,
+      "support": 25
+     }
+    }
+   }
+  }
+ },
+ "regex_baseline_test": {
+  "overall": {
+   "examples": 45,
+   "token": {
+    "TASK": {
+     "precision": 0.9826,
+     "recall": 0.7253,
+     "f1": 0.8346,
+     "support": 233
+    },
+    "DATE": {
+     "precision": 1.0,
+     "recall": 0.9091,
+     "f1": 0.9524,
+     "support": 88
+    },
+    "micro": {
+     "precision": 0.9881,
+     "recall": 0.7757,
+     "f1": 0.8691,
+     "support": 321
+    }
+   },
+   "entity": {
+    "TASK": {
+     "precision": 0.875,
+     "recall": 0.6176,
+     "f1": 0.7241,
+     "support": 34
+    },
+    "DATE": {
+     "precision": 0.9302,
+     "recall": 0.8696,
+     "f1": 0.8989,
+     "support": 46
+    },
+    "micro": {
+     "precision": 0.9104,
+     "recall": 0.7625,
+     "f1": 0.8299,
+     "support": 80
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "examples": 15,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 0.8804,
+      "f1": 0.9364,
+      "support": 92
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 0.9667,
+      "f1": 0.9831,
+      "support": 30
+     },
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.9016,
+      "f1": 0.9483,
+      "support": 122
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 0.9,
+      "recall": 0.8182,
+      "f1": 0.8571,
+      "support": 11
+     },
+     "DATE": {
+      "precision": 0.9333,
+      "recall": 0.9333,
+      "f1": 0.9333,
+      "support": 15
+     },
+     "micro": {
+      "precision": 0.92,
+      "recall": 0.8846,
+      "f1": 0.902,
+      "support": 26
+     }
+    }
+   },
+   "taglish": {
+    "examples": 15,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 0.4938,
+      "f1": 0.6612,
+      "support": 81
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 0.8966,
+      "f1": 0.9455,
+      "support": 29
+     },
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.75,
+      "support": 110
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 0.4615,
+      "f1": 0.6316,
+      "support": 13
+     },
+     "DATE": {
+      "precision": 0.9333,
+      "recall": 0.875,
+      "f1": 0.9032,
+      "support": 16
+     },
+     "micro": {
+      "precision": 0.9524,
+      "recall": 0.6897,
+      "f1": 0.8,
+      "support": 29
+     }
+    }
+   },
+   "tl": {
+    "examples": 15,
+    "token": {
+     "TASK": {
+      "precision": 0.9412,
+      "recall": 0.8,
+      "f1": 0.8649,
+      "support": 60
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 0.8621,
+      "f1": 0.9259,
+      "support": 29
+     },
+     "micro": {
+      "precision": 0.9605,
+      "recall": 0.8202,
+      "f1": 0.8848,
+      "support": 89
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 0.75,
+      "recall": 0.6,
+      "f1": 0.6667,
+      "support": 10
+     },
+     "DATE": {
+      "precision": 0.9231,
+      "recall": 0.8,
+      "f1": 0.8571,
+      "support": 15
+     },
+     "micro": {
+      "precision": 0.8571,
+      "recall": 0.72,
+      "f1": 0.7826,
+      "support": 25
+     }
+    }
+   }
+  }
+ },
+ "synthetic_dev": {
+  "overall": {
+   "examples": 300,
+   "token": {
+    "TASK": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 2440
+    },
+    "DATE": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 886
+    },
+    "micro": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 3326
+    }
+   },
+   "entity": {
+    "TASK": {
+     "precision": 0.9521,
+     "recall": 0.9676,
+     "f1": 0.9598,
+     "support": 370
+    },
+    "DATE": {
+     "precision": 0.9728,
+     "recall": 0.9825,
+     "f1": 0.9777,
+     "support": 401
+    },
+    "micro": {
+     "precision": 0.9629,
+     "recall": 0.9754,
+     "f1": 0.9691,
+     "support": 771
+    }
+   }
+  },
+  "by_language": {
+   "en": {
+    "examples": 100,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1021
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 297
+     },
+     "micro": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1318
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 0.9209,
+      "recall": 0.9481,
+      "f1": 0.9343,
+      "support": 135
+     },
+     "DATE": {
+      "precision": 0.9338,
+      "recall": 0.9549,
+      "f1": 0.9442,
+      "support": 133
+     },
+     "micro": {
+      "precision": 0.9273,
+      "recall": 0.9515,
+      "f1": 0.9392,
+      "support": 268
+     }
+    }
+   },
+   "taglish": {
+    "examples": 100,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 786
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 310
+     },
+     "micro": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1096
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 0.944,
+      "recall": 0.9593,
+      "f1": 0.9516,
+      "support": 123
+     },
+     "DATE": {
+      "precision": 0.9858,
+      "recall": 0.9929,
+      "f1": 0.9893,
+      "support": 140
+     },
+     "micro": {
+      "precision": 0.9662,
+      "recall": 0.9772,
+      "f1": 0.9716,
+      "support": 263
+     }
+    }
+   },
+   "tl": {
+    "examples": 100,
+    "token": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 633
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 279
+     },
+     "micro": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 912
+     }
+    },
+    "entity": {
+     "TASK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 112
+     },
+     "DATE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 128
+     },
+     "micro": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 240
+     }
+    }
+   }
+  }
+ },
+ "compared_with": {
+  "version": "v1",
+  "entity_f1": 0.6409
+ },
+ "promoted": true
+}
