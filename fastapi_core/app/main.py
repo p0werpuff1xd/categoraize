@@ -20,8 +20,11 @@ from .algorithms.feedback import FeedbackError, update_centroids
 from .algorithms.label_library import LABEL_TEMPLATES
 from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict, prototype_language
 from .algorithms.thread_status import ThreadMessage, asks_question, determine_status
+from .ml import priority_model
 from .ml.priority_rules import compute_priority
+from .nlp.date_codes import has_conflict, resolve_phrase, resolved_datetime
 from .nlp.extractor import resolve_date
+from .nlp.register import detect_register
 from .nlp.language import detect_language
 from .nlp.pii import mask_pii
 from .nlp.regex_tagger import has_deadline_marker_before
@@ -46,15 +49,23 @@ from .schemas import (
     MatchResponse,
     Priority,
     PriorityFactors,
+    PriorityRequest,
+    PriorityResponse,
+    RegisterRequest,
+    RegisterResponse,
     Span,
     SuggestedLabel,
     SummarizeRequest,
     SummarizeResponse,
+    TaskSpan,
+    TasksRequest,
+    TasksResponse,
     ThreadStatusRequest,
     ThreadStatusResponse,
 )
 from .security import auth_failures, harden_request
 from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, model_manager
+from .services.learned import learned_models
 from .services.tagger import tagger_manager
 
 SERVICE_VERSION = "0.3.0"
@@ -65,6 +76,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if os.getenv("CATEGORAIZE_SKIP_MODEL_LOAD") != "1":
         model_manager.start_background_load()
         tagger_manager.active()
+        learned_models.load()
     yield
 
 
@@ -101,6 +113,7 @@ def healthz() -> JSONResponse:
         "model": MODEL_NAME,
         "dimension": VECTOR_DIMENSION,
         "tagger": tagger_manager.describe(),
+        "learned_models": learned_models.describe(),
         "auth_failures": auth_failures.count,
     }
     return JSONResponse(status_code=200 if model_manager.ready else 503, content=body)
@@ -397,6 +410,117 @@ def discover(request: DiscoverRequest) -> DiscoverResponse:
         ))
 
     return DiscoverResponse(clusters=clusters, noise_ids=noise_ids)
+
+
+@app.post("/api/v1/tasks", response_model=TasksResponse, dependencies=[Depends(require_internal_key)])
+def tasks_endpoint(request: TasksRequest) -> TasksResponse:
+    subject, body = _masked_text(request)
+    received = request.received_at.astimezone(ZoneInfo(request.timezone))
+    spans = _task_spans(subject, body, received)
+    busy = [(period.start, period.end) for period in request.calendar_busy] if request.calendar_busy else None
+    name, _, version = tagger_manager.active()
+    return TasksResponse(
+        spans=spans,
+        calendar_checked=request.calendar_busy is not None,
+        calendar_conflict=has_conflict([span.resolved for span in spans if span.label == "DATE"], busy),
+        tagger={"name": name, "version": version},
+    )
+
+
+@app.post("/api/v1/register", response_model=RegisterResponse, dependencies=[Depends(require_internal_key)])
+def register_endpoint(request: RegisterRequest) -> RegisterResponse:
+    subject, body = _masked_text(request)
+    model = learned_models.get("register")
+    embedding = None
+    if model is not None:
+        require_model_ready()
+        embedding = model_manager.embed_email(subject, body)
+    result = detect_register(subject, body, embedding=embedding, model=model)
+    return RegisterResponse(register=result.register, source=result.source, probabilities=result.probabilities,
+                            cues=result.cues)
+
+
+@app.post("/api/v1/priority", response_model=PriorityResponse, dependencies=[Depends(require_internal_key)])
+def priority_endpoint(request: PriorityRequest) -> PriorityResponse:
+    subject, body = _masked_text(request)
+    received = request.received_at.astimezone(ZoneInfo(request.timezone))
+    spans = _task_spans(subject, body, received)
+    has_task = any(span.label == "TASK" for span in spans)
+    dates = [span.resolved for span in spans if span.label == "DATE" and not span.ambiguous]
+    proximity = priority_model.deadline_proximity(dates, received)
+    category = priority_model.PROMOTION_SLUG if request.is_promotion else None
+
+    register_lm, priority_lm = learned_models.get("register"), learned_models.get("priority")
+    embedding = None
+    if register_lm is not None or priority_lm is not None:
+        require_model_ready()
+        embedding = model_manager.embed_email(subject, body)
+    register = detect_register(subject, body, embedding=embedding, model=register_lm).register
+
+    if priority_lm is not None and embedding is not None:
+        promo_vector = priority_lm.meta.get("promo_vector") or [0.0] * len(embedding)
+        feature_vector = priority_model.features(
+            embedding,
+            sender_role=request.sender.role,
+            is_vip=request.sender.is_vip,
+            has_task=has_task,
+            deadline_proximity=proximity,
+            promo_score=cosine(embedding, promo_vector),
+            register=register,
+        )
+        result = priority_model.predict(priority_lm, feature_vector, is_vip=request.sender.is_vip, has_task=has_task,
+                                        category=category, override=request.override_priority)
+        level, source, why, guardrails = result.level, result.source, result.why, result.guardrails
+    else:
+        level, why, guardrails = _rule_priority(request, {"subject": subject, "body": body}, spans, received,
+                                                has_task, category)
+        source = "rules"
+    return PriorityResponse(level=level, source=source, why=why, guardrails=guardrails, register=register,
+                            has_task=has_task, deadline_proximity=round(proximity, 4))
+
+
+def _rule_priority(request: PriorityRequest, texts: dict[str, str], spans: list[TaskSpan], received: datetime,
+                   has_task: bool, category: str | None) -> tuple[int, list[dict], list[str]]:
+    deadlines = []
+    for span in spans:
+        moment = resolved_datetime(span.resolved, received.tzinfo) if span.label == "DATE" else None
+        if moment is None or span.ambiguous or moment.date() < received.date():
+            continue
+        if has_task or has_deadline_marker_before(texts[span.source], span.start):
+            deadlines.append(moment)
+    result = compute_priority(
+        base_priority=request.category_base_priority,
+        validated_deadlines=deadlines,
+        now=received,
+        sender_role=request.sender.role,
+        is_vip=request.sender.is_vip,
+        calendar_busy=[(p.start, p.end) for p in request.calendar_busy] if request.calendar_busy else None,
+    )
+    # VIP floor is already part of the rules; only the cap and the override remain.
+    level, guardrails = priority_model.apply_guardrails(
+        result.level, is_vip=False, has_task=has_task, category=category, override=request.override_priority
+    )
+    if result.factors["vip_pin"]:
+        guardrails.insert(0, "vip_floor")
+    ranked = sorted(((name, value) for name, value in result.factors.items() if value), key=lambda item: -abs(item[1]))
+    return level, [{"factor": name.replace("_", " "), "contribution": float(value)} for name, value in ranked[:3]], guardrails
+
+
+def _task_spans(subject: str, body: str, received: datetime) -> list[TaskSpan]:
+    _name, tag, _version = tagger_manager.active()
+    spans: list[TaskSpan] = []
+    for source, text in (("subject", subject), ("body", body)):
+        for raw in tag(text):
+            resolved, ambiguous = resolve_phrase(raw.text, received) if raw.label == "DATE" else (None, False)
+            spans.append(TaskSpan(label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end,
+                                  resolved=resolved, ambiguous=ambiguous))
+    return spans
+
+
+def _masked_text(request) -> tuple[str, str]:
+    if not request.mask_pii:
+        return request.subject, request.body
+    return _mask(request.subject), _mask(request.body)
 
 
 def _mask(text: str) -> str:
