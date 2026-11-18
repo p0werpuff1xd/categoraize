@@ -104,6 +104,9 @@ async def feedback_error_handler(_request: Request, error: FeedbackError) -> JSO
     return JSONResponse(status_code=422, content={"detail": str(error)})
 
 
+# Cloud Run's front end reserves public paths ending in "z" (such as /healthz),
+# so /health is the public alias the web app calls.
+@app.get("/health")
 @app.get("/healthz")
 def healthz() -> JSONResponse:
     body = {
