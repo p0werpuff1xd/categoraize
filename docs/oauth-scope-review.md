@@ -2,7 +2,7 @@
 
 Phase 7 C, 2026-11-17. Least-privilege review of every Google and Microsoft
 scope the app requests (control-matrix C11). **Nothing was removed**: the
-verdicts are recommendations for the owner.
+verdicts are recommendations for the owner; the decisions taken are at the end.
 
 - **KEEP**: CategorAIze or a feature the user switches on needs it, and no
   narrower scope does the job.
@@ -75,3 +75,15 @@ Sources: `apps/web/utils/gmail/scopes.ts`, `utils/outlook/scopes.ts`,
 4. Changing scopes forces existing users to re-consent; the app records
    `oauth_scope_changed` audit events when calendar or Drive connections are
    saved.
+
+## Decisions applied (2026-11-18)
+
+- **Removed** Microsoft `Calendars.Read` (covered by `Calendars.ReadWrite`) and
+  Google `calendar.freebusy` (free/busy queries work under `calendar.readonly`).
+  No feature changes; existing calendar connections are asked to re-consent the
+  next time they connect.
+- **Kept** every ASK scope (`gmail.settings.basic`, contacts, `calendar.events`,
+  `Calendars.ReadWrite`, `Mail.Send`, Drive): each backs an upstream feature
+  that is still in the build (filters, signatures, recipient suggestions,
+  booking links and event creation, sending, attachment filing). Drop a scope
+  together with its feature if that feature is removed later.
