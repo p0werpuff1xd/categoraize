@@ -36,12 +36,7 @@ export const TENANT_MODELS = new Set([
   "CategorizeAuditEvent",
 ]);
 
-type TxClient = Record<string, unknown> & {
-  $executeRaw: (
-    query: TemplateStringsArray,
-    ...values: unknown[]
-  ) => Promise<number>;
-};
+type TxClient = Prisma.TransactionClient;
 type BaseClient = {
   $transaction: <T>(fn: (tx: TxClient) => Promise<T>) => Promise<T>;
   emailAccount: {
@@ -188,7 +183,9 @@ export const tenantContext = Prisma.defineExtension((client) => {
           return base.$transaction(async (tx) => {
             await setTenant(tx, userId);
             return tenantTx.run({ tx, userId }, () => {
-              const delegate = tx[lowerFirst(model)] as Record<
+              // Dynamic model lookup: the delegate name comes from the query.
+              const delegates = tx as unknown as Record<string, unknown>;
+              const delegate = delegates[lowerFirst(model)] as Record<
                 string,
                 (input: unknown) => Promise<unknown>
               >;
