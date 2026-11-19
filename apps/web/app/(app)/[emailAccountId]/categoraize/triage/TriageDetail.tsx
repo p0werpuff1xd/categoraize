@@ -39,6 +39,12 @@ import {
   dismissCategoraizeSpanAction,
 } from "@/utils/actions/categoraize-deadlines";
 import { getActionErrorMessage } from "@/utils/error";
+import {
+  canRate,
+  initialRating,
+  type RatingState,
+  ratingReducer,
+} from "@/utils/categoraize/rating-state";
 import type { CategoraizeCategoriesResponse } from "@/app/api/categorai/categories/route";
 import type { TriageEmail } from "./PriorityInbox";
 
@@ -67,7 +73,7 @@ export function TriageDetail({
   const { emailAccountId } = useAccount();
   const [targetCategoryId, setTargetCategoryId] = useState<string>("");
   const [overrideOpen, setOverrideOpen] = useState(false);
-  const [rated, setRated] = useState<boolean | null>(null);
+  const [rating, setRating] = useState<RatingState>(initialRating);
 
   const callbacks = (success: string) => ({
     onSuccess: () => {
@@ -146,12 +152,14 @@ export function TriageDetail({
     rateCategoraizePriorityAction.bind(null, emailAccountId),
     {
       onExecute: ({ input }) => {
-        setRated(input.accurate);
         if (!input.accurate) setOverrideOpen(true);
       },
-      onSuccess: () => toastSuccess({ description: "Thanks, rating saved" }),
+      onSuccess: () => {
+        setRating((state) => ratingReducer(state, { type: "success" }));
+        toastSuccess({ description: "Thanks, rating saved" });
+      },
       onError: ({ error }) => {
-        setRated(null);
+        setRating((state) => ratingReducer(state, { type: "error" }));
         toastError({
           title: "Couldn't save the rating",
           description: getActionErrorMessage(error),
@@ -159,6 +167,25 @@ export function TriageDetail({
       },
     },
   );
+  const submitRating = (accurate: boolean) => {
+    const next = ratingReducer(rating, {
+      type: "click",
+      accurate,
+      online: typeof navigator === "undefined" || navigator.onLine,
+    });
+    setRating(next);
+    if (next.status === "offline") {
+      toastError({
+        title: "You're offline",
+        description:
+          "The rating was not sent. Try again when you're back online.",
+      });
+      return;
+    }
+    if (next.status === "saving") {
+      rate.execute({ classificationId: email.id, accurate });
+    }
+  };
   const createFromSuggestion = useAction(
     createCategoryFromSuggestionAction.bind(null, emailAccountId),
     callbacks("Label created"),
@@ -295,18 +322,13 @@ export function TriageDetail({
                 level={email.priority}
                 manual={email.manualPriority !== null}
               />
-              {rated === null ? (
+              {canRate(rating) ? (
                 <>
                   <Button
                     size="xs"
                     variant="outline"
                     disabled={rate.isExecuting}
-                    onClick={() =>
-                      rate.execute({
-                        classificationId: email.id,
-                        accurate: true,
-                      })
-                    }
+                    onClick={() => submitRating(true)}
                   >
                     <ThumbsUpIcon className="mr-1 size-3" />
                     Accurate
@@ -315,12 +337,7 @@ export function TriageDetail({
                     size="xs"
                     variant="outline"
                     disabled={rate.isExecuting}
-                    onClick={() =>
-                      rate.execute({
-                        classificationId: email.id,
-                        accurate: false,
-                      })
-                    }
+                    onClick={() => submitRating(false)}
                   >
                     <ThumbsDownIcon className="mr-1 size-3" />
                     Not accurate
@@ -328,7 +345,7 @@ export function TriageDetail({
                 </>
               ) : (
                 <span className="text-muted-foreground">
-                  Rated {rated ? "accurate" : "not accurate"}
+                  Rated {rating.rated ? "accurate" : "not accurate"}
                 </span>
               )}
             </div>
