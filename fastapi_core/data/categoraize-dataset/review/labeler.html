@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CategorAIze labeler</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1b1f; --muted:#5f6068; --line:#d9d9de; --card:#f6f6f8; --accent:#2f5bd3; --done:#1e7a46; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141417; --fg:#ececf0; --muted:#a3a3ad; --line:#33333a; --card:#1d1d22; --accent:#7f9cff; --done:#5fcf8f; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 16px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  button, select, input[type=text] { font: inherit; color: var(--fg); background: var(--bg); border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
+  button.primary { background: var(--accent); color:#fff; border-color: var(--accent); }
+  button:disabled { opacity:.5; }
+  .card { background: var(--card); border:1px solid var(--line); border-radius:8px; padding:14px; }
+  .meta { color: var(--muted); font-size: 13px; display:flex; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
+  .subject { font-weight: 600; margin-bottom: 6px; }
+  .body { white-space: pre-wrap; margin-bottom: 14px; }
+  .gold { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .fields { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; }
+  label span { display:block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  label select, label input { width: 100%; }
+  .progress { font-size: 13px; color: var(--muted); }
+  .complete { color: var(--done); font-weight: 600; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>CategorAIze labeler</h1>
+  <p class="lead">Open <code>second_labeler_test_BLIND.csv</code> (label without looking at the gold file) or
+    <code>native_speaker_review.csv</code>. Follow <code>LABELING_GUIDELINE.md</code>. Everything stays on this
+    computer; progress is saved in this browser. Export when done and send the CSV back.</p>
+
+  <div class="bar">
+    <input id="file" type="file" accept=".csv,text/csv" aria-label="Open a review CSV">
+    <button id="export" class="primary" disabled>Export CSV</button>
+    <span id="progress" class="progress"></span>
+  </div>
+
+  <section id="editor" class="hidden">
+    <div class="bar">
+      <button id="prev">Previous</button>
+      <button id="next">Next</button>
+      <button id="nextOpen">Next unlabeled</button>
+      <span id="position" class="progress"></span>
+    </div>
+    <div class="card">
+      <div id="meta" class="meta"></div>
+      <div id="subject" class="subject"></div>
+      <div id="body" class="body"></div>
+      <div id="gold" class="gold"></div>
+      <div id="fields" class="fields"></div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+const SHOWN = new Set(["id", "language", "sender_role", "is_vip", "received_at"]);
+const TEXT = new Set(["subject", "body"]);
+const GOLD = new Set(["gold_category", "gold_priority", "gold_register"]);
+let state = { name: "", header: [], rows: [], editable: [], index: 0 };
+
+function parseCsv(text) {
+  const rows = []; let row = []; let field = ""; let quoted = false;
+  text = text.replace(/^﻿/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') quoted = false;
+      else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); rows.push(row); row = []; field = "";
+    } else field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((cell) => cell !== ""));
+}
+
+function toCsv(rows) {
+  return "﻿" + rows.map((r) => r.map((cell) => {
+    const s = String(cell ?? "");
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(",")).join("\r\n") + "\r\n";
+}
+
+function optionsFor(name) {
+  const m = name.match(/\(([^)]*)\)/);
+  if (!m) return null;
+  const inside = m[1].trim();
+  if (inside.includes("|")) return inside.split("|").map((s) => s.trim());
+  const range = inside.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (range) { const out = []; for (let n = +range[1]; n <= +range[2]; n++) out.push(String(n)); return out; }
+  if (inside.includes("/")) return inside.split("/").map((s) => s.trim());
+  return null;
+}
+
+function storageKey() { return "categoraize-labeler:" + state.name; }
+function save() { try { localStorage.setItem(storageKey(), JSON.stringify({ rows: state.rows, index: state.index })); } catch (e) {} }
+
+function isLabeled(row) {
+  return state.editable.filter((col) => optionsFor(state.header[col])).every((col) => (row[col] ?? "").trim() !== "");
+}
+
+function render() {
+  const row = state.rows[state.index];
+  const h = state.header;
+  const done = state.rows.filter(isLabeled).length;
+  document.getElementById("progress").innerHTML = done === state.rows.length
+    ? `<span class="complete">All ${done} labeled</span>` : `${done} of ${state.rows.length} labeled`;
+  document.getElementById("position").textContent = `Email ${state.index + 1} of ${state.rows.length}`;
+  document.getElementById("meta").textContent = h.map((name, i) => SHOWN.has(name) ? `${name}: ${row[i]}` : null).filter(Boolean).join("   ·   ");
+  document.getElementById("subject").textContent = row[h.indexOf("subject")] ?? "";
+  document.getElementById("body").textContent = row[h.indexOf("body")] ?? "";
+  const gold = h.map((name, i) => GOLD.has(name) ? `${name.replace("gold_", "")}: ${row[i]}` : null).filter(Boolean);
+  document.getElementById("gold").textContent = gold.length ? "Labels to review: " + gold.join(" · ") : "";
+  const fields = document.getElementById("fields");
+  fields.replaceChildren();
+  for (const col of state.editable) {
+    const name = h[col];
+    const label = document.createElement("label");
+    const caption = document.createElement("span");
+    caption.textContent = name;
+    label.append(caption);
+    const options = optionsFor(name);
+    let input;
+    if (options) {
+      input = document.createElement("select");
+      for (const value of ["", ...options]) {
+        const o = document.createElement("option"); o.value = value; o.textContent = value || "choose…"; input.append(o);
+      }
+    } else { input = document.createElement("input"); input.type = "text"; }
+    input.value = row[col] ?? "";
+    input.addEventListener("change", () => { row[col] = input.value; save(); render(); });
+    label.append(input);
+    fields.append(label);
+  }
+}
+
+function go(index) { state.index = Math.max(0, Math.min(state.rows.length - 1, index)); save(); render(); }
+
+document.getElementById("file").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const all = parseCsv(await file.text());
+  const header = all[0];
+  const rows = all.slice(1).map((r) => header.map((_, i) => r[i] ?? ""));
+  const editable = header.map((name, i) => (SHOWN.has(name) || TEXT.has(name) || GOLD.has(name)) ? -1 : i).filter((i) => i >= 0);
+  state = { name: file.name, header, rows, editable, index: 0 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey()) || "null");
+    if (saved && saved.rows && saved.rows.length === rows.length && saved.rows.every((r, i) => r[0] === rows[i][0])) {
+      state.rows = saved.rows; state.index = saved.index || 0;
+    }
+  } catch (e) {}
+  document.getElementById("editor").classList.remove("hidden");
+  document.getElementById("export").disabled = false;
+  render();
+});
+document.getElementById("prev").addEventListener("click", () => go(state.index - 1));
+document.getElementById("next").addEventListener("click", () => go(state.index + 1));
+document.getElementById("nextOpen").addEventListener("click", () => {
+  const n = state.rows.length;
+  for (let k = 1; k <= n; k++) { const i = (state.index + k) % n; if (!isLabeled(state.rows[i])) return go(i); }
+});
+document.getElementById("export").addEventListener("click", () => {
+  const blob = new Blob([toCsv([state.header, ...state.rows])], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = state.name.replace(/\.csv$/i, "") + "_filled.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT") return;
+  if (event.key === "ArrowRight") go(state.index + 1);
+  if (event.key === "ArrowLeft") go(state.index - 1);
+});
+</script>
+</body>
+</html>
