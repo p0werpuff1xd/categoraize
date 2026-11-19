@@ -13,16 +13,13 @@ export function Nav() {
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/90 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto px-6 lg:px-8 xl:px-0 flex h-14 items-center justify-between">
         {/* Logo */}
-        <Link
-          href="/"
-          className="flex items-center shrink-0 bg-gray-900 rounded-md px-3 py-1"
-        >
+        <Link href="/" className="flex items-center shrink-0 py-1">
           <Image
             src="/logo-wordmark.svg"
             alt="CategorAIze"
             width={140}
             height={32}
-            className="h-8 w-auto"
+            className="h-9 w-auto"
             priority
             unoptimized
           />
