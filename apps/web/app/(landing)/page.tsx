@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/utils/auth";
 import { Nav } from "@/app/(landing)/home/Nav";
 import { Hero } from "@/app/(landing)/home/Hero";
 import { Features } from "@/app/(landing)/home/Features";
@@ -7,7 +6,13 @@ import { FinalCTA } from "@/app/(landing)/home/FinalCTA";
 import { Footer } from "@/app/(landing)/home/Footer";
 
 export default async function LandingPage() {
-  const session = await auth();
+  let session = null;
+  try {
+    const { auth } = await import("@/utils/auth");
+    session = await auth();
+  } catch {
+    // Auth may fail in dev when provider env vars are absent; show landing page
+  }
 
   if (session?.user?.email) {
     redirect("/accounts");
