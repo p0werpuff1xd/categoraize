@@ -20,7 +20,7 @@
   .meta { color: var(--muted); font-size: 13px; display:flex; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
   .subject { font-weight: 600; margin-bottom: 6px; }
   .body { white-space: pre-wrap; margin-bottom: 14px; }
-  .gold { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .gold { font-size: 13px; color: var(--muted); margin-bottom: 12px; white-space: pre-wrap; }
   .fields { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; }
   label span { display:block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
   label select, label input { width: 100%; }
@@ -63,6 +63,8 @@
 const SHOWN = new Set(["id", "language", "sender_role", "is_vip", "received_at"]);
 const TEXT = new Set(["subject", "body"]);
 const GOLD = new Set(["gold_category", "gold_priority", "gold_register"]);
+// Reference columns shown read-only (for example an AI suggestion the reviewer confirms or rejects).
+const isReference = (name) => name.startsWith("AI_");
 let state = { name: "", header: [], rows: [], editable: [], index: 0 };
 
 function parseCsv(text) {
@@ -121,7 +123,11 @@ function render() {
   document.getElementById("subject").textContent = row[h.indexOf("subject")] ?? "";
   document.getElementById("body").textContent = row[h.indexOf("body")] ?? "";
   const gold = h.map((name, i) => GOLD.has(name) ? `${name.replace("gold_", "")}: ${row[i]}` : null).filter(Boolean);
-  document.getElementById("gold").textContent = gold.length ? "Labels to review: " + gold.join(" · ") : "";
+  const reference = h.map((name, i) => isReference(name) && row[i] ? `${name.replace(/^AI_/, "")}: ${row[i]}` : null).filter(Boolean);
+  document.getElementById("gold").textContent = [
+    gold.length ? "Labels to review: " + gold.join(" · ") : "",
+    reference.length ? "AI suggestion (check it, do not copy it): " + reference.join(" · ") : "",
+  ].filter(Boolean).join("\n");
   const fields = document.getElementById("fields");
   fields.replaceChildren();
   for (const col of state.editable) {
@@ -153,7 +159,7 @@ document.getElementById("file").addEventListener("change", async (event) => {
   const all = parseCsv(await file.text());
   const header = all[0];
   const rows = all.slice(1).map((r) => header.map((_, i) => r[i] ?? ""));
-  const editable = header.map((name, i) => (SHOWN.has(name) || TEXT.has(name) || GOLD.has(name)) ? -1 : i).filter((i) => i >= 0);
+  const editable = header.map((name, i) => (SHOWN.has(name) || TEXT.has(name) || GOLD.has(name) || isReference(name)) ? -1 : i).filter((i) => i >= 0);
   state = { name: file.name, header, rows, editable, index: 0 };
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey()) || "null");
