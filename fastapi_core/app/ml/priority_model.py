@@ -41,6 +41,8 @@ class PriorityPrediction:
     source: str  # learned | rules
     why: list[dict] = field(default_factory=list)
     guardrails: list[str] = field(default_factory=list)
+    model_level: int = 0
+    offset: int = 0
 
 
 def deadline_proximity(resolved_values: list[str | None], received: dt.datetime) -> float:
@@ -114,13 +116,18 @@ def predict(
     has_task: bool,
     category: str | None,
     override: int | None = None,
+    offset: int = 0,
 ) -> PriorityPrediction:
+    """offset is the user's per-category adjustment (their base priority minus the default),
+    applied after the model and before the guardrails."""
     probabilities = model.predict_proba(feature_vector)
     index = max(range(len(probabilities)), key=probabilities.__getitem__)
-    level = int(model.classes[index])
+    model_level = int(model.classes[index])
     why = explain(model, feature_vector, index)
+    level = max(1, min(5, model_level + offset))
     level, guardrails = apply_guardrails(level, is_vip=is_vip, has_task=has_task, category=category, override=override)
-    return PriorityPrediction(level=level, source="learned", why=why, guardrails=guardrails)
+    return PriorityPrediction(level=level, source="learned", why=why, guardrails=guardrails,
+                              model_level=model_level, offset=offset)
 
 
 def explain(model: LinearModel, feature_vector: list[float], class_index: int, top: int = 3) -> list[dict]:

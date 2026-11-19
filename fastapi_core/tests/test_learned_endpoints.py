@@ -133,3 +133,52 @@ def test_missing_model_files_fall_back_to_rules(client, monkeypatch, tmp_path):
     finally:
         monkeypatch.delenv("CATEGORAIZE_MODELS_DIR")
         learned_models.reset()
+
+
+def _classify(client, base_priority, **overrides):
+    payload = {
+        "email_id": "m1",
+        "subject": "Report",
+        "body": "Hi Alex, please send the quarterly report by tomorrow 3 PM. Thanks.",
+        "received_at": MONDAY,
+        "timezone": "Asia/Manila",
+        "threshold": -1.0,
+        "categories": [{"id": "c1", "name": "Work", "description": "Work requests and reports",
+                        "base_priority": base_priority}],
+    } | overrides
+    response = _post(client, "/api/v1/classify", payload)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_classify_returns_learned_priority_and_register(client):
+    body = _classify(client, 3)
+    learned = body["learned_priority"]
+    assert learned is not None and 1 <= learned["level"] <= 5
+    assert learned["category_offset"] == 0
+    assert 1 <= len(learned["why"]) <= 3
+    assert body["sender_register"]["value"] in {"formal", "neutral", "casual"}
+
+
+def test_category_base_priority_shifts_the_learned_level(client):
+    default, raised = _classify(client, 3)["learned_priority"], _classify(client, 5)["learned_priority"]
+    assert raised["category_offset"] == 2
+    assert raised["model_level"] == default["model_level"]
+    assert raised["level"] == min(5, default["level"] + 2) or "vip_floor" in raised["guardrails"]
+
+
+def test_ignorable_category_caps_learned_priority_at_p2(client):
+    learned = _classify(client, 1, sender={"role": "Director/Executive", "is_vip": True})["learned_priority"]
+    assert learned["level"] <= 2
+
+
+def test_classify_without_a_priority_model_has_no_learned_priority(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CATEGORAIZE_MODELS_DIR", str(tmp_path))
+    learned_models.reset()
+    try:
+        body = _classify(client, 3)
+        assert body["learned_priority"] is None
+        assert body["sender_register"]["source"] == "rules"
+    finally:
+        monkeypatch.delenv("CATEGORAIZE_MODELS_DIR")
+        learned_models.reset()
