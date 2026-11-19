@@ -17,7 +17,7 @@ def test_endpoint_rejects_missing_and_wrong_key(case, anonymous, name):
     assert (missing, wrong) == (401, 401)
 
 
-@pytest.mark.xfail(strict=True, reason="SYS-D01 deployed NLP image predates the /health route")
+# SYS-D01 (fixed 2026-11-20 by redeploying categoraize-nlp from main, revision 00005).
 def test_health_route_the_web_app_calls(case, anonymous):
     status = anonymous.get(f"{NLP_URL}/health").status_code
     case("GET /health (used by the web status check)", 200, status, tc="S10-B01")

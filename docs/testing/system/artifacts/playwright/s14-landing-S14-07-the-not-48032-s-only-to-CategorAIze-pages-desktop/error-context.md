@@ -7,7 +7,7 @@
 # Test info
 
 - Name: s14-landing.spec.ts >> S14-07 the not-found page links only to CategorAIze pages
-- Location: __tests__\system\s14-landing.spec.ts:63:5
+- Location: __tests__\system\s14-landing.spec.ts:93:5
 
 # Error details
 
@@ -44,81 +44,115 @@ Error: expect(received).toEqual(expected) // deep equality
 # Test source
 
 ```ts
-  1  | import { expect, test } from "@playwright/test";
-  2  | 
-  3  | // S14 Landing page: links, dead pages, nav/footer, auth redirects (signed out).
-  4  | // The landing route "/" sends signed-out visitors to /login, so /login is the
-  5  | // landing page; /privacy and /terms are the public pages it links to.
-  6  | const PUBLIC_PAGES = ["/login", "/privacy", "/terms"];
-  7  | 
-  8  | test("S14-01 signed-out visitor at / lands on the sign-in page", async ({ page }) => {
-  9  |   const response = await page.goto("/");
-  10 |   expect(response?.ok()).toBe(true);
-  11 |   await expect(page).toHaveURL(/\/login(\?|$)/);
-  12 |   await page.screenshot({ path: test.info().outputPath("landing.png"), fullPage: true });
-  13 | });
-  14 | 
-  15 | for (const pagePath of PUBLIC_PAGES) {
-  16 |   test(`S14-02 every link on ${pagePath} resolves`, async ({ page, request }) => {
-  17 |     await page.goto(pagePath);
-  18 |     const hrefs = await page
-  19 |       .locator("body a[href]")
-  20 |       .evaluateAll((links) => [...new Set(links.map((a) => (a as HTMLAnchorElement).href))]);
-  21 |     const broken: string[] = [];
-  22 |     for (const href of hrefs) {
-  23 |       if (!href.startsWith("http")) continue;
-  24 |       const res = await request.get(href, { maxRedirects: 5, failOnStatusCode: false });
-  25 |       if (res.status() >= 400) broken.push(`${res.status()} ${href}`);
-  26 |     }
-  27 |     test.info().annotations.push({ type: "links", description: hrefs.join(" ") });
-  28 |     expect(broken, `broken links on ${pagePath}`).toEqual([]);
-  29 |   });
-  30 | }
-  31 | 
-  32 | test("S14-03 page links stay on CategorAIze pages (no leftover upstream links)", async ({ page, baseURL }) => {
-  33 |   const own = new URL(baseURL!).hostname.split("-")[0]; // "categoraize"
-  34 |   const foreign: string[] = [];
-  35 |   for (const pagePath of PUBLIC_PAGES) {
-  36 |     await page.goto(pagePath);
-  37 |     const hrefs = await page
-  38 |       .locator("body a[href]")
-  39 |       .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
-  40 |     for (const href of hrefs) {
-  41 |       const host = new URL(href).hostname;
-  42 |       if (!host.startsWith(own) && !/(google|microsoft|live)\.com$/.test(host)) {
-  43 |         foreign.push(`${pagePath} -> ${href}`);
-  44 |       }
-  45 |     }
-  46 |   }
-  47 |   expect(foreign).toEqual([]);
-  48 | });
-  49 | 
-  50 | for (const protectedPath of ["/welcome-redirect", "/accounts", "/setup", "/settings"]) {
-  51 |   test(`S14-04 signed-out ${protectedPath} redirects to sign-in`, async ({ page }) => {
-  52 |     await page.goto(protectedPath);
-  53 |     await expect(page).toHaveURL(/\/login/);
-  54 |   });
-  55 | }
-  56 | 
-  57 | test("S14-05 unknown page shows the not-found page with status 404", async ({ page }) => {
-  58 |   const response = await page.goto("/this-page-does-not-exist-s14");
-  59 |   expect(response?.status()).toBe(404);
-  60 |   await expect(page.getByText(/not found|404/i).first()).toBeVisible();
-  61 | });
-  62 | 
-  63 | test("S14-07 the not-found page links only to CategorAIze pages", async ({ page }) => {
-  64 |   test.fail(true, "SYS-D04: the not-found page links to the upstream Inbox Zero documentation");
-  65 |   await page.goto("/this-page-does-not-exist-s14");
-  66 |   const upstream = await page.locator('a[href*="getinboxzero.com"]').evaluateAll((links) =>
-  67 |     links.map((a) => (a as HTMLAnchorElement).href),
-  68 |   );
-  69 |   test.info().annotations.push({ type: "upstream-links", description: upstream.join(" ") });
-> 70 |   expect(upstream).toEqual([]);
-     |                    ^ Error: expect(received).toEqual(expected) // deep equality
-  71 | });
-  72 | 
-  73 | test("S14-06 signed-in visitor at / goes to the app", async () => {
-  74 |   test.skip(true, "BLOCKED: needs a signed-in test account (test accounts not created yet)");
-  75 | });
-  76 | 
+  8   | test("S14-01 signed-out visitor at / lands on the sign-in page", async ({
+  9   |   page,
+  10  | }) => {
+  11  |   const response = await page.goto("/");
+  12  |   expect(response?.ok()).toBe(true);
+  13  |   await expect(page).toHaveURL(/\/login(\?|$)/);
+  14  |   await page.screenshot({
+  15  |     path: test.info().outputPath("landing.png"),
+  16  |     fullPage: true,
+  17  |   });
+  18  | });
+  19  | 
+  20  | for (const pagePath of PUBLIC_PAGES) {
+  21  |   test(`S14-02 every link on ${pagePath} resolves`, async ({
+  22  |     page,
+  23  |     request,
+  24  |   }) => {
+  25  |     await page.goto(pagePath);
+  26  |     const hrefs = await page
+  27  |       .locator("body a[href]")
+  28  |       .evaluateAll((links) => [
+  29  |         ...new Set(links.map((a) => (a as HTMLAnchorElement).href)),
+  30  |       ]);
+  31  |     const broken: string[] = [];
+  32  |     for (const href of hrefs) {
+  33  |       if (!href.startsWith("http")) continue;
+  34  |       const res = await request.get(href, {
+  35  |         maxRedirects: 5,
+  36  |         failOnStatusCode: false,
+  37  |       });
+  38  |       if (res.status() >= 400) broken.push(`${res.status()} ${href}`);
+  39  |     }
+  40  |     test
+  41  |       .info()
+  42  |       .annotations.push({ type: "links", description: hrefs.join(" ") });
+  43  |     expect(broken, `broken links on ${pagePath}`).toEqual([]);
+  44  |   });
+  45  | }
+  46  | 
+  47  | test("S14-03 page links stay on CategorAIze pages (no leftover upstream links)", async ({
+  48  |   page,
+  49  |   baseURL,
+  50  | }) => {
+  51  |   const own = new URL(baseURL!).hostname.split("-")[0]; // "categoraize"
+  52  |   const foreign: string[] = [];
+  53  |   for (const pagePath of PUBLIC_PAGES) {
+  54  |     await page.goto(pagePath);
+  55  |     const hrefs = await page
+  56  |       .locator("body a[href]")
+  57  |       .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
+  58  |     for (const href of hrefs) {
+  59  |       const host = new URL(href).hostname;
+  60  |       if (
+  61  |         !host.startsWith(own) &&
+  62  |         !/(google|microsoft|live)\.com$/.test(host)
+  63  |       ) {
+  64  |         foreign.push(`${pagePath} -> ${href}`);
+  65  |       }
+  66  |     }
+  67  |   }
+  68  |   expect(foreign).toEqual([]);
+  69  | });
+  70  | 
+  71  | for (const protectedPath of [
+  72  |   "/welcome-redirect",
+  73  |   "/accounts",
+  74  |   "/setup",
+  75  |   "/settings",
+  76  | ]) {
+  77  |   test(`S14-04 signed-out ${protectedPath} redirects to sign-in`, async ({
+  78  |     page,
+  79  |   }) => {
+  80  |     await page.goto(protectedPath);
+  81  |     await expect(page).toHaveURL(/\/login/);
+  82  |   });
+  83  | }
+  84  | 
+  85  | test("S14-05 unknown page shows the not-found page with status 404", async ({
+  86  |   page,
+  87  | }) => {
+  88  |   const response = await page.goto("/this-page-does-not-exist-s14");
+  89  |   expect(response?.status()).toBe(404);
+  90  |   await expect(page.getByText(/not found|404/i).first()).toBeVisible();
+  91  | });
+  92  | 
+  93  | test("S14-07 the not-found page links only to CategorAIze pages", async ({
+  94  |   page,
+  95  | }) => {
+  96  |   test.fail(
+  97  |     true,
+  98  |     "SYS-D04: the not-found page links to the upstream Inbox Zero documentation",
+  99  |   );
+  100 |   await page.goto("/this-page-does-not-exist-s14");
+  101 |   const upstream = await page
+  102 |     .locator('a[href*="getinboxzero.com"]')
+  103 |     .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
+  104 |   test.info().annotations.push({
+  105 |     type: "upstream-links",
+  106 |     description: upstream.join(" "),
+  107 |   });
+> 108 |   expect(upstream).toEqual([]);
+      |                    ^ Error: expect(received).toEqual(expected) // deep equality
+  109 | });
+  110 | 
+  111 | test("S14-06 signed-in visitor at / goes to the app", async () => {
+  112 |   test.skip(
+  113 |     true,
+  114 |     "BLOCKED: needs a signed-in test account (test accounts not created yet)",
+  115 |   );
+  116 | });
+  117 | 
 ```

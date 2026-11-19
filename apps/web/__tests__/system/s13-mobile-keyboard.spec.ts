@@ -92,10 +92,6 @@ test("S13-K01 sign-in is reachable and usable with the keyboard only", async ({
 test("S1-02 Microsoft sign-in is offered (sign up with Microsoft)", async ({
   page,
 }) => {
-  test.fail(
-    true,
-    "SYS-D05: production has no Microsoft OAuth settings, so no Microsoft sign-in",
-  );
   await page.goto("/login");
   const onLogin = await page
     .getByRole("button", { name: /microsoft/i })
@@ -104,14 +100,46 @@ test("S1-02 Microsoft sign-in is offered (sign up with Microsoft)", async ({
   const onOptions = await page
     .getByRole("button", { name: /microsoft/i })
     .count();
+  await page.goto("/login");
   await page.screenshot({
-    path: test.info().outputPath("login-options-no-microsoft.png"),
+    path: test.info().outputPath("login-microsoft-button.png"),
   });
   test.info().annotations.push({
     type: "microsoft-buttons",
     description: `${onLogin} on /login, ${onOptions} on /login/options`,
   });
   expect(onLogin + onOptions).toBeGreaterThan(0);
+});
+
+test("S1-06 Microsoft accepts the production callback URL (no AADSTS50011)", async ({
+  page,
+}) => {
+  // Starts the Microsoft sign-in and stops at Microsoft's own page: no
+  // credentials are entered. An unregistered redirect URI shows AADSTS50011
+  // there before any sign-in.
+  await page.goto("/login");
+  await page.getByRole("button", { name: /microsoft/i }).click();
+  await page.waitForURL(/login\.(microsoftonline|live)\.com/, {
+    timeout: 30_000,
+  });
+  const url = new URL(page.url());
+  const redirectUri = url.searchParams.get("redirect_uri") ?? "(none)";
+  // Either the email field (redirect accepted) or an AADSTS error renders.
+  const emailField = page.locator(
+    'input[name="loginfmt"], input[type="email"]',
+  );
+  const error = page.getByText(/AADSTS\d+/);
+  await expect(emailField.or(error).first()).toBeVisible({ timeout: 30_000 });
+  const body = await page.locator("body").innerText();
+  await page.screenshot({
+    path: test.info().outputPath("microsoft-authorize-page.png"),
+  });
+  test.info().annotations.push({
+    type: "redirect-uri",
+    description: `${url.hostname} redirect_uri=${redirectUri}`,
+  });
+  expect(body.match(/AADSTS\d+[^\n]*/)?.[0] ?? "no error").toBe("no error");
+  await expect(emailField.first()).toBeVisible();
 });
 
 test("S13-I01 inbox page on mobile and keyboard", async () => {

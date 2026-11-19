@@ -21,10 +21,10 @@ RES = SYS / "results"
 ART = SYS / "artifacts"
 
 NO_ACCOUNTS = "BLOCKED: the dedicated Google and Microsoft test accounts are not created yet"
-NO_MS = "BLOCKED by SYS-D05: production has no Microsoft OAuth settings"
+NO_MS = NO_ACCOUNTS  # SYS-D05 fixed: Microsoft sign-in is available; only the test account is missing
 ENV = {
-    "Web": "https://categoraize-35rdktlybq-eu.a.run.app (Cloud Run `categoraize`, revision categoraize-00027, built from `main`)",
-    "NLP": "https://categoraize-nlp-35rdktlybq-as.a.run.app (Cloud Run `categoraize-nlp`, revision categoraize-nlp-00004, image of 2026-11-18)",
+    "Web": "https://categoraize-35rdktlybq-eu.a.run.app (Cloud Run `categoraize`, revision categoraize-00028: `main` image plus the Microsoft OAuth settings added on 2026-11-20 to fix SYS-D05)",
+    "NLP": "https://categoraize-nlp-35rdktlybq-as.a.run.app (Cloud Run `categoraize-nlp`, revision categoraize-nlp-00005, built from `main` 98ac9c3 on 2026-11-20 to fix SYS-D01)",
     "Database": "Supabase `supabase-pink-yacht` (production), runtime role `categoraize_app`; checks were read-only",
     "Not in production": "the 9 commits of `feat/web-nlp-wiring` that are not on `main` (web NLP wiring, D-04 and D-05 fixes)",
 }
@@ -183,7 +183,9 @@ def read_misc():
 S = {
     1: ("Auth and consent", [
         ("S1-01", "Sign up with Google", "test Google account", "sign in with Google, finish OAuth", "account created, lands on consent", NO_ACCOUNTS),
-        ("S1-02", "Sign up with Microsoft", "test Microsoft account", "open /login and /login/options, look for Microsoft", "a Microsoft sign-in button", ["S1-02"]),
+        ("S1-02", "Microsoft sign-in is offered", "deployed web", "open /login and /login/options, look for Microsoft", "a Microsoft sign-in button", ["S1-02"]),
+        ("S1-06", "Microsoft accepts the production callback URL", "deployed web", "click Sign in with Microsoft, stop at Microsoft's page (no credentials)", "Microsoft sign-in form, no AADSTS error", ["S1-06"]),
+        ("S1-07", "Sign up with Microsoft (full round trip)", "test Microsoft account", "sign in, finish OAuth", "account created, lands on consent", NO_ACCOUNTS),
         ("S1-03", "Consent screen blocks the app until accepted", "new account", "open any app page before accepting", "redirect to /consent", NO_ACCOUNTS),
         ("S1-04", "Declining training/external-AI use keeps the app working", "consent screen", "accept Terms, leave external AI off", "inbox and triage work", NO_ACCOUNTS),
         ("S1-05", "Consent timestamp stored", "accepted consent", "query CategorizeUserConsent for the test user", "acceptedAt set, versions current", NO_ACCOUNTS),
@@ -273,14 +275,14 @@ S = {
 }
 
 DEFECTS = [
-    ("SYS-D01", "High", "Open", "Yes",
+    ("SYS-D01", "High", "Fixed 2026-11-20", "Yes",
      "Production NLP service has no `/health` route (image of 2026-11-18). The web status check gets 404, so the Priority Inbox shows \"Smart sorting is unavailable\" and disables Classify and Re-score, although classification works.",
      "GET https://categoraize-nlp-35rdktlybq-as.a.run.app/health -> 404; `/healthz` is reserved by Cloud Run.",
-     "Redeploy `categoraize-nlp` from current `main` (route added there)."),
-    ("SYS-D05", "High", "Open", "Yes",
+     "Redeployed `categoraize-nlp` from `main` (revision 00005); `/health` now returns 200 and S9-01 passes."),
+    ("SYS-D05", "High", "Fixed 2026-11-20", "Yes",
      "Production web service has no `MICROSOFT_CLIENT_ID`/`SECRET`: no Microsoft sign-in, so no Outlook mailbox, Outlook Calendar or OneDrive.",
      "Open /login and /login/options: only Google and email code; `gcloud run services describe categoraize` lists no MICROSOFT_* variables.",
-     "Add the Azure app id/secret to the Cloud Run env and the production redirect URIs to the Azure app."),
+     "Added MICROSOFT_CLIENT_ID/SECRET/WEBHOOK_CLIENT_STATE to Cloud Run (revision 00028); the Azure app already accepts the production callback URL (S1-06)."),
     ("SYS-D02", "Medium", "Open", "No",
      "NLP `/docs`, `/redoc` and `/openapi.json` are public in production (endpoints themselves still require the key).",
      "GET /docs, /openapi.json, /redoc without a key -> 200.", "Create FastAPI with docs_url/redoc_url/openapi_url = None outside development."),
@@ -359,10 +361,20 @@ def main() -> int:
     out += ["- **Test accounts:** not created yet, so every step that needs a signed-in mailbox is BLOCKED.", "",
             "## Go / no-go", ""]
     blocking = [d for d in DEFECTS if d[3] == "Yes" and d[2] == "Open"]
-    out += [f"**NO-GO.** {len(blocking)} open blocking defects, and the mailbox scenarios (1-9, 11) could not run yet:", ""]
-    out += [f"- **{d[0]}** ({d[1]}): {d[4]}" for d in blocking]
-    out += ["", "What would change the verdict: fix SYS-D01 and SYS-D05 (both are deploy/configuration changes), create the two test accounts, "
-            "and rerun `scripts/testing/run-system-tests.ps1` so the BLOCKED steps produce evidence.", "",
+    fixed = [d for d in DEFECTS if d[3] == "Yes" and d[2].startswith("Fixed")]
+    if blocking:
+        out += [f"**NO-GO.** {len(blocking)} open blocking defects:", ""]
+        out += [f"- **{d[0]}** ({d[1]}): {d[4]}" for d in blocking]
+    else:
+        out += [f"**NO-GO for now: not because of an open defect, but because {totals['BLOCKED']} steps have no evidence yet.** "
+                "No blocking defect is open. Most mailbox scenarios (1-9, 11) need the two test accounts, which do not exist yet; "
+                "a release decision on untested core flows would be a guess."]
+    if fixed:
+        out += ["", "Blocking defects found and fixed during this run:", ""]
+        out += [f"- **{d[0]}** ({d[2]}): {d[6]}" for d in fixed]
+    out += ["", "What would change the verdict: create the two test accounts and rerun "
+            "`scripts/testing/run-system-tests.ps1` so the BLOCKED steps produce evidence; the open Medium defects "
+            "(SYS-D02, D06, D07) should be fixed or accepted before release.", "",
             "## Summary", "", "| # | Scenario | Verdict | Pass | Fail | Blocked |", "|---:|---|---|---:|---:|---:|"]
     out += [f"| {n} | {t} | **{v}** | {p} | {f} | {b} |" for n, t, v, p, f, b in summary]
     out += [f"| | **All steps** | | **{totals['PASS']}** | **{totals['FAIL']}** | **{totals['BLOCKED']}** |", ""]
