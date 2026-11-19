@@ -219,6 +219,14 @@ export function TriageDetail({
               analysis ([PHONE], [CARD], [GOV_ID]).
             </p>
           )}
+          {email.senderRegister && (
+            <p className="text-xs text-muted-foreground">
+              Sender tone:{" "}
+              <span className="font-medium text-foreground">
+                {email.senderRegister}
+              </span>
+            </p>
+          )}
         </section>
 
         {dates.length > 0 && (

@@ -409,8 +409,11 @@ function TriageRow({
   const factors = email.priorityFactors as {
     vip_pin?: number;
     calendar?: number;
+    learned?: { guardrails: string[] };
   } | null;
-  const vipPinned = factors?.vip_pin ?? 0;
+  const vipPinned = factors?.learned
+    ? Number(factors.learned.guardrails.includes("vip_floor"))
+    : (factors?.vip_pin ?? 0);
   const calendarConflict = (factors?.calendar ?? 0) > 0;
 
   return (

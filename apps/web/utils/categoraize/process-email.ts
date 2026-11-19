@@ -152,8 +152,19 @@ async function classifyAndStoreEmailForTenant({
     rankedCategories: result.ranked as Prisma.InputJsonValue,
     suggestedLabel: (result.suggested_label ??
       undefined) as Prisma.InputJsonValue,
-    computedPriority: result.priority.level,
-    priorityFactors: result.priority.factors as Prisma.InputJsonValue,
+    // Learned model + this label's base-priority offset + guardrails when the
+    // service has a model; the rule level stays in the factors as a cross-check.
+    computedPriority: result.learned_priority?.level ?? result.priority.level,
+    priorityFactors: (result.learned_priority
+      ? {
+          ...result.priority.factors,
+          learned: {
+            ...result.learned_priority,
+            rule_level: result.priority.level,
+          },
+        }
+      : result.priority.factors) as Prisma.InputJsonValue,
+    senderRegister: result.sender_register?.value ?? null,
     deadlineAt: result.priority.deadline
       ? new Date(result.priority.deadline)
       : null,
