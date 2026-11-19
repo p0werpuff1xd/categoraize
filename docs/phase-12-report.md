@@ -94,8 +94,8 @@ Reproduce: `python -m eval.tune_category`, `python -m eval.train_tagger`,
 | 8 | Register the daily backup task; copy to external media | user | Done: Task Scheduler runs the backup daily 02:30 (Copy 1 `E:ackups\copy1`, Copy 2 `D:\categoraize-backups\copy2`, a separate physical disk) and a restore test weekly; scripts fixed for the new role; backup and restore test PASS. Still open: an external or off-site Copy 2 |
 | 9 | Back up the age encryption key to external media | user | Partly: copied to `D:\categoraize-keys` (separate disk, user-only ACL, hash verified). Still open: a USB copy kept away from this PC |
 | 10 | Decide OAuth scope removals | owner | Done: dropped the two redundant calendar scopes; kept the rest with their features (`docs/oauth-scope-review.md`) |
-| 11 | Second labeler fills `review/second_labeler_test_BLIND.csv`; run `scripts/kappa.py` | team | Open |
-| 12 | Native Filipino speaker fills `review/native_speaker_review.csv`; also review the date and register wordlists | team | Open |
+| 11 | Second labeler and kappa | team | Done 2026-11-19 (KIM, AD, LJ; owner-stated blank-sheet labeling): category kappa 0.81, priority weighted kappa 0.75, register kappa 0.46 (`eval/RESULTS.md`) |
+| 12 | Native Filipino speaker review | team | Done 2026-11-19: 111 items rated (mean naturalness 3.73/5), 6 labels flagged; not yet adjudicated |
 | 13 | Merge the register-on-rules commit | owner | Done: cherry-picked onto `feat/phase-11-encryption-masking-rls` and pushed |
 | 14 | Redeploy the NLP service so the new endpoints and models are live | owner | Done 2026-11-19: revision `categoraize-nlp-00004` serves 100%; smoke test passed (tasks, register via rules, priority via learned model, classify unchanged, 401 without key). Previous revision `00003` kept for rollback |
 
