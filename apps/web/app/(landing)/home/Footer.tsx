@@ -8,16 +8,13 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-6 lg:px-8 xl:px-0 py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         {/* Brand */}
         <div className="flex flex-col gap-2">
-          <Link
-            href="/"
-            className="inline-flex bg-gray-900 rounded-md px-3 py-1"
-          >
+          <Link href="/" className="inline-flex">
             <Image
               src="/logo-wordmark.svg"
               alt="CategorAIze"
               width={130}
               height={30}
-              className="h-8 w-auto"
+              className="h-9 w-auto"
               unoptimized
             />
           </Link>
