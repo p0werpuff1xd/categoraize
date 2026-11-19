@@ -1,0 +1,23 @@
+﻿
+== as categoraize_app (no superuser, no BYPASSRLS)
+PASS no context: classifications hidden (0)
+PASS no context: consents hidden (0)
+PASS no context: contacts hidden (0)
+PASS tenant A: own classifications visible (45)
+PASS tenant A: cross-tenant read of B's contact returns nothing
+PASS tenant A: cross-tenant read of B's consent returns nothing
+SAVEPOINT
+ERROR:  new row violates row-level security policy for table "CategorizeContact"
+ROLLBACK
+PASS tenant A: insert with B's emailAccountId rejected by the policy (error above is expected)
+PASS tenant A: update of B's contact touches 0 rows
+PASS tenant A: delete of B's contact touches 0 rows
+PASS tenant B: sees exactly its own contact (1)
+PASS tenant B: none of A's classifications (0)
+PASS empty context: contacts hidden (0)
+PASS tenant B: none of A's audit events (0)
+SAVEPOINT
+ERROR:  must be owner of table CategorizeContact
+ROLLBACK
+PASS runtime role cannot disable row-level security (error above is expected)
+== rolled back: no test rows were kept

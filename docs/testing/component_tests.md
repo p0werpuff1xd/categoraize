@@ -1,6 +1,6 @@
 # Component (unit) test results
 
-Generated 2026-11-19 16:24 UTC by `scripts/testing/make_component_report.py` from the JUnit XML and psql output
+Generated 2026-11-19 17:09 UTC by `scripts/testing/make_component_report.py` from the JUnit XML and psql output
 in `docs/testing/results/`. Do not edit by hand: rerun `scripts/testing/run-component-tests.ps1`.
 
 XFAIL = a strict expected failure tied to an open defect in `defects.md`; it turns into a FAIL
@@ -21,8 +21,8 @@ if the code starts passing, so the defect list cannot go stale.
 | C9 Discovery (clustering) | 6 | 6 | 0 | 0 | 0 |
 | C10 API layer | 37 | 37 | 0 | 0 | 0 |
 | C11 Web app logic | 93 | 93 | 0 | 0 | 0 |
-| C12 IAS: RLS, export/erasure, backup/restore | 20 | 20 | 0 | 0 | 0 |
-| **All** | **288** | **281** | **0** | **7** | **0** |
+| C12 IAS: RLS, export/erasure, backup/restore | 44 | 44 | 0 | 0 | 0 |
+| **All** | **312** | **305** | **0** | **7** | **0** |
 
 ## Coverage
 
@@ -388,6 +388,16 @@ Sources: `apps/web/components/CategoraizePriority.test.tsx`, `apps/web/utils/cat
 | C12-13 | only reads the user's own accounts | fixture in the test source | only reads the user's own accounts | as expected | PASS |
 | C12-14 | leaves email bodies out of classifications | fixture in the test source | leaves email bodies out of classifications | as expected | PASS |
 | C12-15 | never selects tokens from the account rows | fixture in the test source | never selects tokens from the account rows | as expected | PASS |
+| C12-20 | setup: B has rows in all 13 CategorAIze tables (empty: none) | rolled-back transaction on the local database | PASS | setup: B has rows in all 13 CategorAIze tables (empty: none) | PASS |
+| C12-21 | complete: every CategorAIze table is empty for B after erasure (0 row… | rolled-back transaction on the local database | PASS | complete: every CategorAIze table is empty for B after eras… | PASS |
+| C12-22 | complete: B's user, account and email account rows are gone | rolled-back transaction on the local database | PASS | complete: B's user, account and email account rows are gone | PASS |
+| C12-23 | idempotent: a second erasure deletes 0 rows without error | rolled-back transaction on the local database | PASS | idempotent: a second erasure deletes 0 rows without error | PASS |
+| C12-24 | isolation: tenant A's rows are untouched (45 classifications) | rolled-back transaction on the local database | PASS | isolation: tenant A's rows are untouched (45 classification… | PASS |
+| C12-25 | audit trail outlives the account (ids only, no FK) | rolled-back transaction on the local database | PASS | audit trail outlives the account (ids only, no FK) | PASS |
+| C12-31 | restored row counts match the manifest | rolled-back transaction on the local database | PASS | restored row counts match the manifest | PASS |
+| C12-32 | email content and secret columns are empty in the backup | rolled-back transaction on the local database | PASS | email content and secret columns are empty in the backup | PASS |
+| C12-33 | audit log stays append-only after restore | rolled-back transaction on the local database | PASS | audit log stays append-only after restore | PASS |
+| C12-34 | a tampered backup is refused (checksum and age) | rolled-back transaction on the local database | PASS | a tampered backup is refused (checksum and age) | PASS |
 | C12-DEL01 | does not delete a user when their email accounts own an organization … | fixture in the test source | does not delete a user when their email accounts own an org… | as expected | PASS |
 | C12-DEL02 | keeps Tinybird data when deleting the user fails | fixture in the test source | keeps Tinybird data when deleting the user fails | as expected | PASS |
 | C12-DEL03 | deletes solo organizations and memberships before deleting the user, … | fixture in the test source | deletes solo organizations and memberships before deleting … | as expected | PASS |
@@ -402,14 +412,19 @@ Sources: `apps/web/components/CategoraizePriority.test.tsx`, `apps/web/utils/cat
 | C12-REV03 | never throws: network errors and 5xx are counted as failures | fixture in the test source | never throws: network errors and 5xx are counted as failures | as expected | PASS |
 | C12-REV04 | never throws when the token lookup fails, so deletion goes ahead | fixture in the test source | never throws when the token lookup fails, so deletion goes … | as expected | PASS |
 | C12-REV05 | skips grants with no token | fixture in the test source | skips grants with no token | as expected | PASS |
+| C12-RLS01 | no context: classifications hidden (0) | rolled-back transaction on the local database | PASS | no context: classifications hidden (0) | PASS |
+| C12-RLS02 | no context: consents hidden (0) | rolled-back transaction on the local database | PASS | no context: consents hidden (0) | PASS |
+| C12-RLS03 | no context: contacts hidden (0) | rolled-back transaction on the local database | PASS | no context: contacts hidden (0) | PASS |
+| C12-RLS04 | tenant A: own classifications visible (45) | rolled-back transaction on the local database | PASS | tenant A: own classifications visible (45) | PASS |
+| C12-RLS05 | tenant A: cross-tenant read of B's contact returns nothing | rolled-back transaction on the local database | PASS | tenant A: cross-tenant read of B's contact returns nothing | PASS |
+| C12-RLS06 | tenant A: cross-tenant read of B's consent returns nothing | rolled-back transaction on the local database | PASS | tenant A: cross-tenant read of B's consent returns nothing | PASS |
+| C12-RLS07 | tenant A: insert with B's emailAccountId rejected by the policy (erro… | rolled-back transaction on the local database | PASS | tenant A: insert with B's emailAccountId rejected by the po… | PASS |
+| C12-RLS08 | tenant A: update of B's contact touches 0 rows | rolled-back transaction on the local database | PASS | tenant A: update of B's contact touches 0 rows | PASS |
+| C12-RLS09 | tenant A: delete of B's contact touches 0 rows | rolled-back transaction on the local database | PASS | tenant A: delete of B's contact touches 0 rows | PASS |
+| C12-RLS10 | tenant B: sees exactly its own contact (1) | rolled-back transaction on the local database | PASS | tenant B: sees exactly its own contact (1) | PASS |
+| C12-RLS11 | tenant B: none of A's classifications (0) | rolled-back transaction on the local database | PASS | tenant B: none of A's classifications (0) | PASS |
+| C12-RLS12 | empty context: contacts hidden (0) | rolled-back transaction on the local database | PASS | empty context: contacts hidden (0) | PASS |
+| C12-RLS13 | tenant B: none of A's audit events (0) | rolled-back transaction on the local database | PASS | tenant B: none of A's audit events (0) | PASS |
+| C12-RLS14 | runtime role cannot disable row-level security (error above is expect… | rolled-back transaction on the local database | PASS | runtime role cannot disable row-level security (error above… | PASS |
 
-Sources: `apps/web/utils/categoraize/data-export.test.ts`, `apps/web/utils/categoraize/revoke-tokens.test.ts`, `apps/web/utils/user/delete.test.ts`
-
-## Not run in this report
-
-These database checks need the local Docker Postgres and had no result file in
-`docs/testing/results/` when this report was generated, so they are not counted above:
-
-- R-12.1: `scripts/db/test-rls.sql` (two tenants, runtime role categoraize_app)
-- R-12.3: `scripts/db/test-erasure.sql` (erasure complete and idempotent, cases C12-20..25)
-- R-12.4: `scripts/backup/restore-test.ps1` (restore dry run, cases C12-30..34)
+Sources: `apps/web/utils/categoraize/data-export.test.ts`, `apps/web/utils/categoraize/revoke-tokens.test.ts`, `apps/web/utils/user/delete.test.ts`, `scripts/db/test-erasure.sql`, `scripts/db/test-restore.sql`, `scripts/db/test-rls.sql`

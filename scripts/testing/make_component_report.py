@@ -65,7 +65,7 @@ REQUIREMENTS: list[tuple[str, str, str]] = [
     ("R-11.5", "PII masking helper", r"^C11-PII"),
     ("R-11.6", "AES-256-GCM field encryption round trip and tamper detection", r"^C11-ENC"),
     ("R-11.7", "Audit-log writer keeps ids only", r"^C11-AUD"),
-    ("R-12.1", "RLS: tenant A cannot read or change tenant B rows", r"^C12-0\d"),
+    ("R-12.1", "RLS: tenant A cannot read or change tenant B rows", r"^C12-RLS"),
     ("R-12.2", "Data export is complete, idempotent and leaves secrets out", r"^C12-1\d"),
     ("R-12.3", "Erasure is complete and idempotent; token revocation", r"^C12-(2\d|DEL|REV)"),
     ("R-12.4", "Backup restore dry run and tamper refusal", r"^C12-3\d"),
@@ -185,9 +185,9 @@ def read_vitest(path: Path) -> list[dict]:
 DB_LINE = re.compile(r"^(PASS|FAIL)\s+(.*)$")
 
 
-def read_db(path: Path, first_id: int) -> list[dict]:
+def read_db(path: Path, prefix: str) -> list[dict]:
     rows = []
-    n = first_id
+    n = 1
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         m = DB_LINE.match(line.strip())
         if not m:
@@ -198,7 +198,7 @@ def read_db(path: Path, first_id: int) -> list[dict]:
             case_id = idm.group(0)
             text = text.replace(case_id, "").strip()
         else:
-            case_id = f"C12-{n:02d}"
+            case_id = f"{prefix}{n:02d}"
             n += 1
         rows.append({
             "id": case_id,
@@ -234,9 +234,9 @@ def main() -> int:
             rows += reader(path)
         else:
             print(f"missing {path}", file=sys.stderr)
-    rows += read_db(RESULTS / "db-rls.txt", 1) if (RESULTS / "db-rls.txt").exists() else []
-    rows += read_db(RESULTS / "db-erasure.txt", 20) if (RESULTS / "db-erasure.txt").exists() else []
-    rows += read_db(RESULTS / "db-restore.txt", 30) if (RESULTS / "db-restore.txt").exists() else []
+    rows += read_db(RESULTS / "db-rls.txt", "C12-RLS") if (RESULTS / "db-rls.txt").exists() else []
+    rows += read_db(RESULTS / "db-erasure.txt", "C12-ERA") if (RESULTS / "db-erasure.txt").exists() else []
+    rows += read_db(RESULTS / "db-restore.txt", "C12-RST") if (RESULTS / "db-restore.txt").exists() else []
 
     def sort_key(r: dict):
         parts = re.match(r"C(\d+)-([A-Z]*)(\d+)(.*)", r["id"])

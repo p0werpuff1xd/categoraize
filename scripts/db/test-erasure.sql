@@ -60,6 +60,20 @@ INSERT INTO "CategorizeUserConsent" (id, "termsVersion", "privacyVersion", "acce
   VALUES ('erase-consent-b', 'x', 'x', now(), 'erase-user-b');
 INSERT INTO "CategorizeUserSettings" (id, "updatedAt", "userId")
   VALUES ('erase-settings-b', now(), 'erase-user-b');
+-- Synthetic rows for tables the local test tenant has no data in, so the
+-- erasure check covers every CategorAIze table.
+INSERT INTO "Category" (id, "updatedAt", name, "emailAccountId")
+  VALUES ('erase-category-b', now(), 'Erasure test category', 'erase-email-b');
+INSERT INTO "CategorizeSenderCategoryCentroid" (id, "updatedAt", "categoryId", "emailAccountId")
+  VALUES ('erase-centroid-b', now(), 'erase-category-b', 'erase-email-b');
+INSERT INTO "CategorizeSenderEmbedding" (id, "updatedAt", sender, "emailAccountId")
+  VALUES ('erase-embedding-b', now(), 'erase-sender@example.invalid', 'erase-email-b');
+INSERT INTO "CategorizeProposalDecision" (id, key, accepted, "emailAccountId")
+  VALUES ('erase-decision-b', 'erase-test', true, 'erase-email-b');
+INSERT INTO "CategorizeDeadlineAlert" (id, "updatedAt", "threadId", "messageId", title, "dueDate", "emailAccountId")
+  VALUES ('erase-deadline-b', now(), 't-erase', 'm-erase', 'Erasure test deadline', now() + interval '1 day', 'erase-email-b');
+INSERT INTO "CategorizeNotification" (id, type, title, message, "emailAccountId", "deadlineAlertId")
+  VALUES ('erase-notification-b', 'DEADLINE_APPROACHING', 'Erasure test', 'Erasure test notification', 'erase-email-b', 'erase-deadline-b');
 INSERT INTO "CategorizeAuditEvent" (id, "eventType", "userId", "emailAccountId")
   VALUES ('erase-audit-b', 'account_deleted', 'erase-user-b', 'erase-email-b');
 
@@ -90,11 +104,10 @@ SELECT pg_temp.count_b('before');
 
 \set QUIET off
 \echo
-\echo == erasure of tenant B (copy of A's data)
+\echo == erasure of tenant B (a copy of tenant A plus synthetic rows)
 SELECT 'INFO B rows before erasure: ' || string_agg(tbl || '=' || n, ', ' ORDER BY tbl) FROM er_counts WHERE phase = 'before';
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END || ' C12-20 setup: B has rows in all ' || (SELECT count(*) FROM er_counts WHERE phase = 'before') || ' CategorAIze tables (' || coalesce(string_agg(tbl, ', '), 'none empty') || ')'
-  FROM er_counts WHERE phase = 'before' AND n = 0
-  AND tbl NOT IN ('CategorizeDeadlineAlert', 'CategorizeNotification', 'CategorizeSenderCategoryCentroid', 'CategorizeSenderEmbedding', 'CategorizeFeedbackEvent', 'CategorizePriorityOverrideLog', 'CategorizeProposalDecision', 'CategorizeExtractedSpan');
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END || ' C12-20 setup: B has rows in all ' || (SELECT count(*) FROM er_counts WHERE phase = 'before') || ' CategorAIze tables (empty: ' || coalesce(string_agg(tbl, ', '), 'none') || ')'
+  FROM er_counts WHERE phase = 'before' AND n = 0;
 
 -- Erase B exactly like deleteUserRows(): member rows, then the user.
 \set QUIET on

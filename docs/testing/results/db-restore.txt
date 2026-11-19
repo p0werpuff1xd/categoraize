@@ -1,0 +1,5 @@
+﻿PASS C12-30 encrypted backup restores into a scratch database (live DB untouched)
+PASS C12-31 restored row counts match the manifest
+PASS C12-32 email content and secret columns are empty in the backup
+PASS C12-33 audit log stays append-only after restore
+PASS C12-34 a tampered backup is refused (checksum and age)
