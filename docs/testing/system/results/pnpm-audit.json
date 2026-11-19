@@ -1,0 +1,347 @@
+﻿{
+  "advisories": {
+    "1119441": {
+      "findings": [
+        {
+          "version": "8.3.2",
+          "paths": [
+            "apps__web>@chat-adapter/teams>@microsoft/teams.apps>@azure/msal-node>uuid"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1119441,
+      "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+      "module_name": "uuid",
+      "vulnerable_versions": "<11.1.1",
+      "patched_versions": ">=11.1.1",
+      "severity": "moderate",
+      "cwe": "CWE-787, CWE-1285",
+      "github_advisory_id": "GHSA-w5hq-g745-h8pq",
+      "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq"
+    },
+    "1120680": {
+      "findings": [
+        {
+          "version": "0.27.3",
+          "paths": [
+            "packages__transactional-email>@react-email/preview-server>esbuild"
+          ],
+          "dev": true,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1120680,
+      "title": "esbuild allows arbitrary file read when running the development server on Windows",
+      "module_name": "esbuild",
+      "vulnerable_versions": ">=0.27.3 <0.28.1",
+      "patched_versions": ">=0.28.1",
+      "severity": "low",
+      "cwe": "CWE-22",
+      "github_advisory_id": "GHSA-g7r4-m6w7-qqqr",
+      "url": "https://github.com/advisories/GHSA-g7r4-m6w7-qqqr"
+    },
+    "1153171": {
+      "findings": [
+        {
+          "version": "4.28.2",
+          "paths": [
+            "apps__web>@serwist/next>@serwist/cli>@serwist/build>@serwist/utils>browserslist",
+            "apps__web>@serwist/next>@serwist/cli>@serwist/utils>browserslist",
+            "apps__web>autoprefixer>browserslist",
+            "apps__web>serwist>@serwist/utils>browserslist",
+            "apps__web>@serwist/cli>@serwist/build>@serwist/utils>browserslist",
+            "apps__web>@serwist/cli>@serwist/utils>browserslist"
+          ],
+          "dev": true,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1153171,
+      "title": "Browserslist: Unbounded memory growth (no cache eviction) via distinct query results, leading to eventual OOM",
+      "module_name": "browserslist",
+      "vulnerable_versions": "<=4.28.6",
+      "patched_versions": ">=4.28.7",
+      "severity": "high",
+      "cwe": "CWE-770",
+      "github_advisory_id": "GHSA-c83g-rgw3-j3cx",
+      "url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx"
+    },
+    "1153172": {
+      "findings": [
+        {
+          "version": "4.28.2",
+          "paths": [
+            "apps__web>@serwist/next>@serwist/cli>@serwist/build>@serwist/utils>browserslist",
+            "apps__web>@serwist/next>@serwist/cli>@serwist/utils>browserslist",
+            "apps__web>autoprefixer>browserslist",
+            "apps__web>serwist>@serwist/utils>browserslist",
+            "apps__web>@serwist/cli>@serwist/build>@serwist/utils>browserslist",
+            "apps__web>@serwist/cli>@serwist/utils>browserslist"
+          ],
+          "dev": true,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1153172,
+      "title": "Browserslist: Uncaught crash / prototype write via untrusted browserslist-stats.json custom stats (normalizeStats)",
+      "module_name": "browserslist",
+      "vulnerable_versions": "<=4.28.6",
+      "patched_versions": ">=4.28.7",
+      "severity": "high",
+      "cwe": "CWE-248, CWE-1321",
+      "github_advisory_id": "GHSA-73wf-gq98-2v4g",
+      "url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g"
+    },
+    "1193686": {
+      "findings": [
+        {
+          "version": "2.10.27",
+          "paths": [
+            "apps__web>@serwist/next>@serwist/cli>@serwist/build>@serwist/utils>browserslist>baseline-browser-mapping",
+            "apps__web>@serwist/next>@serwist/cli>@serwist/utils>browserslist>baseline-browser-mapping",
+            "apps__web>autoprefixer>browserslist>baseline-browser-mapping",
+            "apps__web>serwist>@serwist/utils>browserslist>baseline-browser-mapping",
+            "apps__web>@serwist/cli>@serwist/build>@serwist/utils>browserslist>baseline-browser-mapping",
+            "apps__web>@serwist/cli>@serwist/utils>browserslist>baseline-browser-mapping"
+          ],
+          "dev": true,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1193686,
+      "title": "baseline-browser-mapping process termination on invalid input causes denial of service",
+      "module_name": "baseline-browser-mapping",
+      "vulnerable_versions": ">=2.0.0 <2.11.0",
+      "patched_versions": ">=2.11.0",
+      "severity": "moderate",
+      "cwe": "CWE-705",
+      "github_advisory_id": "GHSA-w5vr-8v7q-w6rv",
+      "url": "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv"
+    },
+    "1243071": {
+      "findings": [
+        {
+          "version": "44.9.0",
+          "paths": [
+            "apps__desktop>electron"
+          ],
+          "dev": true,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1243071,
+      "title": "Electron: Mitigation for compromised eMudhra intermediate certificates",
+      "module_name": "electron",
+      "vulnerable_versions": ">=44.0.0-alpha.1 <44.9.1",
+      "patched_versions": ">=44.9.1",
+      "severity": "high",
+      "cwe": "CWE-299",
+      "github_advisory_id": "GHSA-jr5w-w6x2-84p9",
+      "url": "https://github.com/advisories/GHSA-jr5w-w6x2-84p9"
+    },
+    "1243661": {
+      "findings": [
+        {
+          "version": "1.19.18",
+          "paths": [
+            "apps__web>@modelcontextprotocol/sdk>@hono/node-server",
+            "apps__web>@posthog/ai>@google/genai>@modelcontextprotocol/sdk>@hono/node-server"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1243661,
+      "title": "@hono/node-server: `serveStatic` decodes the request path a second time, leading to bypass of middleware on static paths",
+      "module_name": "@hono/node-server",
+      "vulnerable_versions": ">=1.19.10 <2.1.3",
+      "patched_versions": ">=2.1.3",
+      "severity": "moderate",
+      "cwe": "CWE-174",
+      "github_advisory_id": "GHSA-rmxm-3fg6-px4f",
+      "url": "https://github.com/advisories/GHSA-rmxm-3fg6-px4f"
+    },
+    "1244013": {
+      "findings": [
+        {
+          "version": "13.0.7",
+          "paths": [
+            "apps__web>@sentry/nextjs>@sentry/bundler-plugins>glob",
+            "apps__web>@sentry/nextjs>@sentry/webpack-plugin>@sentry/bundler-plugins>glob",
+            "apps__web>@serwist/next>glob",
+            "apps__web>@serwist/next>@serwist/webpack-plugin>@serwist/build>glob",
+            "apps__web>@serwist/next>@serwist/build>glob",
+            "apps__web>@serwist/next>@serwist/cli>@serwist/build>glob",
+            "apps__web>@serwist/next>@serwist/cli>glob",
+            "apps__web>@serwist/cli>@serwist/build>glob",
+            "apps__web>@serwist/cli>glob",
+            ".>ultracite>glob"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1244013,
+      "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+      "module_name": "glob",
+      "vulnerable_versions": ">=9.0.0 <=14.0.1",
+      "patched_versions": ">=14.0.2",
+      "severity": "moderate",
+      "cwe": "CWE-400",
+      "github_advisory_id": "GHSA-3g3m-2fjr-6pw4",
+      "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4"
+    },
+    "1244623": {
+      "findings": [
+        {
+          "version": "10.2.5",
+          "paths": [
+            "apps__desktop>electron-builder>dmg-builder>app-builder-lib>minimatch",
+            "apps__desktop>electron-builder>app-builder-lib>minimatch",
+            "apps__web>@sentry/nextjs>@sentry/bundler-plugins>glob>minimatch",
+            "apps__web>@sentry/nextjs>@sentry/webpack-plugin>@sentry/bundler-plugins>glob>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@oclif/plugin-not-found>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity-labs/oclif-plugin-skills-flag>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/workflow-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/core>minimatch",
+            "apps__web>sanity-plugin-markdown>sanity>@sanity/cli>@oclif/core>minimatch",
+            "apps__web>@vercel/queue>minimatch",
+            "apps__web>braintrust>minimatch",
+            "apps__web>@serwist/next>glob>minimatch",
+            "apps__web>@serwist/next>@serwist/webpack-plugin>@serwist/build>glob>minimatch",
+            "apps__web>@serwist/next>@serwist/build>glob>minimatch",
+            "apps__web>@serwist/next>@serwist/cli>@serwist/build>glob>minimatch",
+            "apps__web>@serwist/next>@serwist/cli>glob>minimatch",
+            "apps__web>@serwist/cli>@serwist/build>glob>minimatch",
+            "apps__web>@serwist/cli>glob>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@oclif/plugin-not-found>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity-labs/oclif-plugin-skills-flag>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/workflow-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/core>minimatch",
+            "apps__web>sanity>@sanity/cli>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@oclif/plugin-not-found>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity-labs/oclif-plugin-skills-flag>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/workflow-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/core>minimatch",
+            "apps__web>next-sanity>sanity>@sanity/cli>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@oclif/plugin-not-found>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@sanity/workbench-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/blueprints>@sanity/cli-build>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity-labs/oclif-plugin-skills-flag>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/runtime-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/workflow-cli>@sanity/cli-core>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/plugin-help>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@sanity/workflow-cli>@oclif/core>minimatch",
+            "apps__web>@sanity/vision>sanity>@sanity/cli>@oclif/core>minimatch",
+            ".>ultracite>glob>minimatch"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "version": "9.0.9",
+          "paths": [
+            "apps__desktop>electron-builder>dmg-builder>app-builder-lib>@electron/universal>minimatch",
+            "apps__desktop>electron-builder>app-builder-lib>@electron/universal>minimatch"
+          ],
+          "dev": true,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1244623,
+      "title": "minimatch has potential denial of service via globparts amplification",
+      "module_name": "minimatch",
+      "vulnerable_versions": ">=7.0.0 <11.0.1",
+      "patched_versions": ">=11.0.1",
+      "severity": "moderate",
+      "cwe": "CWE-405",
+      "github_advisory_id": "GHSA-g3hv-75wg-m249",
+      "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 1,
+      "moderate": 5,
+      "high": 3,
+      "critical": 0
+    },
+    "dependencies": 1973,
+    "devDependencies": 418,
+    "optionalDependencies": 354,
+    "totalDependencies": 2653
+  }
+}

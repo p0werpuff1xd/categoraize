@@ -1,0 +1,38 @@
+﻿{
+    "entries":  20000,
+    "results":  [
+                    {
+                        "pattern":  "google_access_token",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "refresh_token_value",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "jwt",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "bearer_header",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "internal_key_header",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "bodyText_field",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "db_url_with_password",
+                        "matches":  0
+                    },
+                    {
+                        "pattern":  "openrouter_key",
+                        "matches":  0
+                    }
+                ],
+    "window":  "3d"
+}

@@ -1,0 +1,168 @@
+<testsuites id="" name="" tests="18" failures="0" skipped="2" errors="0" time="13.727653">
+<testsuite name="s13-mobile-keyboard.spec.ts" timestamp="2026-11-19T17:54:12.565Z" hostname="desktop" tests="3" failures="0" skipped="1" time="3.201" errors="0">
+<testcase name="S13-K01 sign-in is reachable and usable with the keyboard only" classname="s13-mobile-keyboard.spec.ts" time="1.516">
+<properties>
+<property name="tab-order" value="Sign in with Google | Other options | (Enter) | Email code (existing accounts) | Back">
+</property>
+</properties>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s13-mobile-keyboard-S13-K0-c8453-able-with-the-keyboard-only-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S1-02 Microsoft sign-in is offered (sign up with Microsoft)" classname="s13-mobile-keyboard.spec.ts" time="1.685">
+<properties>
+<property name="fail" value="SYS-D05: production has no Microsoft OAuth settings, so no Microsoft sign-in">
+</property>
+<property name="microsoft-buttons" value="0 on /login, 0 on /login/options">
+</property>
+</properties>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s13-mobile-keyboard-S1-02--d06a4-red-sign-up-with-Microsoft--desktop\test-finished-1.png]]
+
+[[ATTACHMENT|..\artifacts\playwright\s13-mobile-keyboard-S1-02--d06a4-red-sign-up-with-Microsoft--desktop\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S13-I01 inbox page on mobile and keyboard" classname="s13-mobile-keyboard.spec.ts">
+<properties>
+<property name="skip" value="BLOCKED: the inbox needs a signed-in test account (test accounts not created yet)">
+</property>
+</properties>
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="s14-landing.spec.ts" timestamp="2026-11-19T17:54:12.565Z" hostname="desktop" tests="12" failures="0" skipped="1" time="12.953" errors="0">
+<testcase name="S14-01 signed-out visitor at / lands on the sign-in page" classname="s14-landing.spec.ts" time="1.295">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-01-signed--78af7-t-lands-on-the-sign-in-page-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-02 every link on /login resolves" classname="s14-landing.spec.ts" time="1.58">
+<properties>
+<property name="links" value="https://categoraize-35rdktlybq-eu.a.run.app/login/options?next=%2Fwelcome-redirect https://categoraize-35rdktlybq-eu.a.run.app/terms https://categoraize-35rdktlybq-eu.a.run.app/privacy">
+</property>
+</properties>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-02-every-link-on-login-resolves-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-02 every link on /privacy resolves" classname="s14-landing.spec.ts" time="1.021">
+<properties>
+<property name="links" value="https://categoraize-35rdktlybq-eu.a.run.app/terms">
+</property>
+</properties>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-02-every-link-on-privacy-resolves-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-02 every link on /terms resolves" classname="s14-landing.spec.ts" time="1.234">
+<properties>
+<property name="links" value="https://categoraize-35rdktlybq-eu.a.run.app/privacy">
+</property>
+</properties>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-02-every-link-on-terms-resolves-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-03 page links stay on CategorAIze pages (no leftover upstream links)" classname="s14-landing.spec.ts" time="1.506">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-03-page-li-3f785-no-leftover-upstream-links--desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-04 signed-out /welcome-redirect redirects to sign-in" classname="s14-landing.spec.ts" time="1.105">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-04-signed--3586c-direct-redirects-to-sign-in-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-04 signed-out /accounts redirects to sign-in" classname="s14-landing.spec.ts" time="1.081">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-04-signed-out-accounts-redirects-to-sign-in-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-04 signed-out /setup redirects to sign-in" classname="s14-landing.spec.ts" time="1.018">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-04-signed-out-setup-redirects-to-sign-in-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-04 signed-out /settings redirects to sign-in" classname="s14-landing.spec.ts" time="0.962">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-04-signed-out-settings-redirects-to-sign-in-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-05 unknown page shows the not-found page with status 404" classname="s14-landing.spec.ts" time="0.863">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-05-unknown-0c5e9--found-page-with-status-404-desktop\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-07 the not-found page links only to CategorAIze pages" classname="s14-landing.spec.ts" time="1.288">
+<properties>
+<property name="fail" value="SYS-D04: the not-found page links to the upstream Inbox Zero documentation">
+</property>
+<property name="upstream-links" value="https://docs.getinboxzero.com/">
+</property>
+</properties>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-07-the-not-48032-s-only-to-CategorAIze-pages-desktop\test-finished-1.png]]
+
+[[ATTACHMENT|..\artifacts\playwright\s14-landing-S14-07-the-not-48032-s-only-to-CategorAIze-pages-desktop\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S14-06 signed-in visitor at / goes to the app" classname="s14-landing.spec.ts">
+<properties>
+<property name="skip" value="BLOCKED: needs a signed-in test account (test accounts not created yet)">
+</property>
+</properties>
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="s13-mobile-keyboard.spec.ts" timestamp="2026-11-19T17:54:12.565Z" hostname="mobile-390" tests="3" failures="0" skipped="0" time="5.427" errors="0">
+<testcase name="S13-M01 /login fits a 390 px screen without sideways scrolling @mobile" classname="s13-mobile-keyboard.spec.ts" time="1.782">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s13-mobile-keyboard-S13-M0-9fb80-t-sideways-scrolling-mobile-mobile-390\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S13-M02 /privacy fits a 390 px screen without sideways scrolling @mobile" classname="s13-mobile-keyboard.spec.ts" time="1.819">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s13-mobile-keyboard-S13-M0-9f514-t-sideways-scrolling-mobile-mobile-390\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+<testcase name="S13-M03 /terms fits a 390 px screen without sideways scrolling @mobile" classname="s13-mobile-keyboard.spec.ts" time="1.826">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\artifacts\playwright\s13-mobile-keyboard-S13-M0-ed017-t-sideways-scrolling-mobile-mobile-390\test-finished-1.png]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

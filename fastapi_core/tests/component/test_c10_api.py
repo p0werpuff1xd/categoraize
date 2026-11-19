@@ -12,7 +12,7 @@ from app.main import app
 
 PROTECTED = sorted(route.path for route in app.routes if getattr(route, "path", "").startswith("/api/v1/"))
 APP_DIR = Path(__file__).resolve().parents[2] / "app"
-SECRET_MARKER = "ZQX-PRIVATE-7731 Juan dela Cruz 09171234567"
+SECRET_MARKER = "ZQX-PRIVATE-7731 Juan dela Cruz 09171234567"  # gitleaks:allow (fake marker, not a secret)
 
 
 @pytest.mark.parametrize("path", PROTECTED, ids=[f"C10-A{i:02d} {p} no key" for i, p in enumerate(PROTECTED, start=1)])
