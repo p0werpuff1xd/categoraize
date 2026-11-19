@@ -48,9 +48,9 @@ const geist = Geist({
   display: "swap",
 });
 
-const title = `${BRAND_NAME} | Automate and clean your inbox`;
+const title = `${BRAND_NAME} | AI email sorting for English, Filipino & Taglish`;
 const description =
-  "Your AI executive assistant to reach inbox zero fast. Automate emails, bulk unsubscribe, block cold emails, and analytics. Open-source";
+  "CategorAIze reads your Gmail in English, Filipino and Taglish, ranks every message P1–P5 by urgency, and surfaces tasks and deadlines automatically. Open-source.";
 
 const indexingAllowed = isIndexingAllowed(env.NEXT_PUBLIC_BASE_URL);
 
@@ -66,10 +66,7 @@ const organization: Organization = {
     "@type": "ImageObject",
     url: toAbsoluteUrl(BRAND_ICON_URL),
   },
-  sameAs: [
-    "https://x.com/inboxzero_ai",
-    "https://github.com/elie222/inbox-zero",
-  ],
+  sameAs: ["https://github.com/elie222/inbox-zero"],
   ...(SUPPORT_EMAIL
     ? {
         contactPoint: {
@@ -93,7 +90,7 @@ const website: WebSite = {
   "@type": "WebSite",
   "@id": websiteId,
   name: BRAND_NAME,
-  alternateName: ["InboxZero", "getinboxzero"],
+  alternateName: ["CategorAIze", "categoraize"],
   url: env.NEXT_PUBLIC_BASE_URL,
   publisher: { "@id": organizationId },
 };
@@ -106,12 +103,12 @@ const softwareApplication: SoftwareApplication = {
   operatingSystem: "Web",
   url: env.NEXT_PUBLIC_BASE_URL,
   featureList: [
-    "AI Email Assistant",
-    "Email Automation",
-    "Bulk Unsubscribe",
-    "Cold Email Blocking",
-    "Email Analytics",
-    "Newsletter Management",
+    "Multilingual Email Sorting",
+    "P1–P5 Priority Ranking",
+    "Task & Deadline Extraction",
+    "Calendar-Aware Priority",
+    "Filipino & Taglish Support",
+    "Privacy-First AI",
   ],
   offers: subscriptionOffers(),
   publisher: { "@id": organizationId },
@@ -136,7 +133,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    creator: "@inboxzero_ai",
+    creator: "@categoraize_ai",
   },
   metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
   // issues with robots.txt: https://github.com/vercel/next.js/issues/58615#issuecomment-1852457285
