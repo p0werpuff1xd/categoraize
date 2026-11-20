@@ -194,11 +194,6 @@ export function Channels() {
       <PageHeader
         title={t`Channels`}
         description={t`Manage what gets delivered to your chat apps.`}
-        video={{
-          title: t`Getting started with Slack and Telegram`,
-          description: t`Learn how to get important emails in Slack or Telegram and send drafted replies from there.`,
-          muxPlaybackId: "QbtTl00g2Gjx3JhM016Xkei0202zW4qpsF302rp01sRQHaf028",
-        }}
       />
 
       <LoadingContent

@@ -1,19 +1,11 @@
-import { PageHeaderVideoButton } from "@/components/PageHeaderVideoButton";
 import { PageHeading, PageSubHeading } from "@/components/Typography";
-
-type Video = {
-  title: string;
-  description: React.ReactNode;
-  muxPlaybackId: string;
-};
 
 interface PageHeaderProps {
   description?: string;
   title: string;
-  video?: Video;
 }
 
-export function PageHeader({ title, video, description }: PageHeaderProps) {
+export function PageHeader({ title, description }: PageHeaderProps) {
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center mt-1 gap-3">
@@ -23,7 +15,6 @@ export function PageHeader({ title, video, description }: PageHeaderProps) {
             <PageSubHeading className="mt-1">{description}</PageSubHeading>
           )}
         </div>
-        {video && <PageHeaderVideoButton video={video} />}
       </div>
     </div>
   );
