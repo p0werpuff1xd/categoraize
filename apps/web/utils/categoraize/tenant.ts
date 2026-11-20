@@ -176,39 +176,47 @@ function lowerFirst(name: string) {
   return name.charAt(0).toLowerCase() + name.slice(1);
 }
 
-export const tenantContext = Prisma.defineExtension((client) => {
-  const base = client as unknown as BaseClient;
-  baseClient = base;
+/**
+ * The tenant extension. Pass the RAW (unextended) PrismaClient: the wrapped
+ * query runs on a transaction of that client, so the extensions added before
+ * this one (field encryption, audit) run once, in the outer chain. Running it
+ * on an extended client applied them twice: writes were encrypted twice and
+ * reads decrypted twice ("value that is not ciphertext").
+ */
+export const tenantContext = (rawClient?: unknown) =>
+  Prisma.defineExtension((client) => {
+    const base = (rawClient ?? client) as unknown as BaseClient;
+    baseClient = base;
 
-  return client.$extends({
-    query: {
-      $allModels: {
-        async $allOperations({ model, operation, args, query }) {
-          if (!TENANT_MODELS.has(model)) return query(args);
-          // Already inside a tenant transaction (nested call): run in it.
-          if (tenantTx.getStore()) return query(args);
+    return client.$extends({
+      query: {
+        $allModels: {
+          async $allOperations({ model, operation, args, query }) {
+            if (!TENANT_MODELS.has(model)) return query(args);
+            // Already inside a tenant transaction (nested call): run in it.
+            if (tenantTx.getStore()) return query(args);
 
-          const userId = await resolveTenantUserId(base);
-          if (!userId) {
-            warnOnce(`${model}.${operation}`);
-            return query(args);
-          }
+            const userId = await resolveTenantUserId(base);
+            if (!userId) {
+              warnOnce(`${model}.${operation}`);
+              return query(args);
+            }
 
-          return base.$transaction(async (tx) => {
-            await setTenant(tx, userId);
-            return tenantTx.run({ tx, userId }, async () => {
-              // Dynamic model lookup: the delegate name comes from the query.
-              const delegates = tx as unknown as Record<string, unknown>;
-              const delegate = delegates[lowerFirst(model)] as Record<
-                string,
-                (input: unknown) => Promise<unknown>
-              >;
-              // Awaited here so nested lookups still see the open transaction.
-              return await delegate[operation](args);
+            return base.$transaction(async (tx) => {
+              await setTenant(tx, userId);
+              return tenantTx.run({ tx, userId }, async () => {
+                // Dynamic model lookup: the delegate name comes from the query.
+                const delegates = tx as unknown as Record<string, unknown>;
+                const delegate = delegates[lowerFirst(model)] as Record<
+                  string,
+                  (input: unknown) => Promise<unknown>
+                >;
+                // Awaited here so nested lookups still see the open transaction.
+                return await delegate[operation](args);
+              });
             });
-          });
+          },
         },
       },
-    },
+    });
   });
-});
