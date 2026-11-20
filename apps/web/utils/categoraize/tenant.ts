@@ -59,7 +59,7 @@ const OWNER_TTL_MS = 5 * 60 * 1000;
 const warned = new Set<string>();
 
 async function resolveTenantUserId(base: BaseClient): Promise<string | null> {
-  const explicit = explicitTenant.getStore()?.userId;
+  const explicit = getExplicitTenantUserId();
   if (explicit) return explicit;
   const context = getAuditContext();
   if (context.userId) return context.userId;
@@ -73,9 +73,20 @@ async function setTenant(tx: TxClient, userId: string) {
 
 let baseClient: BaseClient | null = null;
 
-/** Runs fn with the tenant fixed to userId (scripts and background jobs). */
+/**
+ * Runs fn with the tenant fixed to userId (scripts, layouts, background jobs).
+ *
+ * Prisma queries are lazy: they run when awaited, not when created. fn is
+ * therefore awaited INSIDE the context; returning its promise would run the
+ * query after the context ended, without a tenant (RLS then hides every row).
+ */
 export function withUserContext<T>(userId: string, fn: () => Promise<T>) {
-  return explicitTenant.run({ userId }, fn);
+  return explicitTenant.run({ userId }, async () => await fn());
+}
+
+/** The tenant set by withUserContext/withAccountContext, if any. */
+export function getExplicitTenantUserId(): string | undefined {
+  return explicitTenant.getStore()?.userId;
 }
 
 /**
@@ -96,7 +107,7 @@ export async function withTenantSql<T>(
   }
   return baseClient.$transaction(async (tx) => {
     await setTenant(tx, userId);
-    return tenantTx.run({ tx, userId }, () => fn(tx));
+    return tenantTx.run({ tx, userId }, async () => await fn(tx));
   });
 }
 
@@ -110,7 +121,10 @@ export async function withAccountContext<T>(
 ): Promise<T> {
   if (!baseClient) return fn();
   const owner = await ownerOf(baseClient, emailAccountId);
-  return owner ? explicitTenant.run({ userId: owner }, fn) : fn();
+  // Awaited inside the context: see withUserContext.
+  return owner
+    ? explicitTenant.run({ userId: owner }, async () => await fn())
+    : fn();
 }
 
 /**
@@ -129,7 +143,7 @@ export async function withAccountSql<T>(
   if (!owner) return fn(fallback as TxClient);
   return baseClient.$transaction(async (tx) => {
     await setTenant(tx, owner);
-    return tenantTx.run({ tx, userId: owner }, () => fn(tx));
+    return tenantTx.run({ tx, userId: owner }, async () => await fn(tx));
   });
 }
 
@@ -182,14 +196,15 @@ export const tenantContext = Prisma.defineExtension((client) => {
 
           return base.$transaction(async (tx) => {
             await setTenant(tx, userId);
-            return tenantTx.run({ tx, userId }, () => {
+            return tenantTx.run({ tx, userId }, async () => {
               // Dynamic model lookup: the delegate name comes from the query.
               const delegates = tx as unknown as Record<string, unknown>;
               const delegate = delegates[lowerFirst(model)] as Record<
                 string,
                 (input: unknown) => Promise<unknown>
               >;
-              return delegate[operation](args);
+              // Awaited here so nested lookups still see the open transaction.
+              return await delegate[operation](args);
             });
           });
         },
