@@ -3,6 +3,7 @@ import {
   decryptField,
   encryptField,
   FieldEncryptionError,
+  isEncryptedValue,
   newRowId,
 } from "@/utils/categoraize/field-encryption";
 import { getTenantTransaction } from "@/utils/categoraize/tenant";
@@ -149,12 +150,23 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
         compute(row: Record<string, string | null>) {
           const value = row[column];
           if (value === null || value === undefined) return value;
-          return decryptField({
+          const plain = decryptField({
             table,
             column,
             rowId: row.id as string,
             value,
           });
+          // Rows written through the tenant wrapper before 2026-11-20 were
+          // encrypted twice (see tenantContext); unwrap the second layer. It
+          // must still authenticate, so tampering is caught as before.
+          return isEncryptedValue(plain)
+            ? decryptField({
+                table,
+                column,
+                rowId: row.id as string,
+                value: plain,
+              })
+            : plain;
         },
       };
     }
