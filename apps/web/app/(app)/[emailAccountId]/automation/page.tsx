@@ -56,17 +56,7 @@ export default async function AutomationPage({
         <PageWrapper>
           <div className="flex items-center justify-between">
             <div>
-              <PageHeader
-                title={t(i18n)`AI Assistant`}
-                video={{
-                  title: t(i18n)`Getting started with AI Personal Assistant`,
-                  description: t(
-                    i18n,
-                  )`Learn how to use the AI Personal Assistant to automatically label, archive, and more.`,
-                  muxPlaybackId:
-                    "TYo3SIMdhg008x022H79400CxeRSiB6mLyuwHx8Szc00Rec",
-                }}
-              />
+              <PageHeader title={t(i18n)`AI Assistant`} />
             </div>
 
             <div className="ml-4">

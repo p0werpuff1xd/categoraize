@@ -61,7 +61,6 @@ import { ClientOnly } from "@/components/ClientOnly";
 import { useAccount } from "@/providers/EmailAccountProvider";
 import { PageWrapper } from "@/components/PageWrapper";
 import { PageHeader } from "@/components/PageHeader";
-import { TextLink } from "@/components/Typography";
 import { DismissibleVideoCard } from "@/components/VideoCard";
 import { DatePickerWithRange } from "@/components/DatePickerWithRange";
 import { Button } from "@/components/ui/button";
@@ -400,27 +399,7 @@ export function BulkUnsubscribe() {
   return (
     <PageWrapper>
       <div className="flex items-start justify-between gap-4">
-        <PageHeader
-          title={t`Bulk Unsubscriber`}
-          video={{
-            title: t`Getting started with Bulk Unsubscribe`,
-            description: (
-              <Trans>
-                Learn how to quickly bulk unsubscribe from and archive unwanted
-                emails. You can read more in our{" "}
-                <TextLink
-                  href="https://docs.getinboxzero.com/essentials/bulk-email-unsubscriber"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  help center
-                </TextLink>
-                .
-              </Trans>
-            ),
-            muxPlaybackId: "qxP8P5aKm7k7I01seCEMP1ZepHQAmdKCcW02x1fM7xQm00",
-          }}
-        />
+        <PageHeader title={t`Bulk Unsubscriber`} />
         <ScanOlderEmailsButton />
       </div>
 
