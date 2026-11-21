@@ -1,7 +1,7 @@
 {
  "system": "B3",
  "split": "test",
- "generated_at": "2026-11-18T11:25:28+00:00",
+ "generated_at": "2026-11-21T11:27:03+00:00",
  "config": {
   "system": "B3",
   "category_params": {
@@ -32,9 +32,9 @@
      "high": 0.8412
     },
     "priority_exact": {
-     "value": 0.36,
-     "low": 0.27,
-     "high": 0.45
+     "value": 0.37,
+     "low": 0.28,
+     "high": 0.4602
     },
     "priority_within1": {
      "value": 0.88,
@@ -42,14 +42,14 @@
      "high": 0.93
     },
     "priority_qwk": {
-     "value": 0.5339,
-     "low": 0.3595,
-     "high": 0.664
+     "value": 0.5419,
+     "low": 0.3665,
+     "high": 0.6721
     },
     "priority_mae": {
-     "value": 0.79,
-     "low": 0.65,
-     "high": 0.93
+     "value": 0.78,
+     "low": 0.64,
+     "high": 0.92
     },
     "register_accuracy": {
      "value": 0.85,
@@ -127,9 +127,9 @@
      "high": 0.9168
     },
     "priority_exact": {
-     "value": 0.3235,
-     "low": 0.1765,
-     "high": 0.4706
+     "value": 0.3529,
+     "low": 0.2059,
+     "high": 0.5
     },
     "priority_within1": {
      "value": 0.8235,
@@ -137,14 +137,14 @@
      "high": 0.9412
     },
     "priority_qwk": {
-     "value": 0.4889,
-     "low": 0.145,
-     "high": 0.7147
+     "value": 0.5049,
+     "low": 0.1661,
+     "high": 0.7246
     },
     "priority_mae": {
-     "value": 0.8824,
-     "low": 0.6471,
-     "high": 1.1471
+     "value": 0.8529,
+     "low": 0.6176,
+     "high": 1.1176
     },
     "register_accuracy": {
      "value": 0.8235,
@@ -222,9 +222,9 @@
      "high": 0.9016
     },
     "priority_exact": {
-     "value": 0.3636,
+     "value": 0.3939,
      "low": 0.2121,
-     "high": 0.5159
+     "high": 0.5758
     },
     "priority_within1": {
      "value": 0.9091,
@@ -232,14 +232,14 @@
      "high": 1.0
     },
     "priority_qwk": {
-     "value": 0.5617,
-     "low": 0.2152,
-     "high": 0.7759
+     "value": 0.5772,
+     "low": 0.2443,
+     "high": 0.7879
     },
     "priority_mae": {
-     "value": 0.7576,
-     "low": 0.5455,
-     "high": 1.0
+     "value": 0.7273,
+     "low": 0.5144,
+     "high": 0.9697
     },
     "register_accuracy": {
      "value": 0.9091,
@@ -317,9 +317,9 @@
      "high": 0.8544
     },
     "priority_exact": {
-     "value": 0.3939,
-     "low": 0.2424,
-     "high": 0.5758
+     "value": 0.3636,
+     "low": 0.2121,
+     "high": 0.5455
     },
     "priority_within1": {
      "value": 0.9091,
@@ -327,14 +327,14 @@
      "high": 1.0
     },
     "priority_qwk": {
-     "value": 0.559,
-     "low": 0.2228,
-     "high": 0.7733
+     "value": 0.5501,
+     "low": 0.2158,
+     "high": 0.7664
     },
     "priority_mae": {
-     "value": 0.7273,
-     "low": 0.4848,
-     "high": 0.9697
+     "value": 0.7576,
+     "low": 0.5152,
+     "high": 1.0
     },
     "register_accuracy": {
      "value": 0.8182,
@@ -873,7 +873,7 @@
    "language": "en",
    "gold_category": "alerts",
    "pred_category": "alerts",
-   "gold_priority": 3,
+   "gold_priority": 2,
    "pred_priority": 2,
    "gold_register": "neutral",
    "pred_register": "neutral",
@@ -1321,7 +1321,7 @@
    "language": "mixed",
    "gold_category": "alerts",
    "pred_category": "alerts",
-   "gold_priority": 3,
+   "gold_priority": 2,
    "pred_priority": 2,
    "gold_register": "neutral",
    "pred_register": "neutral",
@@ -1783,7 +1783,7 @@
    "language": "tl",
    "gold_category": "alerts",
    "pred_category": "work_tasks",
-   "gold_priority": 3,
+   "gold_priority": 2,
    "pred_priority": 3,
    "gold_register": "neutral",
    "pred_register": "neutral",

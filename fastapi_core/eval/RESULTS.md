@@ -5,16 +5,19 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 
 ## Read this first
 
-- **Labels are AI-authored** (`human_reviewed=false` on every record). They are pending a second-labeler
-  Cohen's kappa check (`data/categoraize-dataset/review/second_labeler_test_BLIND.csv`) and a native
-  Filipino speaker review. Do not describe these results as human-labeled.
+- **Labels are AI-assisted.** A second labeler checked all 100 test items blind (category kappa 0.97,
+  priority weighted kappa 0.79, register kappa 0.64 against the gold labels, before adjudication). One gold
+  priority change was made after the first test run (see the test-run note below). A native Filipino speaker
+  review is still pending. Do not describe these results as native-speaker reviewed.
 - **Train is template-synthetic**, so train and dev scores overstate performance on real mail. The
   hand-written test set is the number to report.
 - **The test set is small** (n=100; about a third per language), so confidence intervals are wide and
   differences between systems whose intervals overlap are not established.
 - Dev (n=30) was used for every tuning choice and has no calendar data. Test was run once for all four
   systems; after that run the register model was switched back to rules (see the decision below) and
-  B4 was re-run once with that setting. B1-B3 numbers are from the first and only run.
+  B4 was re-run once with that setting. Three gold priorities (test-en-028, test-mixed-026, test-tl-026)
+  were then changed from 3 to 2 after adjudication, and all four systems were re-run on the corrected gold.
+  The numbers here are from that second run; the category, register and span metrics are unchanged by it.
 - No real user mail was used anywhere (Google API Limited Use).
 
 ## Systems
@@ -32,10 +35,10 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 |---|---|---|---|---|
 | Category macro-F1 | 0.725 [0.625, 0.796] | 0.284 [0.180, 0.366] | 0.770 [0.681, 0.841] | 0.770 [0.681, 0.841] |
 | Category accuracy | 0.680 [0.580, 0.770] | 0.190 [0.120, 0.270] | 0.770 [0.680, 0.850] | 0.770 [0.680, 0.850] |
-| Priority exact | 0.330 [0.240, 0.430] | 0.310 [0.220, 0.400] | 0.360 [0.270, 0.450] | 0.450 [0.360, 0.550] |
+| Priority exact | 0.360 [0.270, 0.450] | 0.340 [0.250, 0.430] | 0.370 [0.280, 0.460] | 0.420 [0.330, 0.520] |
 | Priority within 1 | 0.870 [0.800, 0.930] | 0.810 [0.740, 0.880] | 0.880 [0.810, 0.930] | 0.870 [0.800, 0.930] |
-| Priority QWK | 0.517 [0.347, 0.647] | 0.371 [0.205, 0.504] | 0.534 [0.359, 0.664] | 0.549 [0.385, 0.668] |
-| Priority MAE (lower is better) | 0.830 [0.700, 0.970] | 0.910 [0.770, 1.060] | 0.790 [0.650, 0.930] | 0.690 [0.550, 0.830] |
+| Priority QWK | 0.532 [0.365, 0.660] | 0.385 [0.219, 0.526] | 0.542 [0.366, 0.672] | 0.544 [0.385, 0.663] |
+| Priority MAE (lower is better) | 0.800 [0.660, 0.950] | 0.880 [0.740, 1.030] | 0.780 [0.640, 0.920] | 0.720 [0.580, 0.860] |
 | Register accuracy | 0.850 [0.780, 0.910] | 0.850 [0.780, 0.910] | 0.850 [0.780, 0.910] | 0.850 [0.780, 0.910] |
 | Register macro-F1 | 0.846 [0.766, 0.910] | 0.846 [0.766, 0.910] | 0.846 [0.766, 0.910] | 0.846 [0.766, 0.910] |
 | TASK span F1 | 0.383 [0.250, 0.520] | 0.383 [0.250, 0.520] | 0.383 [0.250, 0.520] | 0.356 [0.264, 0.452] |
@@ -50,8 +53,8 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 | metric | B1 | B2 | B3 | B4 |
 |---|---|---|---|---|
 | Category macro-F1 | 0.765 [0.573, 0.883] | 0.456 [0.238, 0.578] | 0.806 [0.628, 0.917] | 0.806 [0.628, 0.917] |
-| Priority exact | 0.324 [0.176, 0.471] | 0.206 [0.088, 0.353] | 0.324 [0.176, 0.471] | 0.500 [0.353, 0.676] |
-| Priority QWK | 0.489 [0.145, 0.715] | 0.390 [0.059, 0.596] | 0.489 [0.145, 0.715] | 0.575 [0.258, 0.783] |
+| Priority exact | 0.353 [0.206, 0.500] | 0.235 [0.088, 0.382] | 0.353 [0.206, 0.500] | 0.471 [0.324, 0.647] |
+| Priority QWK | 0.505 [0.166, 0.725] | 0.405 [0.068, 0.615] | 0.505 [0.166, 0.725] | 0.569 [0.258, 0.779] |
 | Register accuracy | 0.824 [0.706, 0.941] | 0.824 [0.706, 0.941] | 0.824 [0.706, 0.941] | 0.824 [0.706, 0.941] |
 | Span micro-F1 | 0.471 [0.316, 0.623] | 0.471 [0.316, 0.623] | 0.471 [0.316, 0.623] | 0.491 [0.360, 0.595] |
 | Resolved-date accuracy (end to end) | 0.640 [0.448, 0.826] | 0.640 [0.448, 0.826] | 0.640 [0.448, 0.826] | 0.680 [0.500, 0.862] |
@@ -61,8 +64,8 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 | metric | B1 | B2 | B3 | B4 |
 |---|---|---|---|---|
 | Category macro-F1 | 0.726 [0.507, 0.843] | 0.208 [0.071, 0.292] | 0.785 [0.594, 0.902] | 0.785 [0.594, 0.902] |
-| Priority exact | 0.333 [0.182, 0.485] | 0.303 [0.151, 0.455] | 0.364 [0.212, 0.516] | 0.424 [0.242, 0.606] |
-| Priority QWK | 0.525 [0.181, 0.742] | 0.327 [0.035, 0.574] | 0.562 [0.215, 0.776] | 0.609 [0.399, 0.764] |
+| Priority exact | 0.364 [0.212, 0.515] | 0.333 [0.181, 0.515] | 0.394 [0.212, 0.576] | 0.394 [0.242, 0.576] |
+| Priority QWK | 0.540 [0.209, 0.756] | 0.342 [0.042, 0.598] | 0.577 [0.244, 0.788] | 0.601 [0.395, 0.758] |
 | Register accuracy | 0.909 [0.818, 1.000] | 0.909 [0.818, 1.000] | 0.909 [0.818, 1.000] | 0.909 [0.818, 1.000] |
 | Span micro-F1 | 0.427 [0.297, 0.554] | 0.427 [0.297, 0.554] | 0.427 [0.297, 0.554] | 0.429 [0.292, 0.565] |
 | Resolved-date accuracy (end to end) | 0.435 [0.240, 0.647] | 0.435 [0.240, 0.647] | 0.435 [0.240, 0.647] | 0.522 [0.318, 0.727] |
@@ -72,8 +75,8 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 | metric | B1 | B2 | B3 | B4 |
 |---|---|---|---|---|
 | Category macro-F1 | 0.684 [0.469, 0.812] | 0.083 [0.000, 0.167] | 0.722 [0.496, 0.854] | 0.722 [0.496, 0.854] |
-| Priority exact | 0.333 [0.182, 0.485] | 0.424 [0.242, 0.606] | 0.394 [0.242, 0.576] | 0.424 [0.273, 0.606] |
-| Priority QWK | 0.538 [0.214, 0.748] | 0.384 [0.072, 0.653] | 0.559 [0.223, 0.773] | 0.465 [0.207, 0.653] |
+| Priority exact | 0.364 [0.212, 0.515] | 0.455 [0.273, 0.636] | 0.364 [0.212, 0.545] | 0.394 [0.242, 0.576] |
+| Priority QWK | 0.553 [0.238, 0.763] | 0.396 [0.082, 0.661] | 0.550 [0.216, 0.766] | 0.464 [0.220, 0.648] |
 | Register accuracy | 0.818 [0.667, 0.939] | 0.818 [0.667, 0.939] | 0.818 [0.667, 0.939] | 0.818 [0.667, 0.939] |
 | Span micro-F1 | 0.390 [0.261, 0.523] | 0.390 [0.261, 0.523] | 0.390 [0.261, 0.523] | 0.313 [0.212, 0.407] |
 | Resolved-date accuracy (end to end) | 0.318 [0.130, 0.500] | 0.318 [0.130, 0.500] | 0.318 [0.130, 0.500] | 0.409 [0.210, 0.615] |
@@ -82,10 +85,10 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 
 | metric | B1 | B3 | B4 |
 |---|---|---|---|
-| Priority exact | 0.330 [0.240, 0.430] | 0.360 [0.270, 0.450] | 0.450 [0.360, 0.550] |
+| Priority exact | 0.360 [0.270, 0.450] | 0.370 [0.280, 0.460] | 0.420 [0.330, 0.520] |
 | Priority within 1 | 0.870 [0.800, 0.930] | 0.880 [0.810, 0.930] | 0.870 [0.800, 0.930] |
-| Priority QWK | 0.517 [0.347, 0.647] | 0.534 [0.359, 0.664] | 0.549 [0.385, 0.668] |
-| Priority MAE (lower is better) | 0.830 [0.700, 0.970] | 0.790 [0.650, 0.930] | 0.690 [0.550, 0.830] |
+| Priority QWK | 0.532 [0.365, 0.660] | 0.542 [0.366, 0.672] | 0.544 [0.385, 0.663] |
+| Priority MAE (lower is better) | 0.800 [0.660, 0.950] | 0.780 [0.640, 0.920] | 0.720 [0.580, 0.860] |
 
 ## B4 category confusion matrix (test)
 
@@ -113,7 +116,7 @@ Computed deterministically from resolved DATE times and the busy intervals.
 ## Error analysis (B4, test)
 
 - Category errors: 23 of 100. Most frequent confusions: school -> work_tasks (5), meetings -> work_tasks (3), job_search -> meetings (3), promotions -> job_search (2).
-- Priority: 34 emails predicted too high, 21 too low; mean signed error +0.21 levels.
+- Priority: 37 emails predicted too high, 21 too low; mean signed error +0.24 levels.
 - Register errors: 15 of 100; by language en 6/34, mixed 3/33, tl 6/33.
 - Emails with at least one span error: 84 of 100; by language en 27/34, mixed 26/33, tl 31/33.
 
