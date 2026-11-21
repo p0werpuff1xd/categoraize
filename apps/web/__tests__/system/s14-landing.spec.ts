@@ -1,16 +1,21 @@
 import { expect, test } from "@playwright/test";
 
 // S14 Landing page: links, dead pages, nav/footer, auth redirects (signed out).
-// The landing route "/" sends signed-out visitors to /login, so /login is the
-// landing page; /privacy and /terms are the public pages it links to.
-const PUBLIC_PAGES = ["/login", "/privacy", "/terms"];
+// Signed-out visitors at "/" see the CategorAIze landing page, which links to
+// sign-in; /login, /privacy and /terms are the other public pages.
+const PUBLIC_PAGES = ["/", "/login", "/privacy", "/terms"];
 
-test("S14-01 signed-out visitor at / lands on the sign-in page", async ({
+test("S14-01 signed-out visitor at / sees the landing page with sign-in", async ({
   page,
 }) => {
   const response = await page.goto("/");
   expect(response?.ok()).toBe(true);
-  await expect(page).toHaveURL(/\/login(\?|$)/);
+  await expect(page).toHaveURL(/\/$/);
+  const signIn = page.getByRole("link", { name: /sign in/i }).first();
+  await expect(signIn).toBeVisible();
+  await signIn.click();
+  await expect(page).toHaveURL(/\/login/);
+  await page.goto("/");
   await page.screenshot({
     path: test.info().outputPath("landing.png"),
     fullPage: true,
