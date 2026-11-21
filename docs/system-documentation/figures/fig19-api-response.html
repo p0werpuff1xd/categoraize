@@ -1,0 +1,132 @@
+<html><head><meta charset='utf-8'><style>
+body{margin:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#1f1f1e}
+.card{display:inline-block;padding:18px 22px;border:1px solid #e6e5e0;border-radius:8px;margin:12px}
+h1{font-size:15px;margin:0 0 10px}
+pre{font:12.5px/1.45 Consolas,'Courier New',monospace;margin:0;white-space:pre-wrap;max-width:880px}
+table{border-collapse:collapse;font-size:12.5px;max-width:1150px}
+th,td{border:1px solid #e6e5e0;padding:7px 9px;vertical-align:top;text-align:left}
+th{background:#f5f5f2}
+.k{color:#5f5e58}.tag{display:inline-block;border-radius:4px;padding:1px 6px;margin:1px;font-size:11.5px}
+.TASK{background:#e3ecfb;color:#1c4f95}.DATE{background:#fdebd9;color:#8a3d12}
+.none{color:#8a3d12;font-weight:bold}
+</style></head><body><div class='card' id='fig'><h1>POST /api/v1/classify &nbsp;→&nbsp; HTTP 200 (production NLP service, synthetic Taglish email)</h1><pre>{
+  &quot;email_id&quot;: &quot;sample-taglish-001&quot;,
+  &quot;language&quot;: &quot;mixed&quot;,
+  &quot;category&quot;: null,
+  &quot;ranked&quot;: [
+    {
+      &quot;id&quot;: &quot;personal&quot;,
+      &quot;similarity&quot;: 0.2961179990909443
+    },
+    {
+      &quot;id&quot;: &quot;meetings&quot;,
+      &quot;similarity&quot;: 0.27271375716672414
+    },
+    {
+      &quot;id&quot;: &quot;work_tasks&quot;,
+      &quot;similarity&quot;: 0.24069317197854181
+    },
+    &quot;... 5 more categories&quot;
+  ],
+  &quot;threshold&quot;: 0.35,
+  &quot;spans&quot;: [
+    {
+      &quot;label&quot;: &quot;TASK&quot;,
+      &quot;text&quot;: &quot;Paki-review ng Q4 report&quot;,
+      &quot;source&quot;: &quot;subject&quot;,
+      &quot;start&quot;: 0,
+      &quot;end&quot;: 24,
+      &quot;resolved&quot;: null,
+      &quot;ambiguous&quot;: false,
+      &quot;is_deadline&quot;: false,
+      &quot;tagger&quot;: &quot;bilstm_crf&quot;
+    },
+    {
+      &quot;label&quot;: &quot;TASK&quot;,
+      &quot;text&quot;: &quot;paki-review naman ng Q4 sales report&quot;,
+      &quot;source&quot;: &quot;body&quot;,
+      &quot;start&quot;: 8,
+      &quot;end&quot;: 44,
+      &quot;resolved&quot;: null,
+      &quot;ambiguous&quot;: false,
+      &quot;is_deadline&quot;: false,
+      &quot;tagger&quot;: &quot;bilstm_crf&quot;
+    },
+    {
+      &quot;label&quot;: &quot;DATE&quot;,
+      &quot;text&quot;: &quot;Friday 5 PM&quot;,
+      &quot;source&quot;: &quot;body&quot;,
+      &quot;start&quot;: 54,
+      &quot;end&quot;: 65,
+      &quot;resolved&quot;: &quot;2026-11-20T17:00:00+08:00&quot;,
+      &quot;ambiguous&quot;: false,
+      &quot;is_deadline&quot;: true,
+      &quot;tagger&quot;: &quot;bilstm_crf&quot;
+    },
+    {
+      &quot;label&quot;: &quot;DATE&quot;,
+      &quot;text&quot;: &quot;sa Monday&quot;,
+      &quot;source&quot;: &quot;body&quot;,
+      &quot;start&quot;: 111,
+      &quot;end&quot;: 120,
+      &quot;resolved&quot;: &quot;2026-11-23T17:00:00+08:00&quot;,
+      &quot;ambiguous&quot;: true,
+      &quot;is_deadline&quot;: true,
+      &quot;tagger&quot;: &quot;bilstm_crf&quot;
+    }
+  ],
+  &quot;priority&quot;: {
+    &quot;level&quot;: 5,
+    &quot;factors&quot;: {
+      &quot;category_base&quot;: 3,
+      &quot;deadline&quot;: 0,
+      &quot;sender_role&quot;: 1,
+      &quot;calendar&quot;: 1,
+      &quot;vip_pin&quot;: 0
+    },
+    &quot;deadline&quot;: &quot;2026-11-20T17:00:00+08:00&quot;
+  },
+  &quot;learned_priority&quot;: {
+    &quot;level&quot;: 5,
+    &quot;model_level&quot;: 5,
+    &quot;category_offset&quot;: 0,
+    &quot;why&quot;: [
+      {
+        &quot;factor&quot;: &quot;sender role&quot;,
+        &quot;contribution&quot;: 1.5863
+      },
+      {
+        &quot;factor&quot;: &quot;has a task&quot;,
+        &quot;contribution&quot;: 1.4667
+      },
+      {
+        &quot;factor&quot;: &quot;deadline proximity&quot;,
+        &quot;contribution&quot;: 0.1557
+      }
+    ],
+    &quot;guardrails&quot;: []
+  },
+  &quot;sender_register&quot;: {
+    &quot;value&quot;: &quot;neutral&quot;,
+    &quot;source&quot;: &quot;rules&quot;
+  },
+  &quot;pii_masked&quot;: {
+    &quot;phone&quot;: 0,
+    &quot;card&quot;: 0,
+    &quot;gov_id&quot;: 0
+  },
+  &quot;embedding&quot;: [
+    -0.0461,
+    0.0457,
+    -0.0096,
+    0.0182,
+    -0.0472,
+    &quot;... 379 more values&quot;
+  ],
+  &quot;timings_ms&quot;: {
+    &quot;embed&quot;: 585.34,
+    &quot;classify&quot;: 2.4,
+    &quot;tagging&quot;: 12.96,
+    &quot;total&quot;: 602.83
+  }
+}</pre></div></body></html>

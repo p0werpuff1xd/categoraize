@@ -1,0 +1,21 @@
+flowchart TD
+  a([New email arrives in Gmail or Outlook]) --> b[Provider push notification<br/>reaches the web app webhook]
+  b --> c{User accepted the Terms<br/>and Privacy Notice?}
+  c -- no --> z1([Mail is not read])
+  c -- yes --> d[Fetch subject and body<br/>through the provider API]
+  d --> e[Mask PII<br/>emails, phone numbers, IDs, cards]
+  e --> f[Load context: categories and centroids,<br/>sender role and VIP flag, calendar busy times]
+  f --> g["POST /api/v1/classify to the NLP service"]
+  g --> h[Language detection and normalization]
+  h --> i[mSBERT embedding and<br/>cosine ranking, threshold 0.35]
+  h --> j[Bi-LSTM-CRF TASK and DATE spans<br/>and date resolution]
+  i --> k[Priority P1 to P5<br/>learned model + guardrails]
+  j --> k
+  j --> l[Calendar conflict check]
+  l --> k
+  k --> m[Encrypt and store the classification<br/>and spans under row-level security]
+  m --> n[Apply the label in the mailbox<br/>and show the email in the Priority Inbox]
+  n --> o{User corrects the category<br/>or priority?}
+  o -- yes --> p["POST /api/v1/feedback<br/>Rocchio centroid update"]
+  p --> f
+  o -- no --> q([Done])

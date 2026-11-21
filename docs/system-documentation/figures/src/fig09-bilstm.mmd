@@ -1,0 +1,13 @@
+flowchart TD
+  a[Tokenized email<br/>subject + body] --> b[Word embedding, 100-d]
+  a --> c[Character CNN<br/>30-d characters, 50 filters]
+  a --> d[Casing features, 4-d]
+  b --> e[Concatenate]
+  c --> e
+  d --> e
+  e --> f[Bi-LSTM, hidden 128<br/>dropout 0.5]
+  f --> g[CRF layer:<br/>best BIO tag sequence]
+  g --> h[Decode spans<br/>B-TASK I-TASK, B-DATE I-DATE]
+  h --> i[TASK spans:<br/>action items]
+  h --> j[DATE spans to the date normalizer:<br/>resolved time, ambiguous flag,<br/>is_deadline]
+  j --> k([Deadline proximity for priority<br/>and the calendar conflict check])

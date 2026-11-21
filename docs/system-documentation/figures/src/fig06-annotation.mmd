@@ -1,0 +1,15 @@
+flowchart TD
+  a[Define 8 categories and<br/>labeling guideline v1.0] --> b[Write templates and seeds<br/>in English, Filipino, Taglish]
+  b --> c[Generate the synthetic train set<br/>300 emails, template-based]
+  b --> d[Team writes the dev and test sets<br/>30 + 100 hand-written emails]
+  c --> e[AI-assisted gold labels:<br/>category, priority, register,<br/>TASK and DATE spans, calendar]
+  d --> e
+  e --> f[Second labeler labels the<br/>test set blind]
+  f --> g[Cohen kappa and<br/>weighted kappa computed]
+  g --> h{Disagreements}
+  h -- "adjudicated per guideline" --> i[3 gold priorities<br/>corrected from 3 to 2]
+  i --> j[(Frozen splits<br/>train, dev, test)]
+  h -- "accepted" --> j
+  j --> k[Dev: every tuning choice]
+  j --> l[Test: final evaluation only]
+  x[No real user mail is used<br/>Google API Limited Use] -.-> c

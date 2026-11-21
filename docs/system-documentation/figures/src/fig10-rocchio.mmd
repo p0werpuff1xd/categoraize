@@ -1,0 +1,11 @@
+flowchart TD
+  a([User corrects a category<br/>or confirms one]) --> b["Web app sends the email embedding e,<br/>the correct centroid c+, the wrong centroid c-"]
+  b --> c["POST /api/v1/feedback"]
+  c --> d{Correct and wrong<br/>categories differ?}
+  d -- no --> x([Rejected with HTTP 422])
+  d -- yes --> e["c+ = normalize(c+ + α(e - c+)), α = 0.20"]
+  e --> f["c- = normalize(c- - β(e - c-)), β = 0.15"]
+  f --> g[Return unit-length centroids]
+  g --> h[("Store this user's centroids,<br/>version + 1, under RLS")]
+  h --> i([The next classification for this user<br/>uses the updated centroids])
+  y[Other users' centroids<br/>are never touched] -.-> h

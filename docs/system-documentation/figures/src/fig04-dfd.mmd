@@ -1,0 +1,32 @@
+flowchart LR
+  U[/"User"/]
+  P[/"Email provider<br/>Gmail, Outlook"/]
+  C[/"Calendar provider"/]
+  N[/"NLP service"/]
+  p1(("1.0<br/>Authenticate<br/>and consent"))
+  p2(("2.0<br/>Ingest and<br/>mask email"))
+  p3(("3.0<br/>Classify, extract,<br/>prioritize"))
+  p4(("4.0<br/>Present triage<br/>and tasks"))
+  p5(("5.0<br/>Learn from<br/>feedback"))
+  d1[("D1 Users, accounts,<br/>consents")]
+  d2[("D2 Classifications<br/>and spans, encrypted")]
+  d3[("D3 Categories<br/>and centroids")]
+  d4[("D4 Audit log")]
+  U -- "OAuth sign-in, consent" --> p1
+  p1 --> d1
+  p1 --> d4
+  P -- "new-message notification, message" --> p2
+  d1 -- "consent status" --> p2
+  p2 -- "masked text" --> p3
+  C -- "busy times" --> p3
+  d3 -- "descriptions, centroids" --> p3
+  p3 -- "classify request" --> N
+  N -- "category, spans, priority" --> p3
+  p3 --> d2
+  d2 --> p4
+  p4 -- "ranked inbox, task sheet" --> U
+  U -- "correction, rating" --> p5
+  p5 -- "feedback request" --> N
+  N -- "updated centroids" --> p5
+  p5 --> d3
+  p5 --> d4

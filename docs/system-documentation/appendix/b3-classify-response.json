@@ -1,0 +1,141 @@
+{
+  "email_id": "sample-taglish-001",
+  "language": "mixed",
+  "category": null,
+  "ranked": [
+    {
+      "id": "personal",
+      "similarity": 0.2961179990909443
+    },
+    {
+      "id": "meetings",
+      "similarity": 0.27271375716672414
+    },
+    {
+      "id": "work_tasks",
+      "similarity": 0.24069317197854181
+    },
+    {
+      "id": "alerts",
+      "similarity": 0.23043667187413283
+    },
+    {
+      "id": "promotions",
+      "similarity": 0.2168097231676835
+    },
+    {
+      "id": "school",
+      "similarity": 0.20684815046266472
+    },
+    {
+      "id": "finance_billing",
+      "similarity": 0.17271627065156547
+    },
+    {
+      "id": "job_search",
+      "similarity": 0.1328148504089022
+    }
+  ],
+  "threshold": 0.35,
+  "suggested_label": null,
+  "spans": [
+    {
+      "label": "TASK",
+      "text": "Paki-review ng Q4 report",
+      "source": "subject",
+      "start": 0,
+      "end": 24,
+      "resolved": null,
+      "ambiguous": false,
+      "is_deadline": false,
+      "tagger": "bilstm_crf"
+    },
+    {
+      "label": "TASK",
+      "text": "paki-review naman ng Q4 sales report",
+      "source": "body",
+      "start": 8,
+      "end": 44,
+      "resolved": null,
+      "ambiguous": false,
+      "is_deadline": false,
+      "tagger": "bilstm_crf"
+    },
+    {
+      "label": "DATE",
+      "text": "Friday 5 PM",
+      "source": "body",
+      "start": 54,
+      "end": 65,
+      "resolved": "2026-11-20T17:00:00+08:00",
+      "ambiguous": false,
+      "is_deadline": true,
+      "tagger": "bilstm_crf"
+    },
+    {
+      "label": "DATE",
+      "text": "sa Monday",
+      "source": "body",
+      "start": 111,
+      "end": 120,
+      "resolved": "2026-11-23T17:00:00+08:00",
+      "ambiguous": true,
+      "is_deadline": true,
+      "tagger": "bilstm_crf"
+    }
+  ],
+  "priority": {
+    "level": 5,
+    "factors": {
+      "category_base": 3,
+      "deadline": 0,
+      "sender_role": 1,
+      "calendar": 1,
+      "vip_pin": 0
+    },
+    "deadline": "2026-11-20T17:00:00+08:00"
+  },
+  "embedding": [
+    -0.0461,
+    0.0457,
+    -0.0096,
+    0.0182,
+    -0.0472,
+    "... 379 more values"
+  ],
+  "timings_ms": {
+    "embed": 585.34,
+    "classify": 2.4,
+    "tagging": 12.96,
+    "total": 602.83
+  },
+  "pii_masked": {
+    "phone": 0,
+    "card": 0,
+    "gov_id": 0
+  },
+  "learned_priority": {
+    "level": 5,
+    "model_level": 5,
+    "category_offset": 0,
+    "why": [
+      {
+        "factor": "sender role",
+        "contribution": 1.5863
+      },
+      {
+        "factor": "has a task",
+        "contribution": 1.4667
+      },
+      {
+        "factor": "deadline proximity",
+        "contribution": 0.1557
+      }
+    ],
+    "guardrails": []
+  },
+  "sender_register": {
+    "value": "neutral",
+    "source": "rules"
+  }
+}

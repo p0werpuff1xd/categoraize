@@ -1,0 +1,27 @@
+flowchart TB
+  user([User browser, desktop or mobile])
+  subgraph CR1["Presentation and application tier: Google Cloud Run, asia-southeast3"]
+    web["CategorAIze web app: Next.js, React, Prisma<br/>consent gate, audit log, AES-256-GCM field encryption"]
+  end
+  subgraph CR2["NLP tier: Google Cloud Run, asia-southeast1"]
+    nlp["FastAPI NLP service<br/>mSBERT MiniLM-L12 384-d, Bi-LSTM-CRF tagger v6<br/>priority model v1, register rules, Rocchio feedback"]
+  end
+  subgraph DATA["Data tier"]
+    db[("Supabase PostgreSQL + pgvector<br/>row-level security, encrypted email fields")]
+    redis[("Upstash Redis<br/>queues and caches")]
+  end
+  subgraph EXT["External services, OAuth 2.0 least-privilege scopes"]
+    gmail["Gmail and Outlook mail"]
+    cal["Google and Outlook Calendar"]
+    drive["Google Drive and OneDrive"]
+    llm["OpenRouter LLM<br/>opt-in consent only"]
+  end
+  user -- HTTPS --> web
+  web -- "HTTPS + X-Internal-Key" --> nlp
+  web <--> db
+  web <--> redis
+  web <--> gmail
+  gmail -. "push notifications" .-> web
+  web --> cal
+  web --> drive
+  web -. "drafts, Reply Zero" .-> llm

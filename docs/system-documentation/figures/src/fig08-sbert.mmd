@@ -1,0 +1,13 @@
+flowchart TD
+  a[Email text after masking<br/>and normalization] --> b[mSBERT encode to e, 384-d,<br/>L2-normalized]
+  c[Category descriptions] --> d[mSBERT encode each<br/>category description]
+  d --> e{Learned centroid<br/>available?}
+  e -- yes --> f[Use the Rocchio centroid c_k]
+  e -- no --> g[Use the description embedding]
+  f --> h["score_k = cos(e, c_k)<br/>+ keyword weight 0.3<br/>+ sender-role weight 0.02"]
+  g --> h
+  b --> h
+  h --> i[Rank all categories]
+  i --> j{"Top score at least τ = 0.35?"}
+  j -- yes --> k([Assign the top category])
+  j -- no --> l([Uncategorized:<br/>suggest a library label])

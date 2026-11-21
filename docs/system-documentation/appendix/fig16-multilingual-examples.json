@@ -1,0 +1,117 @@
+[
+  {
+    "language_sent": "en",
+    "subject": "Electricity bill due",
+    "body": "Your electricity bill of PHP 3,240.50 for November is due on November 28. Please pay on or before the due date to avoid disconnection.",
+    "language_detected": "en",
+    "category": "finance_billing",
+    "top3": [
+      [
+        "finance_billing",
+        0.356
+      ],
+      [
+        "alerts",
+        0.161
+      ],
+      [
+        "meetings",
+        0.158
+      ]
+    ],
+    "priority": 3,
+    "spans": [
+      [
+        "DATE",
+        "November"
+      ],
+      [
+        "DATE",
+        "November 28"
+      ],
+      [
+        "TASK",
+        "Please pay"
+      ]
+    ],
+    "register": "neutral"
+  },
+  {
+    "language_sent": "mixed",
+    "subject": "Interview invite",
+    "body": "Hi! Salamat sa pag-apply sa Junior Data Analyst position. Gusto ka naming i-invite sa interview sa Thursday 2 PM via Google Meet. Paki-confirm kung available ka.",
+    "language_detected": "tl",
+    "category": "job_search",
+    "top3": [
+      [
+        "job_search",
+        0.421
+      ],
+      [
+        "personal",
+        0.411
+      ],
+      [
+        "meetings",
+        0.388
+      ]
+    ],
+    "priority": 3,
+    "spans": [
+      [
+        "TASK",
+        "pag-apply sa Junior Data Analyst position"
+      ],
+      [
+        "TASK",
+        "Gusto ka naming i-invite sa interview"
+      ],
+      [
+        "DATE",
+        "sa Thursday 2 PM"
+      ]
+    ],
+    "register": "neutral"
+  },
+  {
+    "language_sent": "tl",
+    "subject": "Takdang-aralin sa Filipino",
+    "body": "Magandang araw, klase. Ipasa ang inyong sanaysay tungkol sa wika sa darating na Lunes bago mag-alas-singko ng hapon. Gng. Santos",
+    "language_detected": "tl",
+    "category": null,
+    "top3": [
+      [
+        "school",
+        0.273
+      ],
+      [
+        "personal",
+        0.269
+      ],
+      [
+        "meetings",
+        0.17
+      ]
+    ],
+    "priority": 3,
+    "spans": [
+      [
+        "TASK",
+        "Takdang-aralin sa Filipino"
+      ],
+      [
+        "TASK",
+        "Ipasa ang inyong sanaysay tungkol sa wika sa darating na"
+      ],
+      [
+        "DATE",
+        "Lunes"
+      ],
+      [
+        "DATE",
+        "alas-singko ng hapon"
+      ]
+    ],
+    "register": "formal"
+  }
+]

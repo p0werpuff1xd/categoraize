@@ -1,0 +1,201 @@
+erDiagram
+  User {
+    string id PK
+    datetime createdAt
+    string name
+    string email
+  }
+  Account {
+    string id PK
+    string userId FK
+    string provider
+  }
+  EmailAccount {
+    string id PK
+    string email
+    string timezone
+    string userId FK
+    string accountId FK
+  }
+  Category {
+    string id PK
+    string name
+    string emailAccountId FK
+  }
+  CategorizeCategory {
+    string id PK
+    datetime createdAt
+    datetime updatedAt
+    string name
+    string description
+    string color
+    string icon
+    string aiInstructions
+    int priorityWeight
+    int basePriority
+    bool isDefault
+    string emailAccountId FK
+    vector centroidEmbedding
+    vector originalEmbedding
+  }
+  CategorizeClassification {
+    string id PK
+    datetime createdAt
+    datetime updatedAt
+    string threadId
+    string messageId
+    string emailAccountId FK
+    string categoryId FK
+    string categoryName
+    float confidence
+    enum priority
+    string priorityBand
+    float priorityScore
+    int urgency
+    int importance
+  }
+  CategorizeExtractedSpan {
+    string id PK
+    datetime createdAt
+    datetime updatedAt
+    enum label
+    string text
+    string source
+    int start
+    int end
+    datetime resolvedAt
+    bool ambiguous
+    bool isDeadline
+    bool confirmed
+    datetime dismissedAt
+    string tagger
+  }
+  CategorizeContact {
+    string id PK
+    datetime createdAt
+    datetime updatedAt
+    string email
+    string name
+    enum role
+    bool isVip
+    string emailAccountId FK
+  }
+  CategorizeFeedbackEvent {
+    string id PK
+    datetime createdAt
+    string fromCategoryId
+    string toCategoryId
+    string classificationId FK
+    string emailAccountId FK
+  }
+  CategorizePriorityOverrideLog {
+    string id PK
+    datetime createdAt
+    string sender
+    int computedPriority
+    int manualPriority
+    bool isAccurate
+    string categoryId FK
+    string classificationId FK
+    string emailAccountId FK
+  }
+  CategorizeSenderCategoryCentroid {
+    string id PK
+    datetime updatedAt
+    vector centroid
+    int centroidVersion
+    string categoryId FK
+    string emailAccountId FK
+  }
+  CategorizeSenderEmbedding {
+    string id PK
+    datetime updatedAt
+    string sender
+    vector embedding
+    string learnedCategoryId
+    string emailAccountId FK
+  }
+  CategorizeProposalDecision {
+    string id PK
+    datetime createdAt
+    string key
+    bool accepted
+    string emailAccountId FK
+  }
+  CategorizeUserConsent {
+    string id PK
+    datetime createdAt
+    string termsVersion
+    string privacyVersion
+    datetime acceptedAt
+    bool externalLlmEnabled
+    datetime withdrawnAt
+    string userId FK
+  }
+  CategorizeUserSettings {
+    string id PK
+    datetime createdAt
+    datetime updatedAt
+    bool piiMaskingEnabled
+    string userId FK
+  }
+  CategorizeAuditEvent {
+    string id PK
+    datetime createdAt
+    string eventType
+    string userId
+    string emailAccountId
+    json metadata
+  }
+  CategorizeDeadlineAlert {
+    string id PK
+    datetime createdAt
+    datetime updatedAt
+    string threadId
+    string messageId
+    string title
+    string description
+    string sourceText
+    datetime dueDate
+    string timezone
+    float confidence
+    bool needsReview
+    datetime confirmedAt
+    enum priority
+  }
+  CategorizeNotification {
+    string id PK
+    datetime createdAt
+    enum type
+    string title
+    string message
+    bool read
+    string threadId
+    string messageId
+    string emailAccountId FK
+    string deadlineAlertId FK
+  }
+  User ||--o{ Account : "user"
+  User ||--o{ EmailAccount : "user"
+  Account ||--o{ EmailAccount : "account"
+  EmailAccount ||--o{ Category : "emailAccount"
+  EmailAccount ||--o{ CategorizeCategory : "emailAccount"
+  EmailAccount ||--o{ CategorizeClassification : "emailAccount"
+  CategorizeCategory ||--o{ CategorizeClassification : "category"
+  CategorizeClassification ||--o{ CategorizeExtractedSpan : "classification"
+  EmailAccount ||--o{ CategorizeExtractedSpan : "emailAccount"
+  EmailAccount ||--o{ CategorizeContact : "emailAccount"
+  CategorizeClassification ||--o{ CategorizeFeedbackEvent : "classification"
+  EmailAccount ||--o{ CategorizeFeedbackEvent : "emailAccount"
+  CategorizeCategory ||--o{ CategorizePriorityOverrideLog : "category"
+  CategorizeClassification ||--o{ CategorizePriorityOverrideLog : "classification"
+  EmailAccount ||--o{ CategorizePriorityOverrideLog : "emailAccount"
+  Category ||--o{ CategorizeSenderCategoryCentroid : "category"
+  EmailAccount ||--o{ CategorizeSenderCategoryCentroid : "emailAccount"
+  EmailAccount ||--o{ CategorizeSenderEmbedding : "emailAccount"
+  EmailAccount ||--o{ CategorizeProposalDecision : "emailAccount"
+  User ||--o{ CategorizeUserConsent : "user"
+  User ||--o{ CategorizeUserSettings : "user"
+  EmailAccount ||--o{ CategorizeDeadlineAlert : "emailAccount"
+  EmailAccount ||--o{ CategorizeNotification : "emailAccount"
+  CategorizeDeadlineAlert ||--o{ CategorizeNotification : "deadlineAlert"

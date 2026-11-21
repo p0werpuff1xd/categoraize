@@ -1,0 +1,15 @@
+flowchart LR
+  in["Masked subject + body<br/>sender role, VIP flag<br/>categories, calendar"] --> lang[Language detection<br/>en, tl, mixed]
+  lang --> norm[Taglish normalizer<br/>paki-, po and opo, time words]
+  norm --> emb[mSBERT encoder<br/>paraphrase-multilingual-<br/>MiniLM-L12-v2, 384-d]
+  emb --> cls[Cosine ranking against<br/>category centroids<br/>+ keyword and role weights]
+  norm --> tag[Bi-LSTM-CRF tagger v6<br/>word + char-CNN + casing]
+  tag --> dates[Date normalizer<br/>Asia/Manila resolution]
+  dates --> conf[Calendar conflict<br/>start inclusive, end exclusive]
+  cls --> pri[Priority model v1<br/>+ guardrails]
+  dates --> pri
+  conf --> pri
+  norm --> reg[Register rules<br/>formal, neutral, casual]
+  cls --> out["Response: category, ranked list,<br/>spans, priority P1 to P5 with reasons,<br/>register, embedding"]
+  pri --> out
+  reg --> out

@@ -1,0 +1,10 @@
+flowchart TD
+  a[DATE span resolved to a<br/>deadline instant, Asia/Manila] --> b{Ambiguous or<br/>date-only?}
+  b -- yes --> z([No conflict counted<br/>and no urgency boost])
+  b -- no --> c[Fetch busy periods for the next<br/>14 days from connected calendars]
+  c --> d{Calendar connected<br/>and reachable?}
+  d -- no --> y([No boost: a missing calendar<br/>never lowers priority])
+  d -- yes --> e{"start ≤ deadline < end<br/>for any busy period?"}
+  e -- no --> w([No conflict])
+  e -- yes --> f[Conflict: calendar factor +1]
+  f --> g([Conflict badge shown on the email])
