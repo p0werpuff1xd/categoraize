@@ -15,7 +15,7 @@ export default async function CategoraizeContactsPage({
     <PageWrapper>
       <PageHeader
         title="Contacts"
-        description="Set a sender's role or mark them VIP. Priority uses both: Director/Executive +2, Manager +1, and a VIP is raised to at least P4. Changes re-score that sender's emails."
+        description="Set a sender's role or mark them VIP. Priority uses both: Key people +2, Important +1, and a VIP is raised to at least P4. Changes re-score that sender's emails."
       />
       <ContactsTable />
     </PageWrapper>

@@ -31,10 +31,10 @@ type Role = NonNullable<Contact["role"]>;
 
 const ROLE_OPTIONS: Array<{ value: Role | "none"; label: string }> = [
   { value: "none", label: "No role" },
-  { value: "DIRECTOR_EXECUTIVE", label: "Director/Executive (+2)" },
-  { value: "MANAGER", label: "Manager (+1)" },
-  { value: "DIRECT_REPORT", label: "Direct report" },
-  { value: "EXTERNAL_VENDOR", label: "External vendor" },
+  { value: "DIRECTOR_EXECUTIVE", label: "Key people (+2)" },
+  { value: "MANAGER", label: "Important (+1)" },
+  { value: "DIRECT_REPORT", label: "Regular contact" },
+  { value: "EXTERNAL_VENDOR", label: "Vendor / service" },
 ];
 
 const PAGE_SIZE = 50;
