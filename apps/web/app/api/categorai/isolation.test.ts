@@ -139,6 +139,10 @@ describe("CategorAIze API routes: tenant isolation", () => {
       models[model].groupBy.mockResolvedValue([]);
     }
     prisma.$queryRaw.mockResolvedValue([] as never);
+    // getActiveConsent reads inside an explicit transaction (set_config first).
+    prisma.$transaction.mockImplementation(((fn: unknown) =>
+      typeof fn === "function" ? fn(prisma) : Promise.all(fn as never[])) as never);
+    prisma.$executeRaw.mockResolvedValue(0 as never);
   });
 
   describe.each(ROUTES)("%s", (path, handler, method) => {
@@ -186,6 +190,9 @@ describe("User-level CategorAIze routes read only the session user", () => {
         : [{ id: "acc-b", email: "b@example.com" }]) as never);
     prisma.categorizeAuditEvent.findMany.mockResolvedValue([]);
     prisma.categorizeUserConsent.findFirst.mockResolvedValue(null);
+    prisma.$transaction.mockImplementation(((fn: unknown) =>
+      typeof fn === "function" ? fn(prisma) : Promise.all(fn as never[])) as never);
+    prisma.$executeRaw.mockResolvedValue(0 as never);
   });
 
   it("security log only asks for the user's own events and accounts", async () => {
