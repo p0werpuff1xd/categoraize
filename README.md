@@ -1,127 +1,196 @@
-[![](apps/web/app/opengraph-image.jpg)](https://www.getinboxzero.com)
+# CategorAIze
 
-<p align="center">
-  <a href="https://www.getinboxzero.com">
-    <h1 align="center">Inbox Zero - your 24/7 AI email assistant</h1>
-  </a>
-  <p align="center">
-    Organizes your inbox, pre-drafts replies, manages your calendar, and organizes attachments. Chat with it from Slack or Telegram to manage your inbox on the go. Open source alternative to Fyxer, but more customizable and secure.
-    <br />
-    <a href="https://www.getinboxzero.com">Website</a>
-    ·
-    <a href="https://www.getinboxzero.com/discord">Discord</a>
-    ·
-    <a href="https://github.com/elie222/inbox-zero/issues">Issues</a>
-  </p>
-</p>
+**A multilingual email categorization system for Filipino professionals.**
 
-<div align="center">
+CategorAIze is a fork of [Inbox Zero](https://github.com/elie222/inbox-zero) extended with a multilingual NLP service for the code-switched email (English, Taglish, Filipino) that Filipino professionals send and receive. It categorizes incoming Gmail messages into eight semantic categories, extracts task and deadline spans, and adapts to individual users through relevance feedback.
 
-![Stars](https://img.shields.io/github/stars/elie222/inbox-zero?labelColor=black&style=for-the-badge&color=2563EB)
-![Forks](https://img.shields.io/github/forks/elie222/inbox-zero?labelColor=black&style=for-the-badge&color=2563EB)
+> Developed as a Software Engineering capstone project at De La Salle University – Dasmariñas.
+> **Gutierrez, Kristine Ianne Marie P. · Quidit, Lauren Jade P. · Santos, Andjhelyn Denielle E.**
 
-<a href="https://trendshift.io/repositories/6400" target="_blank"><img src="https://trendshift.io/api/badge/repositories/6400" alt="elie222%2Finbox-zero | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+---
 
-[![Sponsor](https://readme.cash/i/hg3bchcqpo.svg)](https://readme.cash/c/hg3bchcqpo)
+## What CategorAIze adds to Inbox Zero
 
-[![Vercel OSS Program](https://vercel.com/oss/program-badge.svg)](https://vercel.com/oss)
+| Feature | Inbox Zero (upstream) | CategorAIze (this repo) |
+|---|---|---|
+| Email categorization | Gmail's built-in tabs and AI rules | Zero-shot SBERT embeddings scored against per-category centroids (`fastapi_core/app/algorithms/cosine_similarity.py`) |
+| Languages | English-dominant | Language tagging for `en`, `tl`, `taglish` via lexical markers (`fastapi_core/app/nlp/preprocessing.py`) |
+| Deadline and instruction extraction | None | Rule-based extractor for relative (e.g. "tomorrow", "bukas") and explicit month-day dates (`fastapi_core/app/nlp/extraction.py`) |
+| Personalization | None | Rocchio relevance feedback, stateless endpoint (`fastapi_core/app/algorithms/rocchio.py`) |
+| Priority scoring | None | Weighted heuristic over urgency, deadline, sender, and calendar factors (`fastapi_core/app/algorithms/priority_scoring.py`) |
+| Client integration | None | Typed client in `apps/web/utils/nlp/client.ts` |
 
-</div>
+---
 
-## Mission
+## The Eight Categories
 
-To help you spend less time in your inbox, so you can focus on what matters most.
+| Label | Description |
+|---|---|
+| `work_tasks` | Action items, deliverables, project work |
+| `meetings` | Invitations, scheduling, calendar events |
+| `school` | Academic correspondence, deadlines, enrollment |
+| `job_search` | Applications, interviews, HR communications |
+| `finance_billing` | Invoices, payments, bank and government fees |
+| `promotions` | Marketing, newsletters, offers |
+| `alerts` | System notifications, security alerts, service updates |
+| `personal` | Personal correspondence and everything else |
 
-## Features
+The service is stateless: the category set, with each category's embedding vector, is sent in each classification request. Category descriptions are the intended source for those vectors. Users cannot rename or add categories.
 
-- **AI Personal Assistant:** Organizes your inbox and pre-drafts replies in your tone and style.
-- **AI Rules for email:** Explain in plain English how your AI should handle your inbox.
-- **Reply Zero:** Track emails to reply to and those awaiting responses.
-- **Bulk Unsubscriber:** One-click unsubscribe and archive emails you never read.
-- **Bulk Archiver:** Clean up your inbox by bulk archiving old emails.
-- **Cold Email Blocker:** Auto‑block cold emails.
-- **Email Analytics:** Track your activity and trends over time.
-- **Meeting Briefs:** Get personalized briefings before every meeting, pulling context from your email and calendar.
-- **Smart Filing:** Automatically save email attachments to Google Drive or OneDrive.
-- **Slack & Telegram Integration:** Chat with your AI assistant from Slack or Telegram to manage your inbox without leaving the apps you already use.
+---
 
+## Architecture
 
-Learn more in our [docs](https://docs.getinboxzero.com).
+```
+Gmail API
+    │
+    ▼
+Next.js application (apps/web)     ← inherited from Inbox Zero, extended with CategorAIze modules
+    │  Gmail OAuth 2.0
+    │  Prisma / Postgres persistence
+    │  NLP client (apps/web/utils/nlp/client.ts)
+    │
+    ▼  HTTP, bearer token (NLP_SERVICE_TOKEN)
+FastAPI intelligence service (fastapi_core)   ← stateless; holds no user data between requests
+    │  /api/v1/embed     — multilingual embeddings (SBERT, 384-d)
+    │  /api/v1/classify  — category ranking, language, deadlines, instructions, priority
+    │  /api/v1/feedback  — Rocchio centroid update
+    │
+    ▼
+Postgres (email metadata, classifications, centroids)
+Upstash Redis                 ← Gmail webhook job queue (inherited)
+```
 
-## Feature Screenshots
+The FastAPI service does not access the database, Gmail tokens, attachments, or raw unredacted email content. Next.js handles authorization, persistence, and provider mutations.
 
-| ![AI Assistant](.github/screenshots/email-assistant.png) |        ![Reply Zero](.github/screenshots/reply-zero.png)        |
-| :------------------------------------------------------: | :-------------------------------------------------------------: |
-|                      _AI Assistant_                      |                          _Reply Zero_                           |
-|  ![Gmail Client](.github/screenshots/email-client.png)   | ![Bulk Unsubscriber](.github/screenshots/bulk-unsubscriber.png) |
-|                      _Gmail client_                      |                       _Bulk Unsubscriber_                       |
+---
 
-## Demo Video
+## NLP Components
 
-[![Inbox Zero demo](https://img.youtube.com/vi/UusnveLKwWM/maxresdefault.jpg)](https://youtu.be/UusnveLKwWM)
+### 1. Embeddings and categorization
+- `paraphrase-multilingual-MiniLM-L12-v2` via `sentence-transformers`, 384-dimensional vectors, used without fine-tuning (`fastapi_core/app/services/embeddings.py`).
+- Classification ranks the email vector against each category vector by cosine similarity and returns the best match only if it clears the threshold (default τ = 0.35, set in `ClassificationRequest`).
 
-## Built with
+### 2. Rule-based extraction
+- Deadlines and instructions are extracted with deterministic rules in `fastapi_core/app/nlp/extraction.py`, resolved against the message date and the user's timezone.
+- Each candidate carries a confidence score and a `needs_review` flag.
+- The repository does not currently include a learned span tagger (BiLSTM-CRF). See *Status* below.
 
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Prisma](https://www.prisma.io/)
-- [Upstash](https://upstash.com/)
-- [Turborepo](https://turbo.build/)
-- [Popsy Illustrations](https://popsy.co/)
+### 3. Per-user Rocchio adaptation
+- Implemented in `fastapi_core/app/algorithms/rocchio.py`, exposed at `POST /api/v1/feedback`.
+- On confirmation: `c ← normalize(c + 0.20·e)`.
+- On correction: `c ← normalize(c − 0.15·e)` for the incorrect category.
+- Centroids are stored by the Next.js side and sent with each request; no model retraining is required.
 
-## Star History
+### 4. Priority scoring
+- Weighted sum of four factors, each clamped to [0, 1]: urgency 0.40, deadline 0.35, sender 0.25, calendar 0.20 (normalized to sum to 1).
+- A dampener scales the score; the score maps to levels P1–P5 (`fastapi_core/app/algorithms/priority_scoring.py`).
 
-[![Star History Chart](https://api.star-history.com/svg?repos=elie222/inbox-zero&type=Date)](https://www.star-history.com/#elie222/inbox-zero&Date)
+---
 
-## Feature Requests
+## Dataset
 
-To request a feature open a [GitHub issue](https://github.com/elie222/inbox-zero/issues), or join our [Discord](https://www.getinboxzero.com/discord).
+Synthetic training and development data lives in `fastapi_core/data/synthetic/`:
+
+| File | Lines |
+|---|---|
+| `train.jsonl` | 2,000 |
+| `dev.jsonl` | 300 |
+
+Team review material for the second-labeler agreement check is in `fastapi_core/data/categoraize-dataset/review/`.
+
+No real user email was accessed or used at any stage of the study.
+
+---
+
+## Evaluation (reported)
+
+The study reports the following on a frozen 100-email test set (34 English, 33 Taglish, 33 Filipino). **The evaluation harness, result files, and frozen split referenced by the study are not yet in this repository.** These figures are from the study write-up and have not been re-run here.
+
+| Metric | B1 (Keywords) | B3 (SBERT + centroid) | B4 (Full system) |
+|---|---|---|---|
+| Category macro-F1 | 0.725 | 0.770 | 0.770 |
+| Category accuracy | 0.680 | 0.770 | 0.770 |
+| Priority exact | 0.360 | 0.370 | 0.420 |
+| Resolved-date accuracy | 0.471 | 0.471 | 0.543 |
+| Calendar-conflict accuracy | 0.990 | 0.990 | 1.000 |
+
+Inter-annotator agreement on the same test set (blind second labeler): category Cohen's κ 0.97, priority QW-κ 0.79, register Cohen's κ 0.64.
+
+---
+
+## Repository Structure
+
+```
+.
+├── apps/
+│   ├── web/                        # Next.js application (CategorAIze + Inbox Zero)
+│   │   └── utils/nlp/              # NLP service client
+│   └── worker/                     # Background worker (inherited)
+├── fastapi_core/                   # Stateless FastAPI intelligence service
+│   ├── app/
+│   │   ├── algorithms/             # cosine_similarity, rocchio, priority_scoring
+│   │   ├── nlp/                    # preprocessing, extraction, summarizer
+│   │   ├── services/               # embeddings
+│   │   ├── main.py                 # HTTP endpoints
+│   │   └── schemas.py              # request/response models
+│   ├── data/
+│   │   ├── synthetic/              # train and dev splits
+│   │   └── categoraize-dataset/    # review material
+│   ├── tests/                      # algorithm, NLP, and summarizer tests
+│   └── pyproject.toml
+├── docs/plans/                     # implementation and deployment plans
+├── docker/                         # Dockerfiles (inherited, extended)
+├── NORTHFLANK_DEPLOYMENT.md        # deployment guide
+└── README.md                       # this file
+```
+
+---
 
 ## Getting Started
 
-We offer a hosted version of Inbox Zero at [getinboxzero.com](https://www.getinboxzero.com).
+### Intelligence service (Windows, PowerShell)
 
-### Self-Hosting
-
-The fastest way to self-host Inbox Zero is with the CLI:
-
-> **Prerequisites**: [Docker](https://docs.docker.com/engine/install/) and [Node.js](https://nodejs.org/) v24+
-
-```bash
-npx @inbox-zero/cli setup      # One-time setup wizard
-npx @inbox-zero/cli start      # Start containers
+```powershell
+cd fastapi_core
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[ml,test]"
+uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-Open http://localhost:3000
+Set `NLP_SERVICE_TOKEN` to require authenticated calls. Test the service:
 
-For complete self-hosting instructions, production deployment, OAuth setup, and configuration options, see our **[Self-Hosting Docs](https://docs.getinboxzero.com/hosting/quick-start)**.
-
-### Local Development
-
-> **Prerequisites**: macOS or Linux (WSL on Windows), [Node.js](https://nodejs.org/) v24, and the pnpm version pinned in `package.json`. Install either [Docker Desktop](https://docs.docker.com/desktop/) with Compose or native PostgreSQL and Redis. On macOS, native services can be installed with `brew install postgresql@16 redis`.
-
-```bash
-git clone https://github.com/elie222/inbox-zero.git
-cd inbox-zero
-pnpm install
-pnpm local:start
+```powershell
+cd fastapi_core
+python -m pytest
 ```
 
-Open http://localhost:3000/mail and sign in with Google as `developer@example.com`, or Microsoft as `developer@outlook.test`. The Google mailbox contains demo messages. Demo users have onboarding completed, and premium checks are bypassed for local development.
+### Web application
 
-The command starts an isolated database, Redis and its HTTP endpoint, both mail-provider emulators, billing and email-delivery emulators, an LLM emulator, and Next.js. It applies migrations and waits for services to become ready. No OAuth credentials or AI API keys are required. AI responses are canned; this mode exercises application flows, not model quality.
+Follow the upstream Inbox Zero setup guide at [docs.getinboxzero.com](https://docs.getinboxzero.com) and `AGENTS.md`. Set `NLP_SERVICE_URL` and `NLP_SERVICE_TOKEN` in `apps/web/.env` to point at the running service.
 
-Existing `.env` files are left unchanged and ignored by this launcher. Generated credentials, seed data, and the current service addresses are stored under `.context/local-dev/`. Native database data stays there; Docker database data stays in a volume unique to the checkout. Restarts preserve database data and credentials. Redis caches and provider/emulator state start fresh on each run.
+### Deployment
 
-Press **Ctrl-C** to stop the app and the services this command started. Start it again with the same command. If port 3000 is occupied, use `pnpm local:start --port 3001`. Native PostgreSQL and Redis are selected when available; use `--backend docker` or `--backend native` to select explicitly. A checkout-specific loopback port prevents concurrent launchers; the operating system releases that lock after a crash, and stale PID files are replaced automatically. Services use automatically assigned ports, so existing databases and Redis instances are not reused or stopped.
+See [NORTHFLANK_DEPLOYMENT.md](NORTHFLANK_DEPLOYMENT.md).
 
-Run `pnpm local:start --help` for options. If an unrelated process occupies the reported lock port, stop that process or use a different checkout location. PostgreSQL data must be opened with the same major version that created it. If you upgrade your native PostgreSQL major version, back up or move `.context/local-dev/postgres` before starting a new cluster.
+---
 
-For development against real providers, continue to use `pnpm setup`, your own environment files, and `pnpm dev`. See the **[Contributing Guide](https://docs.getinboxzero.com/contributing)** for configuration and devcontainer setup.
+## Privacy and Compliance
 
-## Contributing
+- **RA 10173 (Data Privacy Act of the Philippines):** the design intent is to scrub personal data before any NLP call, store no email bodies, and encrypt sensitive fields. Field-level AES-256-GCM encryption is implemented in `apps/web/utils/encryption.ts`. A dedicated PII masking module for NLP input is not yet in the repository; scrubbing is currently the Next.js side's responsibility.
+- **Google API Limited Use:** Gmail data is used only to provide the service to the authenticated user. No real email is used for model training.
+- **Research ethics:** the training and evaluation data are synthetic or team-written. No real user inboxes were accessed.
 
-View open tasks in [GitHub Issues](https://github.com/elie222/inbox-zero/issues) and join our [Discord](https://www.getinboxzero.com/discord) to discuss what's being worked on.
+---
 
-Docker images are automatically built on every push to `main` and tagged with the commit SHA (e.g., `elie222/inbox-zero:abc1234`). The `latest` tag always points to the most recent main build. Formal releases use version tags (e.g., `v2.26.0`).
+## Status
+
+- Implemented: embedding service, rule-based extraction, Rocchio feedback, priority scoring, and the `/api/v1/*` endpoints. The `fastapi_core` test suite passes.
+- Not yet in this repository: the learned span tagger, the evaluation harness and result files, and the frozen test split.
+
+---
+
+## Upstream
+
+CategorAIze is a fork of [elie222/inbox-zero](https://github.com/elie222/inbox-zero). The upstream Next.js application, Gmail OAuth integration, and Upstash Redis job queue are inherited. The NLP service, its algorithms, the dataset, and the evaluation work are original contributions of this study.
