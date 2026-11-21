@@ -36,7 +36,7 @@ export function Button({
         variant: {
           primary: [
             // The 1px gradient border comes from the wrapper below, not from here
-            "bg-gradient-to-b from-[#2965EC] to-[#5C89F8] text-white shadow-[0px_2px_10.1px_0px_#4B83FD33] hover:shadow-[0px_2px_10.1px_0px_#4B83FD44]",
+            "bg-gradient-to-b from-[#4F46E5] to-[#6366F1] text-white shadow-[0px_2px_10.1px_0px_#4F46E533] hover:shadow-[0px_2px_10.1px_0px_#4F46E544]",
             "relative overflow-hidden z-10",
             "before:absolute before:inset-0 before:bg-gradient-to-b before:from-[#285EE5] before:to-[#5380F2] before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-200 before:z-0",
           ],
@@ -64,7 +64,7 @@ export function Button({
         className={cn(
           "hover:scale-[1.04] transition-all duration-200 will-change-transform",
           "rounded-[14px] p-[1px] bg-gradient-to-b",
-          "from-[#5989F0] to-[#578AFA] hover:from-[#4875d0] hover:to-[#396ecc]",
+          "from-[#6366F1] to-[#6366F1] hover:from-[#4338CA] hover:to-[#3730A3]",
           auto ? "w-full" : "w-fit",
         )}
       >

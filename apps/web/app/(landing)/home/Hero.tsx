@@ -18,7 +18,7 @@ export function Hero() {
         <HeroReveal delay={0.05} className="mt-6">
           <Heading className="mx-auto max-w-[820px]">
             Sort your inbox by{" "}
-            <span className="bg-gradient-to-r from-[#2965EC] to-[#5C89F8] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#4F46E5] to-[#6366F1] bg-clip-text text-transparent">
               priority, language & context
             </span>
           </Heading>

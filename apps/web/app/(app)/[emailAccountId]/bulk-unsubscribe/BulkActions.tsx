@@ -12,7 +12,7 @@ import {
   Undo2Icon,
   XIcon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import type { DateRange } from "react-day-picker";
 import {
   useBulkUnsubscribe,

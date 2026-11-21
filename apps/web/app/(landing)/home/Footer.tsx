@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { SUPPORT_EMAIL } from "@/utils/branding";
 
 export function Footer() {
   return (
@@ -34,14 +33,6 @@ export function Footer() {
           <Link href="/terms" className="hover:text-gray-900 transition-colors">
             Terms
           </Link>
-          {SUPPORT_EMAIL ? (
-            <a
-              href={`mailto:${SUPPORT_EMAIL}`}
-              className="hover:text-gray-900 transition-colors"
-            >
-              {SUPPORT_EMAIL}
-            </a>
-          ) : null}
         </nav>
       </div>
     </footer>

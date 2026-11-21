@@ -431,6 +431,14 @@ function appEnv({
 }) {
   return {
     PATH: process.env.PATH ?? "",
+    // Windows needs these to resolve .cmd shims such as prisma.cmd.
+    ...(process.platform === "win32"
+      ? {
+          SystemRoot: process.env.SystemRoot ?? "",
+          PATHEXT: process.env.PATHEXT ?? "",
+          ComSpec: process.env.ComSpec ?? "",
+        }
+      : {}),
     HOME: process.env.HOME ?? "",
     USER: process.env.USER ?? "",
     TMPDIR: process.env.TMPDIR ?? "/tmp",

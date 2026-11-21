@@ -9,6 +9,7 @@ import {
   MAIL_SIDEBAR_WIDTH_BOUNDS,
   MAIL_SIDEBAR_WIDTH_COOKIE,
 } from "@/app/(app)/[emailAccountId]/mail/panel-widths";
+import { MotionPreferences } from "@/components/MotionPreferences";
 import { ShortcutsProvider } from "@/lib/shortcuts/ShortcutsProvider";
 import { MAIL_SHORTCUT_SCOPES } from "@/lib/shortcuts/registry";
 import { parsePanelWidthCookie } from "@/utils/panel-width";
@@ -47,7 +48,7 @@ export default async function MailLayout({
           } as CSSProperties
         }
       >
-        {children}
+        <MotionPreferences>{children}</MotionPreferences>
       </div>
     </ShortcutsProvider>
   );

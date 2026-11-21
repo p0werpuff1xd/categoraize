@@ -18,7 +18,7 @@ export const size = {
 
 export const contentType = "image/png";
 
-const BRAND_BLUE = "#2563eb";
+const BRAND_BLUE = "#4f46e5";
 const BRAND_BLUE_DARK = "#1d4ed8";
 
 export default async function Image({

@@ -8,6 +8,7 @@ import {
   SectionSubtitle,
 } from "@/components/new-landing/common/Typography";
 import { Card } from "@/components/new-landing/common/Card";
+import { Reveal } from "@/components/new-landing/common/Reveal";
 
 const features = [
   {
@@ -58,16 +59,18 @@ export function Features() {
       </SectionSubtitle>
       <SectionContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
-          {features.map((f) => (
-            <Card key={f.title} className="flex flex-col gap-3 p-6">
-              <Badge variant={f.badge.variant}>{f.badge.label}</Badge>
-              <h3 className="font-title text-[#242424] text-lg font-semibold">
-                {f.title}
-              </h3>
-              <p className="font-geist text-sm text-[#848484] leading-relaxed">
-                {f.description}
-              </p>
-            </Card>
+          {features.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 3) * 0.08}>
+              <Card className="flex h-full flex-col gap-3 p-6">
+                <Badge variant={f.badge.variant}>{f.badge.label}</Badge>
+                <h3 className="font-title text-[#242424] text-lg font-semibold">
+                  {f.title}
+                </h3>
+                <p className="font-geist text-sm text-[#848484] leading-relaxed">
+                  {f.description}
+                </p>
+              </Card>
+            </Reveal>
           ))}
         </div>
       </SectionContent>

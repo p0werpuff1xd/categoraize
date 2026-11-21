@@ -2,7 +2,7 @@
 
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { ArrowUpIcon } from "lucide-react";
 import { Badge } from "@/components/Badge";
 import { getActionColor } from "@/components/PlanBadge";
