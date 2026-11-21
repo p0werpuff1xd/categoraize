@@ -112,8 +112,9 @@ def main() -> None:
             "- **Gold labels are AI-authored** (`human_reviewed=false` on every record). A team second labeler",
             f"  agreed with them at category kappa {kappa['category_kappa']['value']:.2f}, priority weighted kappa",
             f"  {kappa['priority_weighted_kappa']['value']:.2f} and register kappa {kappa['register_kappa']['value']:.2f}"
-            " (see Team review below); the gold",
-            "  labels were not adjudicated or changed. Describe them as AI-authored with measured team agreement.",
+            " (see Team review below), measured before",
+            "  adjudication. Three gold priorities were then corrected (next note); no other gold label was changed.",
+            "  A native Filipino speaker review is still pending. Describe them as AI-authored with measured team agreement.",
         ]
     else:
         label_note = [
@@ -137,7 +138,9 @@ def main() -> None:
         "  differences between systems whose intervals overlap are not established.",
         "- Dev (n=30) was used for every tuning choice and has no calendar data. Test was run once for all four",
         "  systems; after that run the register model was switched back to rules (see the decision below) and",
-        "  B4 was re-run once with that setting. B1-B3 numbers are from the first and only run.",
+        "  B4 was re-run once with that setting. Three gold priorities (test-en-028, test-mixed-026, test-tl-026)",
+        "  were then changed from 3 to 2 after adjudication, and all four systems were re-run on the corrected gold.",
+        "  The numbers here are from that second run; the category, register and span metrics are unchanged by it.",
         "- No real user mail was used anywhere (Google API Limited Use).",
         "",
         "## Systems",
