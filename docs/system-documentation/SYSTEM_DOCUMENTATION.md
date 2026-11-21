@@ -94,7 +94,7 @@ Each activity is weighted equally. If the team weights activities by effort, cha
 
 | # | Activity | Status | Notes |
 |---|---|---|---|
-| T1 | Create one Google and one Microsoft test account | **Open (owner)** | Blocks 29 system-test steps and Figures 13–15, 17–18. |
+| T1 | Create one Google and one Microsoft test account | **Open (owner)** | Blocks 29 system-test steps and Figure 17 (Figures 13–15 and 18 were captured on the emulated stack). |
 | T2 | Rerun the system suite with test accounts | Pending T1 | `scripts/testing/run-system-tests.ps1` |
 | T3 | Usability test with participants (SUS and SEQ) | Not started | Questionnaire in Appendix D.5. |
 | T4 | Re-measure load after D5 | Pending D5 | `fastapi_core/system_tests/load/locustfile.py` |
@@ -116,13 +116,13 @@ Each activity is weighted equally. If the team weights activities by effort, cha
 | 9 | Bi-LSTM-CRF TASK and DATE Extraction Workflow | `fig09-bilstm.png` | Done (labels: `TASK`/`DATE`) |
 | 10 | Rocchio User Feedback and Adaptation Workflow | `fig10-rocchio.png` | Done |
 | 11 | Calendar Conflict Detection Workflow | `fig11-calendar.png` | Done |
-| 12 | Login and Authentication Interface | `fig12b-login.png` (also `fig12a-landing`, `fig12c-login-options`, `fig12d-privacy-notice`, `fig12e-login-mobile`) | Done (production) |
-| 13 | Main Inbox (Priority Inbox) Interface | — | **[OPEN]** needs a signed-in test account with synthetic mail (T1) |
-| 14 | Email Category and Priority Labels | — | **[OPEN]** same as 13 |
-| 15 | Email Detail View with Extracted Spans (`TASK`/`DATE`) | — | **[OPEN]** same as 13 |
+| 12 | Login and Authentication Interface | `fig12b-login.png` (also `fig12a-landing`, `fig12c-login-options`, `fig12d-privacy-notice`, `fig12e-login-mobile` from production, and `fig12f-consent.png` from the emulated stack) | Done |
+| 13 | Main Inbox (Priority Inbox) Interface | `fig13-priority-inbox.png` | Done (emulated Google mailbox, 45 synthetic bilingual seeded emails (`apps/web/__tests__/playwright/emulated/docs/documentation-screenshots.spec.ts`)) |
+| 14 | Email Category and Priority Labels | `fig14-category-priority-labels.png` (P4+ filter) | Done (same source) |
+| 15 | Email Detail View with Extracted Spans (`TASK`/`DATE`) | `fig15-email-detail-spans.png` (Taglish), `fig15c-email-detail-filipino.png`, `fig15b-task-sheet.png` | Done (same source) |
 | 16 | Multilingual Email Categorization Example | `fig16-multilingual-examples.png` | Done (production NLP, synthetic emails) |
-| 17 | Calendar Conflict Notification | — | **[OPEN]** same as 13, plus a calendar event |
-| 18 | Category Management Interface (Label Studio) | — | **[OPEN]** same as 13 |
+| 17 | Calendar Conflict Notification | — | **[OPEN]** The calendar was connected in the emulated stack, but no seeded deadline was registered as overlapping a busy period, so no conflict badge appeared. Figure 15 shows the calendar factor and its explanation instead. |
+| 18 | Category Management Interface (Label Studio) | `fig18-label-studio.png` (suggested labels and the label list were still loading; the Sandbox and sections are shown); contacts and VIP: `fig18b-contacts-vip.png` | Done; retake once for a fully loaded view |
 | 19 | FastAPI `/api/v1/classify` Endpoint Response | `fig19-api-response.png` | Done (production NLP, synthetic email) |
 | 20 | B1–B4 Model Evaluation Results | `fig20-b1-b4-results.png` | Done |
 | 21 | Inter-Annotator Agreement Results | `fig21-inter-annotator-agreement.png` | Done |
@@ -495,13 +495,13 @@ Screenshots come only from the running application with synthetic data; no real 
 | Section | Figure | Status |
 |---|---|---|
 | A.1 Login and Authentication | Figure 12 (`fig12a`–`fig12e`) | Done (production public pages) |
-| A.2 Main Inbox (Priority Inbox) | Figure 13 | **[OPEN]** needs T1 |
-| A.3 Email Details and Extracted Spans | Figure 15 | **[OPEN]** needs T1 |
+| A.2 Main Inbox (Priority Inbox) | Figure 13 | Done (emulated mailbox, synthetic data) |
+| A.3 Email Details and Extracted Spans | Figure 15 | Done (emulated mailbox, synthetic data) |
 | A.4 Multilingual Email Classification | Figure 16 | Done (production NLP) |
-| A.5 Calendar Conflict Detection | Figure 17 | **[OPEN]** needs T1 and a calendar event |
-| A.6 Category Management (Label Studio) | Figure 18 | **[OPEN]** needs T1 |
+| A.5 Calendar Conflict Detection | Figure 17 | **[OPEN]** see the List of Figures |
+| A.6 Category Management (Label Studio) | Figure 18 | Done (emulated mailbox, synthetic data) |
 
-How to capture Figures 13–15, 17 and 18 once a test account exists: sign in with the test account,
+Figures 13–15 and 18 were captured from the in-repo emulated stack: an emulated Google mailbox (`demo.user@example.com`), a local NLP service and the 45 synthetic bilingual seed emails, with no real account or mail involved. To capture Figure 17 with a real account later: sign in with the test account,
 seed the 45 synthetic bilingual emails with `pnpm categoraize:seed -- --email <test account>` (from
 `apps/web`, see `apps/web/scripts/categoraize-seed.ts`), add one calendar event that overlaps a seeded
 deadline, then capture the Priority Inbox, one email's detail pane, the Task Sheet and Label Studio.
@@ -614,4 +614,4 @@ overall 91% (15.5 of 17 activities). Chart: Figure 22.
 | 4 | Fix the Appendix C file list | Done: every item exists (Appendix C) |
 | 5 | Settle `TASK`/`DATE` vs. `ACTION`/`DEADLINE` | Done: `TASK`/`DATE` everywhere (code, dataset, figures, tables) |
 | 6 | Register detector and "learned priority" wording | Done: register is rule-based (learned model kept, not used); priority uses learned model v1 with rule fallback, so "learned priority" is accurate for B4 and production |
-| 7 | Fill **[REF]** and **[TODO]** items | Open: Chapter 2 references, Table 1, NPC advisories, Figures 13–15, 17, 18 |
+| 7 | Fill **[REF]** and **[TODO]** items | Open: Chapter 2 references, Table 1, NPC advisories, Figure 17 |
