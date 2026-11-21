@@ -2,7 +2,6 @@ import type { Prisma } from "@/generated/prisma/client";
 import { isCategoraizeEnabled } from "@/utils/categoraize/client";
 import { SafeError } from "@/utils/error";
 import prisma from "@/utils/prisma";
-import { withUserContext } from "@/utils/categoraize/tenant";
 
 // Bump when the Terms or Privacy Notice text changes: everyone is asked to
 // accept again. Rows saved under older versions do not count as acceptance.
@@ -20,9 +19,12 @@ const currentVersions = {
  * never come back to life.
  */
 export async function getActiveConsent(userId: string) {
-  // Explicit tenant: layouts and pages run outside the request middleware.
-  return withUserContext(userId, () =>
-    prisma.categorizeUserConsent.findFirst({
+  // Open an explicit transaction and call set_config before the query so RLS
+  // sees the tenant, bypassing AsyncLocalStorage which does not propagate
+  // reliably through Prisma extensions in RSC layouts.
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_user_id', ${userId}, true)`;
+    return tx.categorizeUserConsent.findFirst({
       where: { userId, withdrawnAt: null, ...currentVersions },
       orderBy: { createdAt: "desc" },
       select: {
@@ -32,8 +34,8 @@ export async function getActiveConsent(userId: string) {
         termsVersion: true,
         privacyVersion: true,
       },
-    }),
-  );
+    });
+  });
 }
 
 /**
