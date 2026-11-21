@@ -136,6 +136,22 @@ export const metadata: Metadata = {
     creator: "@categoraize_ai",
   },
   metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
+  // Light and dark tab icons. Declared here (not as app/icon.*) so the browser
+  // only sees these two and cannot pick a stale raster icon instead.
+  icons: {
+    icon: [
+      {
+        url: "/icon-light.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/icon-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+  },
   // issues with robots.txt: https://github.com/vercel/next.js/issues/58615#issuecomment-1852457285
   robots: {
     index: indexingAllowed,
