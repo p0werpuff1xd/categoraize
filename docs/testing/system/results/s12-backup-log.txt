@@ -1,0 +1,34 @@
+﻿2026-11-20 01:35:35  === CategorAIze backup categoraize-20261120-013535 ===
+2026-11-20 01:35:35  WARNING E:\backups\copy1 is the default placeholder on the same disk as the live data. Point -Copy1 at the external drive and -Copy2 at the off-site cloud folder for a real 3-2-1 backup.
+2026-11-20 01:35:35  START preflight
+2026-11-20 01:35:44  server 16.15 (Debian 16.15-1.pgdg12+2); client pg_dump (PostgreSQL) 16.15 (Debian 16.15-1.pgdg12+2)
+2026-11-20 01:35:44  DONE  preflight in 8.32s
+2026-11-20 01:35:44  START generate-copy-sql
+2026-11-20 01:35:44  19 tables with rows, 18 columns redacted
+2026-11-20 01:35:44  DONE  generate-copy-sql in 0.38s
+2026-11-20 01:35:44  START start-staging
+2026-11-20 01:35:54  DONE  start-staging in 10.37s
+2026-11-20 01:35:54  START copy-schema-and-redacted-rows
+2026-11-20 01:38:15  DONE  copy-schema-and-redacted-rows in 140.98s
+2026-11-20 01:38:15  START verify-redaction-and-count
+2026-11-20 01:38:16  redaction verified on 18 columns; 487 rows in 19 tables
+2026-11-20 01:38:16  DONE  verify-redaction-and-count in 0.72s
+2026-11-20 01:38:16  START pg_dump
+2026-11-20 01:38:16  DONE  pg_dump in 0.43s
+2026-11-20 01:38:16  START stop-staging
+2026-11-20 01:38:21  DONE  stop-staging in 4.83s
+2026-11-20 01:38:21  START encrypt
+2026-11-20 01:38:21  DONE  encrypt in 0.09s
+2026-11-20 01:38:21  START checksum-and-manifest
+2026-11-20 01:38:21  DONE  checksum-and-manifest in 0.12s
+2026-11-20 01:38:21  START copy-verify-readonly
+2026-11-20 01:38:22  COPY  E:\backups\copy1\categoraize-20261120-013535.* verified and read-only
+2026-11-20 01:38:22  COPY  D:\categoraize-backups\copy2\categoraize-20261120-013535.* verified and read-only
+2026-11-20 01:38:22  DONE  copy-verify-readonly in 0.46s
+2026-11-20 01:38:22  START retention
+2026-11-20 01:38:22  RETENTION E:\backups\copy1: 5 sets kept (categoraize-20261116-235932=daily, categoraize-20261117-213158=daily, categoraize-20261118-234601=daily, categoraize-20261119-023003=daily, categoraize-20261120-013535=daily)
+2026-11-20 01:38:22  RETENTION D:\categoraize-backups\copy2: 3 sets kept (categoraize-20261118-234601=daily, categoraize-20261119-023003=daily, categoraize-20261120-013535=daily)
+2026-11-20 01:38:22  DONE  retention in 0.12s
+2026-11-20 01:38:22  AUDIT backup_run recorded (sys_170bd897e7c5452ea3855da62501fc7a)
+2026-11-20 01:38:22  TIMINGS preflight=8.32s, generate-copy-sql=0.38s, start-staging=10.37s, copy-schema-and-redacted-rows=140.98s, verify-redaction-and-count=0.72s, pg_dump=0.43s, stop-staging=4.83s, encrypt=0.09s, checksum-and-manifest=0.12s, copy-verify-readonly=0.46s, retention=0.12s, total=166.94s
+2026-11-20 01:38:22  === backup PASS ===

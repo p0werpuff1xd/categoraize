@@ -5,9 +5,10 @@ those files. Bootstrap 95% confidence intervals in brackets (1000 resamples of e
 
 ## Read this first
 
-- **Labels are AI-authored** (`human_reviewed=false` on every record). They are pending a second-labeler
-  Cohen's kappa check (`data/categoraize-dataset/review/second_labeler_test_BLIND.csv`) and a native
-  Filipino speaker review. Do not describe these results as human-labeled.
+- **Gold labels are AI-authored** (`human_reviewed=false` on every record). A team second labeler
+  agreed with them at category kappa 0.81, priority weighted kappa
+  0.75 and register kappa 0.46 (see Team review below); the gold
+  labels were not adjudicated or changed. Describe them as AI-authored with measured team agreement.
 - **Train is template-synthetic**, so train and dev scores overstate performance on real mail. The
   hand-written test set is the number to report.
 - **The test set is small** (n=100; about a third per language), so confidence intervals are wide and
@@ -132,6 +133,27 @@ Ten worst misses, ranked by 2 x category miss + |priority error| + register miss
 | test-en-032 | en | personal -> personal | 4 -> 2 | neutral -> formal | 3 | 4.5 |
 | test-mixed-006 | mixed | meetings -> work_tasks | 4 -> 4 | neutral -> neutral | 5 | 4.5 |
 | test-mixed-014 | mixed | job_search -> meetings | 4 -> 3 | neutral -> neutral | 3 | 4.5 |
+
+## Team review of the test labels (`python -m eval.human_review`)
+
+Second-labeler labels for the 100 test emails were filled by three team members (KIM, AD, LJ, about a third each). Per the project owner (2026-11-19), each labeled their own packet from a blank sheet without seeing the AI-drafted labels. Earlier AI-drafted versions of these sheets were not used.
+
+Agreement between the AI-authored gold labels and the team's second labels:
+
+| metric | overall (n=100) | en (n=34) | mixed (n=33) | tl (n=33) |
+|---|---|---|---|---|
+| Category kappa | 0.805 [0.719, 0.874] | 0.865 [0.726, 0.966] | 0.791 [0.631, 0.929] | 0.757 [0.581, 0.894] |
+| Category agreement | 0.830 [0.760, 0.890] | 0.882 [0.765, 0.971] | 0.818 [0.697, 0.939] | 0.788 [0.636, 0.909] |
+| Priority weighted kappa | 0.753 [0.676, 0.813] | 0.870 [0.779, 0.925] | 0.690 [0.524, 0.799] | 0.687 [0.545, 0.788] |
+| Priority exact | 0.360 [0.270, 0.460] | 0.588 [0.412, 0.735] | 0.242 [0.121, 0.394] | 0.242 [0.121, 0.394] |
+| Priority within 1 | 0.960 [0.920, 0.990] | 1.000 [1.000, 1.000] | 0.939 [0.849, 1.000] | 0.939 [0.849, 1.000] |
+| Register kappa | 0.457 [0.298, 0.611] | 0.247 [-0.044, 0.519] | 0.491 [0.210, 0.740] | 0.581 [0.318, 0.807] |
+| Register agreement | 0.670 [0.580, 0.760] | 0.588 [0.412, 0.765] | 0.697 [0.545, 0.849] | 0.727 [0.576, 0.879] |
+
+Most frequent category disagreements (gold -> team): alerts -> work_tasks (5), meetings -> work_tasks (3), finance_billing -> alerts (3), personal -> alerts (3), work_tasks -> meetings (2). Disagreements were not adjudicated, so the
+evaluation above still uses the original gold labels.
+
+Native-speaker review: 111 Taglish/Filipino items rated by AD, KIM, LJ; mean naturalness 3.73 of 5 (mixed 3.86, tl 3.6), 45 rated 3 or lower, 6 labels marked not OK (test-mixed-004, test-mixed-011, test-tl-002, test-tl-004, test-tl-010, train-mixed-017).
 
 ## Dev scores used for the choices
 

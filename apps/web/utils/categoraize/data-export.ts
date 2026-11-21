@@ -23,6 +23,11 @@ export async function buildExport(userId: string) {
     proposalDecisions,
     consents,
     auditEvents,
+    settings,
+    senderEmbeddings,
+    senderCentroids,
+    deadlineAlerts,
+    notifications,
   ] = await Promise.all([
     prisma.categorizeCategory.findMany({ where: byAccount }),
     prisma.categorizeClassification.findMany({
@@ -39,6 +44,32 @@ export async function buildExport(userId: string) {
       where: { OR: [{ userId }, { emailAccountId: { in: accountIds } }] },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.categorizeUserSettings.findMany({ where: { userId } }),
+    // The 384-number vectors are left out (Prisma cannot read them); the rows
+    // still show which senders and categories the app learned from.
+    prisma.categorizeSenderEmbedding.findMany({
+      where: byAccount,
+      select: {
+        sender: true,
+        learnedCategoryId: true,
+        updatedAt: true,
+        emailAccountId: true,
+      },
+    }),
+    prisma.categorizeSenderCategoryCentroid.findMany({
+      where: byAccount,
+      select: {
+        categoryId: true,
+        centroidVersion: true,
+        updatedAt: true,
+        emailAccountId: true,
+      },
+    }),
+    prisma.categorizeDeadlineAlert.findMany({
+      where: byAccount,
+      omit: { sourceText: true },
+    }),
+    prisma.categorizeNotification.findMany({ where: byAccount }),
   ]);
 
   return {
@@ -56,5 +87,10 @@ export async function buildExport(userId: string) {
     proposalDecisions,
     consents,
     auditEvents,
+    settings,
+    senderLearning: senderEmbeddings,
+    categoryLearning: senderCentroids,
+    deadlineAlerts,
+    notifications,
   };
 }

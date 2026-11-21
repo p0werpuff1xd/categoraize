@@ -39,6 +39,7 @@ export async function loadTriageRows({
       priorityFactors: true,
       deadlineAt: true,
       detectedLang: true,
+      senderRegister: true,
       isReviewedByUser: true,
       piiMaskedCount: true,
       _count: { select: { feedbackEvents: true } },

@@ -125,6 +125,26 @@ class Priority(BaseModel):
     deadline: datetime | None
 
 
+class LearnedPriorityReason(BaseModel):
+    factor: str
+    contribution: float
+
+
+class LearnedPriority(BaseModel):
+    """Learned model level, then the user's category offset, then the guardrails."""
+
+    level: int
+    model_level: int
+    category_offset: int
+    why: list[LearnedPriorityReason]
+    guardrails: list[str]
+
+
+class SenderRegister(BaseModel):
+    value: Literal["formal", "neutral", "casual"]
+    source: Literal["learned", "rules"]
+
+
 class ClassifyResponse(BaseModel):
     email_id: str
     language: Literal["en", "tl", "mixed", "unknown"]
@@ -138,6 +158,9 @@ class ClassifyResponse(BaseModel):
     timings_ms: dict[str, float]
     # Counts only ({phone, card, gov_id}); the masked values are never returned.
     pii_masked: dict[str, int] = Field(default_factory=dict)
+    # None when no learned priority model is loaded (the rule priority above still applies).
+    learned_priority: LearnedPriority | None = None
+    sender_register: SenderRegister | None = None
 
 
 class MatchCandidate(StrictModel):

@@ -11,8 +11,15 @@ import { prefixPath } from "@/utils/path";
 import { embedCategoryDescription } from "@/utils/categoraize/categories";
 import { reclassifyStoredEmail } from "@/utils/categoraize/process-email";
 import {
+  clusterCentroid,
+  findCategorySuggestions,
+} from "@/utils/categoraize/discovery";
+import { setCategoryCentroid } from "@/utils/categoraize/vectors";
+import {
   createCategoraizeCategory,
+  acceptDiscoveredCategory,
   createCategoryFromSuggestion,
+  dismissDiscoveredCategories,
   deleteCategoraizeCategory,
   updateCategoraizeCategory,
   upsertCategoraizeContact,
@@ -192,4 +199,78 @@ async function createCategory({
 
 function revalidateCategoraize(emailAccountId: string) {
   revalidatePath(prefixPath(emailAccountId, "/categoraize"), "layout");
+}
+
+/** Category discovery: cluster Uncategorized emails into suggested categories (never created automatically). */
+export const discoverCategoriesAction = actionClient
+  .metadata({ name: "discoverCategoraizeCategories" })
+  .inputSchema(z.object({}))
+  .action(async ({ ctx: { emailAccountId } }) =>
+    findCategorySuggestions(emailAccountId),
+  );
+
+/** The user confirms one suggested cluster (or several merged) as a new category. */
+export const acceptDiscoveredCategoryAction = actionClient
+  .metadata({ name: "acceptDiscoveredCategory" })
+  .inputSchema(acceptDiscoveredCategory)
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
+    const memberIds = [
+      ...new Set(parsedInput.clusters.flatMap((cluster) => cluster.memberIds)),
+    ];
+    const category = await createCategory({
+      emailAccountId,
+      name: parsedInput.name,
+      description: null,
+    });
+    await embedCategoryDescription({
+      emailAccountId,
+      category,
+      resetCentroid: true,
+      logger,
+    });
+    // The confirmed cluster's centre is the category's starting centroid.
+    const centroid = await clusterCentroid(emailAccountId, memberIds);
+    if (centroid) {
+      await setCategoryCentroid({
+        categoryId: category.id,
+        emailAccountId,
+        centroid,
+      });
+    }
+    await recordClusterDecisions(
+      emailAccountId,
+      parsedInput.clusters.map((cluster) => cluster.key),
+      true,
+    );
+    const rescored = await rescoreClassifications({
+      emailAccountId,
+      where: { id: { in: memberIds } },
+      logger,
+    });
+
+    revalidateCategoraize(emailAccountId);
+    return { id: category.id, rescored };
+  });
+
+export const dismissDiscoveredCategoriesAction = actionClient
+  .metadata({ name: "dismissDiscoveredCategories" })
+  .inputSchema(dismissDiscoveredCategories)
+  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+    await recordClusterDecisions(emailAccountId, parsedInput.keys, false);
+  });
+
+async function recordClusterDecisions(
+  emailAccountId: string,
+  keys: string[],
+  accepted: boolean,
+) {
+  await Promise.all(
+    keys.map((key) =>
+      prisma.categorizeProposalDecision.upsert({
+        where: { emailAccountId_key: { emailAccountId, key } },
+        create: { emailAccountId, key, accepted },
+        update: { accepted },
+      }),
+    ),
+  );
 }

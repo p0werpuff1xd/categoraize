@@ -1,0 +1,38 @@
+﻿id,language,subject,body,gold_category,gold_priority,gold_register,sounds_natural (1-5),label_ok (y/n),suggested_fix,reviewer_initials,human_review
+test-mixed-002,mixed,Final budget,"Good morning po, Alex. Paki-send po ang final budget proposal bago mag-5 PM today. Kailangan na po ito ni Ma'am Diane para sa review. Thank you po.",work_tasks,5,formal,5,y,,AD,TRUE
+test-mixed-003,mixed,Update sa onboarding docs,"Hi boss, tapos ko na yung onboarding docs. Pwede mo bang i-review ang slides 6 at 7 pag may time ka? Walang rush, sometime next week okay lang.",work_tasks,3,neutral,4,y,,AD,TRUE
+test-mixed-004,mixed,PR approval,"Pre, paki-approve ng PR ko pls, mag-deploy tayo mamaya ng 4 PM ðŸ™�",work_tasks,4,casual,2,n,"Use ""Paki-approve ng PR ko, pre. Magde-deploy tayo mamayang 4 PM.""� Reason: More natural word order and punctuation. Priority 4 may be low for a deployment scheduled later today; consider 5.",AD,TRUE
+test-mixed-006,mixed,Na-move ang sprint planning,"Team, na-move ang sprint planning sa Huwebes 2 PM. Paki-confirm ng attendance sa reply. Thanks!",meetings,4,neutral,5,y,,AD,TRUE
+test-mixed-007,mixed,1:1 natin,"Alex, free ka ba for a quick 1:1 bukas ng 4 PM? Dalhin mo yung hiring plan.",meetings,4,neutral,5,y,,AD,TRUE
+test-mixed-010,mixed,Project proposal,"Class, ang deadline ng project proposal ay December 1, 11:59 PM. I-submit niyo sa portal. Walang late submissions. Sir Reyes",school,4,neutral,5,y,,AD,TRUE
+test-mixed-011,mixed,slides natin,"guys, pa-upload naman ng slides sa drive ngayong gabi ha. Mag-pe-present tayo bukas ng 8 AM at kailangan ko pa mag-practice ðŸ˜­",school,4,casual,3,n,"Use ""Guys, paki-upload naman yung slides sa Drive ngayong gabi. Magpe-present tayo bukas ng 8 AM.""� Reason: Natural conversational Taglish. Priority 4 may be low for a tonight deadline; consider 5.",AD,TRUE
+test-mixed-015,mixed,Application update,"Hello po, salamat sa pag-apply. Nire-review pa po ang application ninyo. Aabisuhan namin kayo kung ma-shortlist.",job_search,2,formal,5,y,,AD,TRUE
+test-mixed-021,mixed,FLASH SALE ngayong araw,FLASH SALE! 50% off sa lahat ng items today lang! Mag-checkout na bago maubos ðŸ›�ï¸�,promotions,1,casual,5,y,,AD,TRUE
+test-mixed-022,mixed,May naiwan sa cart,May naiwan ka sa cart! I-complete na ang order at libre ang shipping.,promotions,1,casual,5,y,,AD,TRUE
+test-mixed-025,mixed,Bagong sign-in sa account mo,"May napansin kaming bagong sign-in sa account mo mula sa Windows sa Manila. Kung ikaw 'yan, walang kailangang gawin. Kung hindi, palitan agad ang password mo.",alerts,4,neutral,5,y,,AD,TRUE
+test-mixed-028,mixed,Puno na ang storage mo,95% na ng cloud storage mo ang nagamit. Mag-free up ng space o mag-upgrade para tuloy ang sync ng files mo.,alerts,3,neutral,3,y,,AD,TRUE
+test-mixed-033,mixed,Kamusta ka na?,Uy long time no see! Kamusta ka na? Libre ka ba this weekend? Kape tayo â˜•,personal,2,casual,4,y,,AD,TRUE
+test-tl-001,tl,Kailangan ko ang ulat,"Magandang umaga, Alex. Pakipadala po ang buwanang ulat ng benta bago mag-alas-tres ng hapon ngayon. Kailangan ko ito para sa pulong mamaya. Salamat po.",work_tasks,5,formal,5,y,,AD,TRUE
+test-tl-004,tl,Ticket #204,Pakisara na yung ticket #204 kung naayos na. Salamat.,work_tasks,2,neutral,5,n,Priority 2 is reasonable only if ticket is already resolved; otherwise the action is conditional.,AD,TRUE
+test-tl-008,tl,Tanghalian tayo,"Tara, kain tayo ng tanghalian sa Biyernes ng tanghali! Libre ako.",meetings,2,casual,2,y,,AD,TRUE
+test-tl-010,tl,Slides natin,"Guys, paki-upload ang slides natin sa drive mamayang gabi. Magre-report tayo bukas ng alas-otso ng umaga.",school,4,casual,2,n,"Use ""Mga kasama, paki-upload ang mga slide natin sa Drive mamayang gabi."" make this mixed, not strictly tl. Priority 4 may be low for a tonight deadline; consider 5.",AD,TRUE
+test-tl-011,tl,Pagpapatala,"Mahal na mga mag-aaral, magbubukas ang pagpapatala sa Disyembre 7. Bayaran ang anumang natitirang balanse bago magpatala.",school,3,formal,5,y,,AD,TRUE
+test-tl-018,tl,Natanggap ang bayad,Natanggap na namin ang inyong bayad na PHP 899. Salamat po.,finance_billing,2,formal,4,y,,AD,TRUE
+test-tl-023,tl,Lingguhang balita,"Narito ang mga bagong artikulo ngayong linggo: limang uso sa disenyo ng UI, isang pag-aaral tungkol sa onboarding, at mga kasangkapang gusto namin.",promotions,2,neutral,2,y,,AD,TRUE
+test-tl-025,tl,Bagong pag-login,"May nakita kaming bagong pag-login sa iyong account mula sa Windows sa Maynila. Kung ikaw ito, wala kang kailangang gawin. Kung hindi, palitan agad ang iyong password.",alerts,4,neutral,4,y,,AD,TRUE
+test-tl-026,tl,Paparating na ang order,Ang iyong order #1182 ay ihahatid at darating ngayong araw.,alerts,3,neutral,3,y,,AD,TRUE
+test-tl-027,tl,Mataas ang CPU,Babala: 94% ang CPU ng prod-api-2 sa loob ng 10 minuto. Suriin at dagdagan ang kapasidad kung kinakailangan.,alerts,5,neutral,5,y,,AD,TRUE
+test-tl-030,tl,Checkup ni Mama,"Anak, samahan mo si Mama sa checkup niya sa Huwebes ng umaga. Salamat, anak.",personal,4,neutral,4,y,,AD,TRUE
+dev-mixed-006,mixed,Mega sale bukas,Mega sale na bukas! Up to 60% off sa electronics. Mag-set na ng reminder ðŸ””,promotions,1,casual,3,y,,AD,TRUE
+dev-mixed-007,mixed,Failed login attempts,"May 5 failed login attempts sa account mo. Kung hindi ikaw 'yon, i-reset ang password mo ngayon.",alerts,4,neutral,4,y,,AD,TRUE
+dev-tl-001,tl,Ulat sa linggong ito,"Alex, pakipadala ang lingguhang ulat bago mag-alas-singko ng hapon ngayon. Salamat.",work_tasks,5,neutral,5,y,,AD,TRUE
+dev-tl-002,tl,Maikling pulong,"Alex, magkita tayo mamayang alas-tres para pag-usapan ang badyet.",meetings,4,neutral,4,y,,AD,TRUE
+dev-tl-003,tl,Paalala sa pagsusulit,"Mga mag-aaral, pag-aralan ang Kabanata 5 hanggang 8 para sa pagsusulit sa Lunes, Nobyembre 23.",school,4,formal,4,y,,AD,TRUE
+dev-tl-005,tl,Paalala sa bayarin,Paalala: sa Nobyembre 22 ang takdang petsa ng inyong bayarin sa internet. Mangyaring magbayad upang maiwasan ang pagkaputol.,finance_billing,4,formal,4,y,,AD,TRUE
+dev-tl-008,tl,Pasalubong?,Uy kumusta ang biyahe? May pasalubong ba ako hahaha,personal,2,casual,5,y,,AD,TRUE
+dev-tl-009,tl,Tulong sa Excel,"Pre, pakitulungan naman ako sa pivot table, hindi ko maintindihan. Puwede mo ba akong tulungan mamaya pagkatapos ng tanghalian?",work_tasks,3,casual,4,y,,AD,TRUE
+train-mixed-041,mixed,Status ng application,"Hello po, salamat sa interes ninyo sa Junior Designer position sa Lumina Labs. Under review pa po ang application ninyo.",job_search,2,formal,3,y,,AD,TRUE
+train-mixed-057,mixed,Resibo ng payment,"Salamat! Natanggap namin ang PHP 1,150 para sa order mo. Ito ang resibo mo.",finance_billing,2,neutral,3,y,,AD,TRUE
+train-tl-005,tl,Kapag may oras ka,"Alex, kapag may oras ka, pakisuyong ayusin ang bumagsak na build. Puwede na sa Huwebes.",work_tasks,3,neutral,3,y,,AD,TRUE
+train-tl-021,tl,kape tayo?,"Uy! Kape tayo Sabado, alas-sais ng gabi? Ako ang taya.",meetings,2,casual,3,y,,AD,TRUE
+train-tl-037,tl,Susunod na hakbang para sa QA Engineer,"Magandang araw po, Alex. Nais po naming ipagpatuloy ang inyong aplikasyon sa Kiwi Tech. Pakisuyong kumpletuhin ang pagsusulit sa kasanayan bago mag-Huwebes.",job_search,4,formal,3,y,,AD,TRUE

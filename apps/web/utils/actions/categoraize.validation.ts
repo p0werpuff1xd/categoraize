@@ -35,3 +35,21 @@ export const upsertCategoraizeContact = z.object({
     .nullable(),
   isVip: z.boolean(),
 });
+
+export const acceptDiscoveredCategory = z.object({
+  name: z.string().trim().min(1).max(60),
+  // One or more suggested clusters; several means the user merged them.
+  clusters: z
+    .array(
+      z.object({
+        key: z.string().min(1),
+        memberIds: z.array(z.string().min(1)).min(1),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
+export const dismissDiscoveredCategories = z.object({
+  keys: z.array(z.string().startsWith("cluster:")).min(1).max(50),
+});

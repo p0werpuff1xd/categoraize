@@ -87,15 +87,15 @@ Reproduce: `python -m eval.tune_category`, `python -m eval.train_tagger`,
 | 1 | Apply the RLS migration locally (`npx prisma migrate deploy` in `apps/web/`) | user | Done: recorded in the local `_prisma_migrations` |
 | 2 | Create the `categoraize_app` role (`scripts/db/create-app-role.ps1`) | user | Done locally |
 | 3 | Verify RLS policies (`scripts/db/test-rls.sql`) | user | Done 2026-11-18: every check PASS (rolled back) |
-| 4 | RLS on production Supabase | owner | Open, planned in `docs/release-phase-11.md`: production lacks the three migrations after `20261116090000`. The app connects as Supabase `postgres`, which bypasses RLS, so applying them is safe but protects nothing until `DATABASE_URL` uses `categoraize_app` |
-| 5 | Encrypt existing rows (`scripts/categoraize-encrypt-fields.ts`) | user | Local: done (script fixed; every value already encrypted under k1). Production: right after the Phase 11 code deploys, with a new production key (`docs/release-phase-11.md`) |
+| 4 | RLS on production Supabase | owner | Done 2026-11-19: migrations applied, app connects as `categoraize_app` (see `docs/release-phase-11.md`) |
+| 5 | Encrypt existing rows | user | Done locally and in production (key `p1`); no plaintext left |
 | 6 | Train learned models and set `current.json` | team | Done |
 | 7 | Single test-set evaluation | team | Done (`fastapi_core/eval/RESULTS.md`) |
 | 8 | Register the daily backup task; copy to external media | user | Done: Task Scheduler runs the backup daily 02:30 (Copy 1 `E:ackups\copy1`, Copy 2 `D:\categoraize-backups\copy2`, a separate physical disk) and a restore test weekly; scripts fixed for the new role; backup and restore test PASS. Still open: an external or off-site Copy 2 |
 | 9 | Back up the age encryption key to external media | user | Partly: copied to `D:\categoraize-keys` (separate disk, user-only ACL, hash verified). Still open: a USB copy kept away from this PC |
 | 10 | Decide OAuth scope removals | owner | Done: dropped the two redundant calendar scopes; kept the rest with their features (`docs/oauth-scope-review.md`) |
-| 11 | Second labeler fills `review/second_labeler_test_BLIND.csv`; run `scripts/kappa.py` | team | Open |
-| 12 | Native Filipino speaker fills `review/native_speaker_review.csv`; also review the date and register wordlists | team | Open |
+| 11 | Second labeler and kappa | team | Done 2026-11-19 (KIM, AD, LJ; owner-stated blank-sheet labeling): category kappa 0.81, priority weighted kappa 0.75, register kappa 0.46 (`eval/RESULTS.md`) |
+| 12 | Native Filipino speaker review | team | Done 2026-11-19: 111 items rated (mean naturalness 3.73/5), 6 labels flagged; not yet adjudicated |
 | 13 | Merge the register-on-rules commit | owner | Done: cherry-picked onto `feat/phase-11-encryption-masking-rls` and pushed |
 | 14 | Redeploy the NLP service so the new endpoints and models are live | owner | Done 2026-11-19: revision `categoraize-nlp-00004` serves 100%; smoke test passed (tasks, register via rules, priority via learned model, classify unchanged, 401 without key). Previous revision `00003` kept for rollback |
 
@@ -125,3 +125,6 @@ feat/dataset-eval-learned-models      PR #1 content + 029880dc6 (register on rul
 main                                  none of the above merged yet
 Production                            Cloud Run (web + NLP), Vercel paused
 ```
+
+
+After the release the owner must accept the Terms once in the app (`/consent`): until then the consent gate stops background processing of new mail.

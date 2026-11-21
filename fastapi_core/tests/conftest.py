@@ -91,3 +91,30 @@ def classify_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def _case_text(value) -> str:
+    if isinstance(value, str):
+        return value
+    import json
+
+    return json.dumps(value, ensure_ascii=False, default=str)
+
+
+@pytest.fixture
+def case(record_property):
+    """Record a component test case (Prompt A) in the JUnit XML.
+
+    The case id comes from the pytest param id ("C3-01 bukas") or `tc=`;
+    scripts/testing/make_component_report.py turns these into the report.
+    """
+
+    def record(input, expected, actual, tc=None):
+        if tc:
+            record_property("tc_id", tc)
+        record_property("input", _case_text(input)[:300])
+        record_property("expected", _case_text(expected)[:300])
+        record_property("actual", _case_text(actual)[:300])
+        return actual
+
+    return record

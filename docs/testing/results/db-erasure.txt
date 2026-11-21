@@ -1,0 +1,12 @@
+﻿
+
+== erasure of tenant B (a copy of tenant A plus synthetic rows)
+INFO B rows before erasure: CategorizeCategory=5, CategorizeClassification=45, CategorizeContact=6, CategorizeDeadlineAlert=1, CategorizeExtractedSpan=70, CategorizeFeedbackEvent=1, CategorizeNotification=1, CategorizePriorityOverrideLog=5, CategorizeProposalDecision=1, CategorizeSenderCategoryCentroid=1, CategorizeSenderEmbedding=1, CategorizeUserConsent=1, CategorizeUserSettings=1
+PASS C12-20 setup: B has rows in all 13 CategorAIze tables (empty: none)
+
+PASS C12-21 complete: every CategorAIze table is empty for B after erasure (0 rows left)
+PASS C12-22 complete: B's user, account and email account rows are gone
+PASS C12-23 idempotent: a second erasure deletes 0 rows without error
+PASS C12-24 isolation: tenant A's rows are untouched (45 classifications)
+PASS C12-25 audit trail outlives the account (ids only, no FK)
+== rolled back: no test rows were kept

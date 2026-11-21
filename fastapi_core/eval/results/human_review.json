@@ -1,0 +1,226 @@
+{
+ "provenance": "Second-labeler labels for the 100 test emails were filled by three team members (KIM, AD, LJ, about a third each). Per the project owner (2026-11-19), each labeled their own packet from a blank sheet without seeing the AI-drafted labels. Earlier AI-drafted versions of these sheets were not used.",
+ "second_labeler": {
+  "reviewers": {
+   "AD": 33,
+   "KIM": 34,
+   "LJ": 33
+  },
+  "scopes": {
+   "overall": {
+    "n": 100,
+    "metrics": {
+     "category_kappa": {
+      "value": 0.8052,
+      "low": 0.7193,
+      "high": 0.8743
+     },
+     "category_agreement": {
+      "value": 0.83,
+      "low": 0.76,
+      "high": 0.8902
+     },
+     "priority_weighted_kappa": {
+      "value": 0.753,
+      "low": 0.6762,
+      "high": 0.8129
+     },
+     "priority_exact": {
+      "value": 0.36,
+      "low": 0.27,
+      "high": 0.46
+     },
+     "priority_within1": {
+      "value": 0.96,
+      "low": 0.92,
+      "high": 0.99
+     },
+     "register_kappa": {
+      "value": 0.4568,
+      "low": 0.2983,
+      "high": 0.6107
+     },
+     "register_agreement": {
+      "value": 0.67,
+      "low": 0.58,
+      "high": 0.7602
+     }
+    }
+   },
+   "en": {
+    "n": 34,
+    "metrics": {
+     "category_kappa": {
+      "value": 0.8651,
+      "low": 0.7258,
+      "high": 0.9655
+     },
+     "category_agreement": {
+      "value": 0.8824,
+      "low": 0.7647,
+      "high": 0.9706
+     },
+     "priority_weighted_kappa": {
+      "value": 0.8704,
+      "low": 0.7788,
+      "high": 0.9249
+     },
+     "priority_exact": {
+      "value": 0.5882,
+      "low": 0.4118,
+      "high": 0.7353
+     },
+     "priority_within1": {
+      "value": 1.0,
+      "low": 1.0,
+      "high": 1.0
+     },
+     "register_kappa": {
+      "value": 0.2468,
+      "low": -0.0439,
+      "high": 0.5189
+     },
+     "register_agreement": {
+      "value": 0.5882,
+      "low": 0.4118,
+      "high": 0.7647
+     }
+    }
+   },
+   "mixed": {
+    "n": 33,
+    "metrics": {
+     "category_kappa": {
+      "value": 0.7911,
+      "low": 0.6312,
+      "high": 0.9288
+     },
+     "category_agreement": {
+      "value": 0.8182,
+      "low": 0.697,
+      "high": 0.9394
+     },
+     "priority_weighted_kappa": {
+      "value": 0.6903,
+      "low": 0.5236,
+      "high": 0.7989
+     },
+     "priority_exact": {
+      "value": 0.2424,
+      "low": 0.1212,
+      "high": 0.3939
+     },
+     "priority_within1": {
+      "value": 0.9394,
+      "low": 0.8485,
+      "high": 1.0
+     },
+     "register_kappa": {
+      "value": 0.4915,
+      "low": 0.2102,
+      "high": 0.7403
+     },
+     "register_agreement": {
+      "value": 0.697,
+      "low": 0.5455,
+      "high": 0.8485
+     }
+    }
+   },
+   "tl": {
+    "n": 33,
+    "metrics": {
+     "category_kappa": {
+      "value": 0.7566,
+      "low": 0.5809,
+      "high": 0.8942
+     },
+     "category_agreement": {
+      "value": 0.7879,
+      "low": 0.6364,
+      "high": 0.9091
+     },
+     "priority_weighted_kappa": {
+      "value": 0.6874,
+      "low": 0.5448,
+      "high": 0.7885
+     },
+     "priority_exact": {
+      "value": 0.2424,
+      "low": 0.1212,
+      "high": 0.3939
+     },
+     "priority_within1": {
+      "value": 0.9394,
+      "low": 0.8485,
+      "high": 1.0
+     },
+     "register_kappa": {
+      "value": 0.5805,
+      "low": 0.318,
+      "high": 0.807
+     },
+     "register_agreement": {
+      "value": 0.7273,
+      "low": 0.5758,
+      "high": 0.8788
+     }
+    }
+   }
+  },
+  "confusions": [
+   {
+    "gold": "alerts",
+    "team": "work_tasks",
+    "count": 5
+   },
+   {
+    "gold": "meetings",
+    "team": "work_tasks",
+    "count": 3
+   },
+   {
+    "gold": "finance_billing",
+    "team": "alerts",
+    "count": 3
+   },
+   {
+    "gold": "personal",
+    "team": "alerts",
+    "count": 3
+   },
+   {
+    "gold": "work_tasks",
+    "team": "meetings",
+    "count": 2
+   },
+   {
+    "gold": "promotions",
+    "team": "personal",
+    "count": 1
+   }
+  ]
+ },
+ "native_review": {
+  "rows": 111,
+  "reviewers": {
+   "AD": 37,
+   "KIM": 37,
+   "LJ": 37
+  },
+  "mean_naturalness": 3.73,
+  "mean_naturalness_by_language": {
+   "mixed": 3.86,
+   "tl": 3.6
+  },
+  "rated_3_or_lower": 45,
+  "label_not_ok_ids": [
+   "test-mixed-004",
+   "test-mixed-011",
+   "test-tl-002",
+   "test-tl-004",
+   "test-tl-010",
+   "train-mixed-017"
+  ]
+ }
+}

@@ -43,6 +43,8 @@ from .schemas import (
     DiscoverResponse,
     EmbedRequest,
     EmbedResponse,
+    LearnedPriority,
+    LearnedPriorityReason,
     FeedbackRequest,
     FeedbackResponse,
     MatchRequest,
@@ -53,6 +55,7 @@ from .schemas import (
     PriorityResponse,
     RegisterRequest,
     RegisterResponse,
+    SenderRegister,
     Span,
     SuggestedLabel,
     SummarizeRequest,
@@ -199,6 +202,9 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         if request.calendar_busy is not None
         else None,
     )
+    register = detect_register(request.subject, request.body, embedding=email_vector,
+                               model=learned_models.get("register"))
+    learned = _learned_priority(request, email_vector, spans, base_priority, register.register)
     timings["total"] = _elapsed_ms(started)
 
     return ClassifyResponse(
@@ -213,6 +219,50 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         embedding=email_vector,
         timings_ms=timings,
         pii_masked=pii_counts,
+        learned_priority=learned,
+        sender_register=SenderRegister(value=register.register, source=register.source),
+    )
+
+
+# The user's per-category base priority is applied as an offset from this default
+# after the learned model (master plan amendment 2026-11-17); a base of P1 marks a
+# promotional/ignorable category and caps the level at P2.
+DEFAULT_BASE_PRIORITY = 3
+IGNORABLE_BASE_PRIORITY = 1
+
+
+def _learned_priority(request: ClassifyRequest, email_vector: list[float], spans: list[Span],
+                      base_priority: int, register: str) -> LearnedPriority | None:
+    model = learned_models.get("priority")
+    if model is None:
+        return None
+    received = request.received_at.astimezone(ZoneInfo(request.timezone))
+    has_task = any(span.label == "TASK" for span in spans)
+    dates = [span.resolved.isoformat() for span in spans
+             if span.label == "DATE" and span.resolved is not None and not span.ambiguous]
+    promo_vector = model.meta.get("promo_vector") or [0.0] * len(email_vector)
+    result = priority_model.predict(
+        model,
+        priority_model.features(
+            email_vector,
+            sender_role=request.sender.role,
+            is_vip=request.sender.is_vip,
+            has_task=has_task,
+            deadline_proximity=priority_model.deadline_proximity(dates, received),
+            promo_score=cosine(email_vector, promo_vector),
+            register=register,
+        ),
+        is_vip=request.sender.is_vip,
+        has_task=has_task,
+        category=priority_model.PROMOTION_SLUG if base_priority == IGNORABLE_BASE_PRIORITY else None,
+        offset=base_priority - DEFAULT_BASE_PRIORITY,
+    )
+    return LearnedPriority(
+        level=result.level,
+        model_level=result.model_level,
+        category_offset=result.offset,
+        why=[LearnedPriorityReason(**reason) for reason in result.why],
+        guardrails=result.guardrails,
     )
 
 

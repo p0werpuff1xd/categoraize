@@ -102,8 +102,25 @@ def main() -> None:
     dev = {system: _load(f"{system}_dev.json") for system in SYSTEMS}
     tuned = _json(CONFIG_DIR / "tuned.json")
     conflict = _json(RESULTS_DIR / "conflict_check.json")
+    review = _json(RESULTS_DIR / "human_review.json")
     b4 = test["B4"]
     n = b4["results"]["overall"]["n"]
+
+    if review:
+        kappa = review["second_labeler"]["scopes"]["overall"]["metrics"]
+        label_note = [
+            "- **Gold labels are AI-authored** (`human_reviewed=false` on every record). A team second labeler",
+            f"  agreed with them at category kappa {kappa['category_kappa']['value']:.2f}, priority weighted kappa",
+            f"  {kappa['priority_weighted_kappa']['value']:.2f} and register kappa {kappa['register_kappa']['value']:.2f}"
+            " (see Team review below); the gold",
+            "  labels were not adjudicated or changed. Describe them as AI-authored with measured team agreement.",
+        ]
+    else:
+        label_note = [
+            "- **Labels are AI-authored** (`human_reviewed=false` on every record). They are pending a second-labeler",
+            "  Cohen's kappa check (`data/categoraize-dataset/review/second_labeler_test_BLIND.csv`) and a native",
+            "  Filipino speaker review. Do not describe these results as human-labeled.",
+        ]
 
     lines = [
         "# CategorAIze evaluation results",
@@ -113,9 +130,7 @@ def main() -> None:
         "",
         "## Read this first",
         "",
-        "- **Labels are AI-authored** (`human_reviewed=false` on every record). They are pending a second-labeler",
-        "  Cohen's kappa check (`data/categoraize-dataset/review/second_labeler_test_BLIND.csv`) and a native",
-        "  Filipino speaker review. Do not describe these results as human-labeled.",
+        *label_note,
         "- **Train is template-synthetic**, so train and dev scores overstate performance on real mail. The",
         "  hand-written test set is the number to report.",
         f"- **The test set is small** (n={n}; about a third per language), so confidence intervals are wide and",
@@ -168,6 +183,9 @@ def main() -> None:
                      f"{row['pred_register']} | {row['span_errors']} | {row['severity']} |")
     lines.append("")
 
+    if review:
+        lines += _team_review_lines(review)
+
     lines += ["## Dev scores used for the choices", ""]
     if tuned:
         lines.append(f"- Category (B3): {json.dumps(tuned['category'])}; dev macro-F1 "
@@ -190,6 +208,35 @@ def main() -> None:
     REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     _update_tagger_card(b4)
     print(f"wrote {REPORT}")
+
+
+def _team_review_lines(review: dict) -> list[str]:
+    second, native = review["second_labeler"], review["native_review"]
+    metrics = (("category_kappa", "Category kappa"), ("category_agreement", "Category agreement"),
+               ("priority_weighted_kappa", "Priority weighted kappa"), ("priority_exact", "Priority exact"),
+               ("priority_within1", "Priority within 1"), ("register_kappa", "Register kappa"),
+               ("register_agreement", "Register agreement"))
+    scopes = list(second["scopes"])
+    lines = ["## Team review of the test labels (`python -m eval.human_review`)", "", review["provenance"], "",
+             "Agreement between the AI-authored gold labels and the team's second labels:", "",
+             "| metric | " + " | ".join(f"{s} (n={second['scopes'][s]['n']})" for s in scopes) + " |",
+             "|---|" + "---|" * len(scopes)]
+    for key, label in metrics:
+        lines.append(f"| {label} | " + " | ".join(format_cell(second["scopes"][s]["metrics"][key]) for s in scopes) + " |")
+    top = ", ".join(f"{c['gold']} -> {c['team']} ({c['count']})" for c in second["confusions"][:5])
+    lines += [
+        "",
+        f"Most frequent category disagreements (gold -> team): {top}. Disagreements were not adjudicated, so the",
+        "evaluation above still uses the original gold labels.",
+        "",
+        f"Native-speaker review: {native['rows']} Taglish/Filipino items rated by {', '.join(native['reviewers'])}; "
+        f"mean naturalness {native['mean_naturalness']} of 5 "
+        f"({', '.join(f'{k} {v}' for k, v in native['mean_naturalness_by_language'].items())}), "
+        f"{native['rated_3_or_lower']} rated 3 or lower, {len(native['label_not_ok_ids'])} labels marked not OK "
+        f"({', '.join(native['label_not_ok_ids'])}).",
+        "",
+    ]
+    return lines
 
 
 def _tagger_summary() -> str | None:

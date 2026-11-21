@@ -41,6 +41,10 @@ import {
 } from "@/utils/actions/categoraize-classification";
 import { getActionErrorMessage } from "@/utils/error";
 import { cn } from "@/utils";
+import {
+  filterTriage,
+  type PriorityFilter,
+} from "@/utils/categoraize/triage-order";
 import type { CategoraizeClassificationsResponse } from "@/app/api/categorai/classifications/route";
 import type { CategoraizeSearchBody } from "@/app/api/categorai/search/validation";
 import { LOW_CONFIDENCE_SIMILARITY, TriageDetail } from "./TriageDetail";
@@ -53,7 +57,7 @@ export type TriageEmail =
 
 const PAGE_SIZE = 25;
 
-type Filter = "all" | "p4plus" | 1 | 2 | 3 | 4 | 5;
+type Filter = PriorityFilter;
 
 export function PriorityInbox() {
   const { emailAccountId } = useAccount();
@@ -108,20 +112,10 @@ export function PriorityInbox() {
     },
   );
 
-  const emails = useMemo(() => {
-    const all = data?.classifications ?? [];
-    const filtered = all.filter((email) => {
-      if (filter === "all") return true;
-      if (filter === "p4plus") return email.priority >= 4;
-      return email.priority === filter;
-    });
-    if (!chronological) return filtered;
-    return [...filtered].sort(
-      (a, b) =>
-        new Date(b.receivedAt ?? 0).getTime() -
-        new Date(a.receivedAt ?? 0).getTime(),
-    );
-  }, [data, filter, chronological]);
+  const emails = useMemo(
+    () => filterTriage(data?.classifications ?? [], filter, chronological),
+    [data, filter, chronological],
+  );
 
   const counts = data?.counts ?? [];
   const unreadAt = (levels: number[]) =>
@@ -409,8 +403,11 @@ function TriageRow({
   const factors = email.priorityFactors as {
     vip_pin?: number;
     calendar?: number;
+    learned?: { guardrails: string[] };
   } | null;
-  const vipPinned = factors?.vip_pin ?? 0;
+  const vipPinned = factors?.learned
+    ? Number(factors.learned.guardrails.includes("vip_floor"))
+    : (factors?.vip_pin ?? 0);
   const calendarConflict = (factors?.calendar ?? 0) > 0;
 
   return (

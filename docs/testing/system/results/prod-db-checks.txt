@@ -1,0 +1,49 @@
+﻿== S10-E field-level encryption at rest (format e1:<key>:<iv>:<tag>:<ciphertext>)
+                   col                    | rows | empty | encrypted | plaintext | key_ids 
+------------------------------------------+------+-------+-----------+-----------+---------
+ CategorizeClassification.actionDirective |   55 |    21 |        34 |         0 | p1
+ CategorizeClassification.bodyText        |   55 |     0 |        55 |         0 | p1
+ CategorizeClassification.snippet         |   55 |     0 |        55 |         0 | p1
+ CategorizeClassification.subject         |   55 |     0 |        55 |         0 | p1
+ CategorizeClassification.summary         |   55 |    55 |         0 |         0 | 
+ CategorizeExtractedSpan.text             |  627 |     0 |       627 |         0 | p1
+
+                               ?column?                                
+-----------------------------------------------------------------------
+ PASS S10-E01 no plaintext in encrypted columns (826 encrypted values)
+
+== S10-F row-level security configuration
+              table               | rls_on | forced | policies 
+----------------------------------+--------+--------+----------
+ CategorizeAuditEvent             | t      | t      |        2
+ CategorizeCategory               | t      | t      |        1
+ CategorizeClassification         | t      | t      |        1
+ CategorizeContact                | t      | t      |        1
+ CategorizeDeadlineAlert          | t      | t      |        1
+ CategorizeExtractedSpan          | t      | t      |        1
+ CategorizeFeedbackEvent          | t      | t      |        1
+ CategorizeNotification           | t      | t      |        1
+ CategorizePriorityOverrideLog    | t      | t      |        1
+ CategorizeProposalDecision       | t      | t      |        1
+ CategorizeSenderCategoryCentroid | t      | t      |        1
+ CategorizeSenderEmbedding        | t      | t      |        1
+ CategorizeUserConsent            | t      | t      |        1
+ CategorizeUserSettings           | t      | t      |        1
+
+                              ?column?                              
+--------------------------------------------------------------------
+ PASS S10-F01 RLS forced with a policy on all 14 CategorAIze tables
+
+                                     ?column?                                     
+----------------------------------------------------------------------------------
+ PASS S10-F02 runtime role categoraize_app is not superuser and cannot bypass RLS
+
+== S10-G OAuth tokens are encrypted at rest (upstream format v<N>:<hex iv+tag+ciphertext>)
+ provider | accounts | with_refresh | refresh_encrypted | access_encrypted | provider_plaintext 
+----------+----------+--------------+-------------------+------------------+--------------------
+ google   |        1 |            1 |                 1 |                1 |                  0
+
+                                      ?column?                                      
+------------------------------------------------------------------------------------
+ PASS S10-G01 every stored OAuth access and refresh token is encrypted (1 accounts)
+
