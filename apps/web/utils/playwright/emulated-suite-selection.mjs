@@ -25,7 +25,7 @@ const suiteEntryFiles = new Map([
   ["automation", ["app/(app)/[emailAccountId]/automation/page.tsx"]],
   [
     "billing",
-    ["app/(app)/premium/page.tsx", "app/(landing)/welcome-upgrade/page.tsx"],
+    ["app/(app)/premium/page.tsx"],
   ],
   ["calendars", ["app/(app)/[emailAccountId]/calendars/page.tsx"]],
   ["channels", ["app/(app)/[emailAccountId]/channels/page.tsx"]],
@@ -88,7 +88,6 @@ const sharedFeatureMappings = [
 
 const directSuiteMappings = [
   ["app/(app)/premium/", ["billing"]],
-  ["app/(landing)/welcome-upgrade/", ["billing"]],
   ["app/api/stripe/", ["billing"]],
   ["ee/billing/", ["billing"]],
   ["app/(redirects)/assistant/", ["chat"]],

@@ -1,17 +1,33 @@
 "use client";
 
-import type { ComponentProps } from "react";
-import { MoreHorizontalIcon, SparklesIcon } from "lucide-react";
+import { type ComponentProps, useState } from "react";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import {
+  CodeIcon,
+  DownloadIcon,
+  MoreHorizontalIcon,
+  PrinterIcon,
+  SparklesIcon,
+} from "lucide-react";
 import { FixWithChat } from "@/app/(app)/[emailAccountId]/assistant/FixWithChat";
 import { getRuleResultReasonDisplay } from "@/app/(app)/[emailAccountId]/assistant/ResultDisplay";
 import { RuleActions } from "@/components/RuleActions";
 import { useAccount } from "@/providers/EmailAccountProvider";
 import { useChat } from "@/providers/ChatProvider";
 import type { ThreadPlan } from "@/app/(app)/[emailAccountId]/mail/types";
+import {
+  fetchMessageSource,
+  saveMessageSource,
+} from "@/app/(app)/[emailAccountId]/mail/message-source";
+import { MessageSourceDialog } from "@/app/(app)/[emailAccountId]/mail/MessageSourceDialog";
+import { printMessages } from "@/app/(app)/[emailAccountId]/mail/print-messages";
+import { toastError } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
@@ -19,6 +35,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { ExecutedRuleStatus } from "@/generated/prisma/enums";
+import { captureException } from "@/utils/error";
 import type { ParsedMessage } from "@/utils/types";
 
 type FixWithChatResults = ComponentProps<typeof FixWithChat>["results"];
@@ -32,55 +49,103 @@ export function MessageActionsMenu({
   plans: ThreadPlan[];
   showFixWithChat: boolean;
 }) {
+  const { t, i18n } = useLingui();
+  const { emailAccountId } = useAccount();
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
   const messagePlans = plans.filter((plan) => plan.messageId === message.id);
+  const subject = message.headers.subject ?? "";
+
+  const downloadMessage = async () => {
+    try {
+      saveMessageSource(
+        await fetchMessageSource({ emailAccountId, messageId: message.id }),
+        subject,
+      );
+    } catch (error) {
+      captureException(error);
+      toastError({ description: t`Unable to download this message` });
+    }
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          aria-label="More message actions"
-          size="iconXs"
-          variant="ghostMuted"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label={t`More message actions`}
+            size="iconXs"
+            variant="ghostMuted"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <MoreHorizontalIcon className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
           onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+          onEscapeKeyDown={(event) => event.stopPropagation()}
         >
-          <MoreHorizontalIcon className="size-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
-        onEscapeKeyDown={(event) => event.stopPropagation()}
-      >
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <SparklesIcon className="mr-2 size-4" />
-            Matched reason
-          </DropdownMenuSubTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuSubContent
-              className="max-h-[var(--radix-dropdown-menu-content-available-height)] w-[min(24rem,calc(100vw-1rem))] overflow-y-auto p-0"
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              {messagePlans.length ? (
-                messagePlans.map((plan) => (
-                  <RuleAttribution
-                    key={plan.id}
-                    message={message}
-                    plan={plan}
-                    showFixWithChat={showFixWithChat}
-                  />
-                ))
-              ) : (
-                <p className="p-3 text-muted-foreground text-xs">
-                  No matched rules for this message.
-                </p>
-              )}
-            </DropdownMenuSubContent>
-          </DropdownMenuPortal>
-        </DropdownMenuSub>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <SparklesIcon className="mr-2 size-4" />
+              <Trans>Matched reason</Trans>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent
+                className="max-h-[var(--radix-dropdown-menu-content-available-height)] w-[min(24rem,calc(100vw-1rem))] overflow-y-auto p-0"
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+              >
+                {messagePlans.length ? (
+                  messagePlans.map((plan) => (
+                    <RuleAttribution
+                      key={plan.id}
+                      message={message}
+                      plan={plan}
+                      showFixWithChat={showFixWithChat}
+                    />
+                  ))
+                ) : (
+                  <p className="p-3 text-muted-foreground text-xs">
+                    <Trans>No matched rules for this message.</Trans>
+                  </p>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onSelect={() =>
+              printMessages({ subject, messages: [message], i18n })
+            }
+          >
+            <PrinterIcon className="mr-2 size-4" />
+            <Trans>Print</Trans>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onSelect={downloadMessage}>
+            <DownloadIcon className="mr-2 size-4" />
+            <Trans>Download message</Trans>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onSelect={() => setIsSourceOpen(true)}>
+            <CodeIcon className="mr-2 size-4" />
+            <Trans>Show original</Trans>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <MessageSourceDialog
+        emailAccountId={emailAccountId}
+        messageId={message.id}
+        subject={subject}
+        open={isSourceOpen}
+        onOpenChange={setIsSourceOpen}
+      />
+    </>
   );
 }
 
@@ -93,20 +158,23 @@ function RuleAttribution({
   message: ParsedMessage | null;
   showFixWithChat: boolean;
 }) {
+  const { t, i18n } = useLingui();
   const { provider } = useAccount();
   const { setInput: setChatInput } = useChat();
-  const reasonDisplay = getRuleResultReasonDisplay(plan.reason ?? "");
+  const reasonDisplay = getRuleResultReasonDisplay(plan.reason ?? "", i18n);
 
   return (
     <div className="min-w-0 border-border border-b px-3 py-3 last:border-b-0">
       <div className="min-w-0 text-xs">
         <span className="text-muted-foreground">
-          {plan.status === ExecutedRuleStatus.APPLIED
-            ? "Applied rule:"
-            : "Matched rule:"}{" "}
+          {plan.status === ExecutedRuleStatus.APPLIED ? (
+            <Trans>Applied rule:</Trans>
+          ) : (
+            <Trans>Matched rule:</Trans>
+          )}{" "}
         </span>
         <span className="font-medium text-foreground break-words [overflow-wrap:anywhere]">
-          {plan.rule?.name ?? "a deleted rule"}
+          {plan.rule?.name ?? t`a deleted rule`}
         </span>
       </div>
 
@@ -119,9 +187,11 @@ function RuleAttribution({
       {reasonDisplay.actionFailureMessages.length > 0 ? (
         <div className="mt-2 rounded-md bg-destructive/10 px-2 py-1.5 text-destructive text-xs">
           <div className="font-medium">
-            {reasonDisplay.actionFailureMessages.length === 1
-              ? "Action issue"
-              : "Action issues"}
+            <Plural
+              value={reasonDisplay.actionFailureMessages.length}
+              one="Action issue"
+              other="Action issues"
+            />
           </div>
           <ul className="mt-0.5 list-disc space-y-0.5 pl-4">
             {reasonDisplay.actionFailureMessages.map(
@@ -142,9 +212,11 @@ function RuleAttribution({
         <div className="mt-3 space-y-2">
           <div className="font-medium text-xs">
             {plan.status === ExecutedRuleStatus.APPLIED &&
-            reasonDisplay.actionFailureMessages.length === 0
-              ? "Actions applied"
-              : "Rule actions"}
+            reasonDisplay.actionFailureMessages.length === 0 ? (
+              <Trans>Actions applied</Trans>
+            ) : (
+              <Trans>Rule actions</Trans>
+            )}
           </div>
           <RuleActions
             actions={plan.actionItems}

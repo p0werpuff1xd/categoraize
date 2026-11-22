@@ -5,7 +5,7 @@ import {
   executeAutomationJobRun,
 } from "@/utils/automation-jobs/execute";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const POST = withError(
   "automation-jobs/execute",

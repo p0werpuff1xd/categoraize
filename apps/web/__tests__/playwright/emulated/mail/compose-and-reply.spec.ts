@@ -1,4 +1,5 @@
-import { expect } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+import type { ThreadResponse } from "@/app/api/threads/[id]/route";
 import { capturePlaywrightCheckpoint } from "../playwright-evidence";
 import { test } from "../playwright-test";
 import {
@@ -7,12 +8,15 @@ import {
 } from "./account-test-helpers";
 import {
   conversationWithSubject,
+  countReplyThreadDrafts,
+  countReplyThreadSentCopies,
   expectSeamlessReplyHandoff,
   clearWorkflowMailboxDrafts,
   expectThreadReaderBody,
   openMail,
   openMailboxFromSidebar,
   readLatestMailMutation,
+  requestMailSync,
   UNDO_WINDOW_SEND_TIMEOUT_MS,
   waitForComposeOutboxSend,
   watchReplyHandoff,
@@ -64,6 +68,44 @@ test("composes, sends, and reads a new message from Sent", async ({
   await expectThreadReaderBody(page, "A composed message body.");
   await expectThreadReaderBody(page, "Sent with Categoraize");
   await capturePlaywrightCheckpoint(page, testInfo, "composed-message-in-sent");
+});
+
+test("views a sent message without leaving the current mailbox", async ({
+  page,
+}, testInfo) => {
+  await openMail(page);
+  const subject = `Playwright View Sent ${Date.now()}`;
+
+  await page.getByRole("button", { name: /^Compose/ }).click();
+  const dialog = page.getByRole("dialog", { name: "New Message" });
+  await dialog
+    .getByRole("combobox", { name: "To" })
+    .fill("recipient@example.com");
+  await dialog.getByPlaceholder("Subject").fill(subject);
+  await dialog
+    .locator("[contenteditable='true']")
+    .pressSequentially("A message to view after sending.");
+  await dialog.getByRole("button", { exact: true, name: "Send" }).click();
+  await expect(dialog).toBeHidden();
+
+  const notifications = page.getByRole("region", {
+    name: "Notifications alt+T",
+  });
+  const viewButton = notifications.getByRole("button", { name: "View" });
+  await expect(viewButton).toBeVisible({
+    timeout: UNDO_WINDOW_SEND_TIMEOUT_MS,
+  });
+  await expect(
+    notifications.getByRole("button", { name: /^Undo/ }),
+  ).toHaveCount(0);
+  await capturePlaywrightCheckpoint(page, testInfo, "sent-toast-view");
+  await viewButton.click();
+
+  const sidePanel = page.getByRole("dialog");
+  await expect(sidePanel.getByText(subject).first()).toBeVisible();
+  await expectThreadReaderBody(page, "A message to view after sending.");
+  expect(new URL(page.url()).searchParams.get("thread-id")).toBeNull();
+  await capturePlaywrightCheckpoint(page, testInfo, "sent-message-side-panel");
 });
 
 test("undoes a composed message before it is delivered", async ({
@@ -264,7 +306,6 @@ test("opens and sends a reply from the reader with Enter", async ({
   const replyBody = `A reply sent through the mail reader. ${testInfo.retry}`;
   await replyEditor.pressSequentially(replyBody);
   await expect(replyEditor).toContainText(replyBody);
-  await capturePlaywrightCheckpoint(page, testInfo, "inline-reply-divider");
   const sendButton = page.getByRole("button", { name: "Send", exact: true });
   await expect(sendButton).toHaveText("Send");
 
@@ -378,6 +419,9 @@ test("moves a sent reply from its composer into the thread without a gap", async
     '[data-thread-message-id="msg_playwright_reply"]',
   );
   await expect(sourceMessage).toBeVisible({ timeout: 60_000 });
+  // Earlier cases leave drafts in this conversation that the device may still
+  // list until it syncs their removal; the handoff counts the rows.
+  await expectReaderMatchesMailbox(page, emailAccountId);
   await sourceMessage
     .getByRole("button", { name: "Reply", exact: true })
     .click();
@@ -418,6 +462,7 @@ test("moves a sent reply from its composer into the thread without a gap", async
       .getByRole("region", { name: "Notifications alt+T" })
       .getByRole("button", { name: /^Undo/ }),
   ).toBeVisible();
+  await expectSelectionBarOn(page, sentRow);
   await expectThreadReaderBody(page, replyBody, 3000);
   await capturePlaywrightCheckpoint(page, testInfo, "reply-sent-with-undo");
 
@@ -439,6 +484,78 @@ test("moves a sent reply from its composer into the thread without a gap", async
   ).toHaveCount(0);
   await expectThreadReaderBody(page, replyBody);
   expectSeamlessReplyHandoff(await handoff.stop(), handoff.rowsBefore);
+});
+
+test("does not reopen a sent reply when returning during the undo window", async ({
+  page,
+}, testInfo) => {
+  const { emailAccountId } = await openMail(page);
+  const threadUrl = `/${emailAccountId}/mail?thread-id=thr_playwright_reply`;
+  await page.goto(threadUrl);
+  const sourceMessage = page.locator(
+    '[data-thread-message-id="msg_playwright_reply"]',
+  );
+  await expect(sourceMessage).toBeVisible({ timeout: 60_000 });
+  await sourceMessage
+    .getByRole("button", { name: "Reply", exact: true })
+    .click();
+  const replyBody = `A reply sent before leaving the thread. ${testInfo.retry}`;
+  await sourceMessage
+    .getByRole("textbox", { name: "Email message" })
+    .pressSequentially(replyBody);
+  await sourceMessage
+    .getByRole("button", { name: "Send", exact: true })
+    .click();
+  const undo = page
+    .getByRole("region", { name: "Notifications alt+T" })
+    .getByRole("button", { name: /^Undo/ });
+  await expect(undo).toBeVisible();
+
+  await page.goto(`/${emailAccountId}/mail`);
+  await page.goto(threadUrl);
+  // The local draft is kept for undo and loads after the thread renders, so
+  // watch every frame from the return until the reply shows, and a little after.
+  await page.evaluate((text) => {
+    const state = window as unknown as { __reopenedReply: boolean };
+    state.__reopenedReply = false;
+    const sample = () => {
+      if (
+        Array.from(document.querySelectorAll('[contenteditable="true"]')).some(
+          (element) => element.textContent?.includes(text),
+        )
+      )
+        state.__reopenedReply = true;
+      requestAnimationFrame(sample);
+    };
+    sample();
+  }, replyBody);
+  await expectThreadReaderBody(page, replyBody);
+  await page.waitForTimeout(3000);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { __reopenedReply: boolean }).__reopenedReply,
+    ),
+  ).toBe(false);
+  // The check only means something while the send is still held for undo.
+  const send = await readLatestMailMutation(page, {
+    emailAccountId,
+    kind: "reply",
+    threadId: "thr_playwright_reply",
+  });
+  expect(send).toBeDefined();
+  expect(send?.status).not.toBe("succeeded");
+  await capturePlaywrightCheckpoint(page, testInfo, "returned-during-undo");
+  await expect
+    .poll(
+      () =>
+        readLatestMailMutation(page, {
+          emailAccountId,
+          kind: "reply",
+          threadId: "thr_playwright_reply",
+        }),
+      { timeout: UNDO_WINDOW_SEND_TIMEOUT_MS },
+    )
+    .toMatchObject({ status: "succeeded" });
 });
 
 test("undoes a sent reply and restores its text", async ({
@@ -609,6 +726,82 @@ test("sends a reply after its tab closes during the undo window", async ({
     .toBe("SENT");
 });
 
+test("removes a reply's draft after its tab closed mid-save", async ({
+  page,
+  request,
+}) => {
+  const { emailAccountId } = await openMail(page);
+  await page.goto(`/${emailAccountId}/mail?thread-id=thr_playwright_reply`);
+  const sourceMessage = page.locator(
+    '[data-thread-message-id="msg_playwright_reply"]',
+  );
+  await expect(sourceMessage).toBeVisible({ timeout: 60_000 });
+  await sourceMessage
+    .getByRole("button", { name: "Reply", exact: true })
+    .click();
+  const replyBody = `A reply whose draft was still saving. ${Date.now()}`;
+
+  // This reply's first draft save creates its mailbox draft. Let the server
+  // finish it but hold its answer, so the tab never learns that draft's id.
+  // Installed before typing, so no earlier save can slip past it.
+  let saveReachedServer = false;
+  let holding = false;
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    if (
+      holding ||
+      request.method() !== "POST" ||
+      !request.headers()["next-action"] ||
+      !request.postData()?.includes(replyBody)
+    ) {
+      await route.fallback();
+      return;
+    }
+    holding = true;
+    const response = await route.fetch();
+    saveReachedServer = true;
+    await new Promise((resolve) => setTimeout(resolve, 30_000));
+    await route.fulfill({ response }).catch(() => {});
+  });
+  await sourceMessage
+    .getByRole("textbox", { name: "Email message" })
+    .pressSequentially(replyBody);
+  await expect.poll(() => saveReachedServer, { timeout: 20_000 }).toBe(true);
+  await sourceMessage
+    .getByRole("button", { name: "Send", exact: true })
+    .click();
+  await expect
+    .poll(() => readHeldReply(emailAccountId, replyBody), { timeout: 20_000 })
+    .toMatchObject({ status: "PENDING" });
+  // The draft exists in the mailbox, and the device never heard its id.
+  await expect.poll(() => countReplyThreadDrafts(page, emailAccountId)).toBe(1);
+  // Leave with the save still unanswered, as a closing tab does. Removing the
+  // route first would let the held request through a second time.
+  await page.goto("about:blank");
+
+  const held = await readHeldReply(emailAccountId, replyBody);
+  const internalApiKey = process.env.INTERNAL_API_KEY;
+  if (!held || !internalApiKey) {
+    throw new Error("Expected a held reply and an internal API key");
+  }
+  await withClient((client) =>
+    client.query(
+      `UPDATE "ScheduledEmail" SET "sendAt" = now() - interval '1 second' WHERE id = $1`,
+      [held.id],
+    ),
+  );
+  const delivered = await request.post("/api/scheduled-emails/execute", {
+    data: { scheduledEmailId: held.id },
+    headers: { "x-api-key": internalApiKey },
+  });
+  expect(delivered.ok()).toBe(true);
+
+  await expect
+    .poll(() => countReplyThreadSentCopies(page, emailAccountId, replyBody))
+    .toBe(1);
+  await expect.poll(() => countReplyThreadDrafts(page, emailAccountId)).toBe(0);
+});
+
 test("focuses the To field when forwarding", async ({ page }) => {
   const { emailAccountId } = await openMail(page);
   // Open by thread id so this still works after an earlier reply-and-mark-done
@@ -685,7 +878,7 @@ test("shows the files a forward carries", async ({ page }, testInfo) => {
   await conversationWithSubject(
     page,
     conversations,
-    "Re: Reader Visual Message",
+    "Reader Visual Message",
   ).click();
   const sourceMessage = page
     .locator("[data-thread-message-id]")
@@ -756,4 +949,42 @@ async function readHeldReply(emailAccountId: string, replyBody: string) {
     );
     return result.rows[0];
   });
+}
+
+async function expectReaderMatchesMailbox(page: Page, emailAccountId: string) {
+  await expect
+    .poll(
+      async () => {
+        await requestMailSync(page);
+        const response = await page.request.get(
+          "/api/threads/thr_playwright_reply",
+          { headers: { "X-Email-Account-ID": emailAccountId } },
+        );
+        const { thread }: ThreadResponse = await response.json();
+        const rows = await page.locator("li[data-thread-message-id]").count();
+        return rows === thread.messages.length;
+      },
+      { timeout: 60_000 },
+    )
+    .toBe(true);
+}
+
+// Offline first: the bar marks the sent reply from the moment it shows, not
+// once the provider confirms it.
+async function expectSelectionBarOn(page: Page, row: Locator) {
+  const bar = page.getByTestId("thread-selection-bar");
+  await expect(bar).toBeVisible();
+  await expect
+    .poll(async () => {
+      const [barBox, rowBox] = await Promise.all([
+        bar.boundingBox(),
+        row.boundingBox(),
+      ]);
+      if (!barBox || !rowBox) return false;
+      return (
+        Math.abs(barBox.y - rowBox.y) < 1 &&
+        Math.abs(barBox.height - rowBox.height) < 1
+      );
+    })
+    .toBe(true);
 }

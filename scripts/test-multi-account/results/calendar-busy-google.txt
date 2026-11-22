@@ -1,0 +1,52 @@
+=== [google] ja***@gmail.com (timezone=Asia/Manila) ===
+[0m[test-multi-account/calendar]: Calendar tokens saved successfully {
+  "connectionId": "cmwhw4h6o0003ncsp2a3ktqc0"
+}[0m
+[33m[test-multi-account/calendar]: Skipping unavailable Google calendar {
+  "provider": "google",
+  "calendarErrors": [
+    {
+      "calendarIdIsPrimary": false,
+      "errors": [
+        {
+          "domain": "global",
+          "reason": "notFound"
+        }
+      ]
+    }
+  ]
+}[0m
+google: OK 0 busy period(s) in 1072 ms
+  covers CATZ-TEST window Fri, Nov 20, 16:00..Fri, Nov 20, 18:00: NO
+  timezone-aware ISO strings: yes
+[33m[test-multi-account/calendar]: Skipping unavailable Google calendar {
+  "provider": "google",
+  "calendarErrors": [
+    {
+      "calendarIdIsPrimary": false,
+      "errors": [
+        {
+          "domain": "global",
+          "reason": "notFound"
+        }
+      ]
+    }
+  ]
+}[0m
+unified (what the app merges): 0 period(s)
+[33m[test-multi-account/calendar]: Skipping unavailable Google calendar {
+  "provider": "google",
+  "calendarErrors": [
+    {
+      "calendarIdIsPrimary": false,
+      "errors": [
+        {
+          "domain": "global",
+          "reason": "notFound"
+        }
+      ]
+    }
+  ]
+}[0m
+calendar_busy sent to NLP service: 0 period(s), keys=-
+=== Cross-account ===

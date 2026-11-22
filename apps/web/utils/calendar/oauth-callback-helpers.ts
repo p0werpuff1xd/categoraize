@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import {
   CALENDAR_ONBOARDING_RETURN_COOKIE,
   CALENDAR_STATE_COOKIE_NAME,
@@ -199,7 +200,7 @@ export async function createCalendarConnection(params: {
   refreshToken: string;
   expiresAt: Date | null;
 }) {
-  return await prisma.calendarConnection.create({
+  const connection = await prisma.calendarConnection.create({
     data: {
       provider: params.provider,
       email: params.email,
@@ -210,6 +211,12 @@ export async function createCalendarConnection(params: {
       isConnected: true,
     },
   });
+  await recordAuditEvent({
+    eventType: "oauth_scope_changed",
+    emailAccountId: params.emailAccountId,
+    metadata: { kind: "calendar", provider: params.provider, granted: true },
+  });
+  return connection;
 }
 
 export function extractAadstsCode(

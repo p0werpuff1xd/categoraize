@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CreditCardIcon } from "lucide-react";
 import Link from "next/link";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { env } from "@/env";
 import { Button } from "@/components/ui/button";
 import { toastError } from "@/components/Toast";
@@ -15,7 +16,9 @@ const APPLE_SUBSCRIPTION_HELP_URL = "https://support.apple.com/en-us/118428";
 
 export function ManageSubscription({
   premium,
+  compact,
 }: {
+  compact?: boolean;
   premium:
     | {
         appleExpiresAt?: string | Date | null | undefined;
@@ -28,6 +31,8 @@ export function ManageSubscription({
     | null
     | undefined;
 }) {
+  const size = compact ? "sm" : undefined;
+  const Icon = compact ? undefined : CreditCardIcon;
   const { loading: loadingBillingPortal, openBillingPortal } =
     useOpenBillingPortal();
   const hasAppleSubscription = hasActiveAppleSubscription(
@@ -43,38 +48,55 @@ export function ManageSubscription({
   return (
     <>
       {premium?.stripeSubscriptionStatus === "trialing" && (
-        <EndTrialButton variant="outline" />
+        <EndTrialButton
+          variant={compact ? "outline" : undefined}
+          size={size}
+          showIcon={!compact}
+        />
       )}
 
       {premium?.stripeSubscriptionId && (
-        <Button loading={loadingBillingPortal} onClick={openBillingPortal}>
-          <CreditCardIcon className="mr-2 h-4 w-4" />
-          Manage{hasBothStripeAndLemon ? " Stripe" : ""} subscription
+        <Button
+          variant={compact ? "outline" : undefined}
+          size={size}
+          Icon={Icon}
+          loading={loadingBillingPortal}
+          onClick={openBillingPortal}
+        >
+          {hasBothStripeAndLemon ? (
+            <Trans>Manage Stripe subscription</Trans>
+          ) : (
+            <Trans>Manage subscription</Trans>
+          )}
         </Button>
       )}
 
       {premium?.lemonSqueezyCustomerId && (
-        <Button asChild>
+        <Button asChild variant={compact ? "outline" : undefined} size={size}>
           <Link
             href={`https://${env.NEXT_PUBLIC_LEMON_STORE_ID}.lemonsqueezy.com/billing`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            <CreditCardIcon className="mr-2 h-4 w-4" />
-            Manage{hasBothStripeAndLemon ? " Lemon" : ""} subscription
+            {Icon && <Icon className="mr-2 h-4 w-4" />}
+            {hasBothStripeAndLemon ? (
+              <Trans>Manage Lemon subscription</Trans>
+            ) : (
+              <Trans>Manage subscription</Trans>
+            )}
           </Link>
         </Button>
       )}
 
       {hasAppleSubscription && (
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" size={size}>
           <Link
             href={APPLE_SUBSCRIPTION_HELP_URL}
             target="_blank"
             rel="noopener noreferrer"
           >
-            <CreditCardIcon className="mr-2 h-4 w-4" />
-            Manage in App Store
+            {Icon && <Icon className="mr-2 h-4 w-4" />}
+            <Trans>Manage in App Store</Trans>
           </Link>
         </Button>
       )}
@@ -105,7 +127,7 @@ export function ViewInvoicesButton({
           loading={loading}
           onClick={openBillingPortal}
         >
-          {hasBoth ? "Stripe invoices" : "Invoices"}
+          {hasBoth ? <Trans>Stripe invoices</Trans> : <Trans>Invoices</Trans>}
         </Button>
       )}
 
@@ -116,7 +138,7 @@ export function ViewInvoicesButton({
             target="_blank"
             rel="noopener noreferrer"
           >
-            {hasBoth ? "Lemon invoices" : "Invoices"}
+            {hasBoth ? <Trans>Lemon invoices</Trans> : <Trans>Invoices</Trans>}
           </Link>
         </Button>
       )}
@@ -125,6 +147,7 @@ export function ViewInvoicesButton({
 }
 
 function useOpenBillingPortal() {
+  const { t } = useLingui();
   const [loading, setLoading] = useState(false);
 
   const openBillingPortal = async () => {
@@ -136,7 +159,7 @@ function useOpenBillingPortal() {
       toastError({
         description:
           result?.serverError ||
-          "Error loading billing portal. Please contact support.",
+          t`Error loading billing portal. Please contact support.`,
       });
     } else {
       redirectToSafeUrl(url, { allowExternal: true });

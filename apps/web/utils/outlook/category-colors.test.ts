@@ -1,19 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { OUTLOOK_CATEGORY_COLORS } from "./category-colors";
+import { getDefaultLabelColorName } from "@/utils/label";
+import { getRuleLabel } from "@/utils/rule/consts";
+import { SystemType } from "@/generated/prisma/enums";
+import { getDefaultOutlookCategoryColor } from "./category-colors";
 
-describe("Outlook category colors", () => {
+describe("getDefaultOutlookCategoryColor", () => {
   it.each([
-    ["preset2", "Brown"],
-    ["preset3", "Yellow"],
-    ["preset4", "Green"],
-    ["preset5", "Teal"],
-    ["preset6", "Olive"],
-    ["preset7", "Blue"],
-    ["preset8", "Purple"],
-    ["preset9", "Cranberry"],
-  ])("maps %s to the documented %s category color", (id, name) => {
-    expect(OUTLOOK_CATEGORY_COLORS.find((color) => color.id === id)?.name).toBe(
-      name,
+    [SystemType.NEWSLETTER, SystemType.NOTIFICATION],
+    [SystemType.COLD_EMAIL, SystemType.FYI],
+  ])("keeps the %s and %s categories apart, as Gmail does", (first, second) => {
+    const firstColor = getDefaultLabelColorName(getRuleLabel(first));
+    const secondColor = getDefaultLabelColorName(getRuleLabel(second));
+    if (!firstColor || !secondColor) throw new Error("Missing default color");
+
+    expect(firstColor).not.toBe(secondColor);
+    expect(getDefaultOutlookCategoryColor(firstColor)).not.toBe(
+      getDefaultOutlookCategoryColor(secondColor),
     );
   });
 });

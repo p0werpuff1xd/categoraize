@@ -7,7 +7,7 @@ import type { EmailProvider } from "@/utils/email/types";
 
 const THREAD_CONCURRENCY = 4;
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const bodySchema = z.object({
   action: z.enum(["archive", "unarchive", "trash", "untrash"]),

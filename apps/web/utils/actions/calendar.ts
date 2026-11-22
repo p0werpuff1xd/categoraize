@@ -8,6 +8,7 @@ import {
   updateBookingLinkBody,
 } from "@/utils/actions/calendar.validation";
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import { SafeError } from "@/utils/error";
 
 export const disconnectCalendarAction = actionClient
@@ -28,6 +29,11 @@ export const disconnectCalendarAction = actionClient
 
       await prisma.calendarConnection.delete({
         where: { id: connectionId },
+      });
+      await recordAuditEvent({
+        eventType: "account_disconnected",
+        emailAccountId,
+        metadata: { kind: "calendar", provider: connection.provider },
       });
 
       return { success: true };

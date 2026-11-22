@@ -2,92 +2,86 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { withEmailAccount } from "@/utils/middleware";
 import prisma from "@/utils/prisma";
-import { embedWithIntelligenceService } from "@/lib/categorai/intelligence-client";
-import { categoraiizeSearch } from "./validation";
+import { embedTexts } from "@/utils/categoraize/client";
+import { toVectorLiteral } from "@/utils/categoraize/vectors";
+import { loadTriageRows } from "@/utils/categoraize/triage-rows";
+import { withAccountSql } from "@/utils/categoraize/tenant";
+import { type CategoraizeSearchBody, categoraizeSearch } from "./validation";
 
-const priorityRank: Record<string, number> = {
-  P1: 1,
-  P2: 2,
-  P3: 3,
-  P4: 4,
-  P5: 5,
-};
+export type CategoraizeSearchResponse = Awaited<ReturnType<typeof getData>>;
 
+// POST because the query text can be long; this route only reads.
 export const POST = withEmailAccount("categorai/search", async (request) => {
-  const body = categoraiizeSearch.parse(await request.json());
-  const queryVector =
-    body.queryVector ??
-    (await embedWithIntelligenceService([body.query ?? ""])).embeddings[0];
-  if (!queryVector)
-    return new Response("Unable to embed query", { status: 502 });
-  const vector = `[${queryVector.join(",")}]`;
-  const filters = [
-    Prisma.sql`c."emailAccountId" = ${request.auth.emailAccountId}`,
-  ];
+  const body = categoraizeSearch.parse(await request.json());
+  return NextResponse.json(
+    await getData({ emailAccountId: request.auth.emailAccountId, body }),
+  );
+});
 
-  if (body.categoryId) {
+/**
+ * Semantic search: the query is embedded with Sentence-BERT and compared with
+ * each stored email embedding through pgvector (<=>), combined with the
+ * label, priority and deadline filters. Returns full Priority Inbox rows,
+ * best match first.
+ */
+async function getData({
+  emailAccountId,
+  body,
+}: {
+  emailAccountId: string;
+  body: CategoraizeSearchBody;
+}) {
+  // Short Filipino queries match the language more than the topic, so the
+  // service embeds a Filipino/Taglish query as its English gloss.
+  const [queryVector] = await embedTexts([body.query], { gloss: true });
+  const vector = toVectorLiteral(queryVector);
+  const filters = [
+    Prisma.sql`c."emailAccountId" = ${emailAccountId}`,
+    Prisma.sql`c."embedding" IS NOT NULL`,
+  ];
+  if (body.categoryId === "uncategorized") {
+    filters.push(Prisma.sql`c."categoryId" IS NULL`);
+  } else if (body.categoryId) {
     filters.push(Prisma.sql`c."categoryId" = ${body.categoryId}`);
   }
-
   if (body.minimumPriority) {
-    const minimumPriority = priorityRank[body.minimumPriority];
     filters.push(
-      Prisma.sql`CAST(SUBSTRING(c."priorityBand" FROM 2) AS INTEGER) >= ${minimumPriority}`,
+      Prisma.sql`COALESCE(c."manualPriority", c."computedPriority") >= ${body.minimumPriority}`,
     );
   }
-
   if (body.hasDeadline !== undefined) {
     filters.push(
       body.hasDeadline
-        ? Prisma.sql`EXISTS (
-            SELECT 1 FROM "CategorizeDeadlineAlert" d
-            WHERE d."emailAccountId" = c."emailAccountId"
-              AND d."threadId" = c."threadId"
-              AND d."messageId" = c."messageId"
-              AND d."status" NOT IN ('COMPLETED', 'DISMISSED')
-          )`
-        : Prisma.sql`NOT EXISTS (
-            SELECT 1 FROM "CategorizeDeadlineAlert" d
-            WHERE d."emailAccountId" = c."emailAccountId"
-              AND d."threadId" = c."threadId"
-              AND d."messageId" = c."messageId"
-              AND d."status" NOT IN ('COMPLETED', 'DISMISSED')
-          )`,
+        ? Prisma.sql`c."deadlineAt" IS NOT NULL`
+        : Prisma.sql`c."deadlineAt" IS NULL`,
     );
   }
 
-  const rows = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      threadId: string;
-      messageId: string;
-      categoryId: string | null;
-      categoryName: string | null;
-      priority: string;
-      priorityBand: string;
-      priorityScore: number;
-      confidence: number;
-      similarity: number;
-    }>
-  >`
-    SELECT
-      c."id" AS "id",
-      c."threadId" AS "threadId",
-      c."messageId" AS "messageId",
-      c."categoryId" AS "categoryId",
-      c."categoryName" AS "categoryName",
-      c."priority" AS "priority",
-      c."priorityBand" AS "priorityBand",
-      c."priorityScore" AS "priorityScore",
-      c."confidence" AS "confidence",
-      1 - (c."embedding" <=> ${vector}::vector) AS "similarity"
+  const matches = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<Array<{ id: string; similarity: number }>>`
+    SELECT c."id", 1 - (c."embedding" <=> ${vector}::vector) AS "similarity"
     FROM "CategorizeClassification" c
     WHERE ${Prisma.join(filters, " AND ")}
-      AND c."embedding" IS NOT NULL
     ORDER BY c."embedding" <=> ${vector}::vector ASC
     LIMIT ${body.limit}
     OFFSET ${body.offset}
-  `;
+  `,
+  );
 
-  return NextResponse.json({ results: rows });
-});
+  const similarityById = new Map(
+    matches.map((match) => [match.id, Number(match.similarity)]),
+  );
+  const rows = await loadTriageRows({
+    emailAccountId,
+    where: { id: { in: matches.map((match) => match.id) } },
+    take: matches.length,
+  });
+
+  return {
+    results: rows
+      .map((row) => ({ ...row, similarity: similarityById.get(row.id) ?? 0 }))
+      .sort((a, b) => b.similarity - a.similarity),
+  };
+}

@@ -19,6 +19,7 @@ import { validateUserAndAiAccess } from "@/utils/user/validate";
 import { SafeError } from "@/utils/error";
 import { actionClient } from "@/utils/actions/safe-action";
 import { prefixPath } from "@/utils/path";
+import { learnSenderCategoryCorrection } from "@/utils/categoraize/sender-categories";
 
 export const bulkCategorizeSendersAction = actionClient
   .metadata({ name: "bulkCategorizeSenders" })
@@ -74,7 +75,7 @@ export const changeSenderCategoryAction = actionClient
   .inputSchema(z.object({ sender: z.string(), categoryId: z.string() }))
   .action(
     async ({
-      ctx: { emailAccountId },
+      ctx: { emailAccountId, logger },
       parsedInput: { sender, categoryId },
     }) => {
       const category = await prisma.category.findUnique({
@@ -82,10 +83,24 @@ export const changeSenderCategoryAction = actionClient
       });
       if (!category) throw new SafeError("Category not found");
 
+      const previous = await prisma.newsletter.findUnique({
+        where: { email_emailAccountId: { email: sender, emailAccountId } },
+        select: { categoryId: true },
+      });
+
       await updateCategoryForSender({
         emailAccountId,
         sender,
         categoryId,
+      });
+
+      // A manual recategorization teaches the CategorAIze centroids (Rocchio).
+      await learnSenderCategoryCorrection({
+        emailAccountId,
+        sender,
+        fromCategoryId: previous?.categoryId ?? null,
+        toCategoryId: categoryId,
+        logger,
       });
 
       revalidatePath(prefixPath(emailAccountId, "/smart-categories"));
@@ -112,12 +127,15 @@ export const upsertDefaultCategoriesAction = actionClient
       )?.description;
 
       if (enabled) {
-        await upsertCategory({
-          emailAccountId,
-          newCategory: { name, description },
-        });
-      } else {
-        if (id) await deleteCategory({ emailAccountId, categoryId: id });
+        // An existing category keeps its (possibly user-edited) description.
+        if (!id) {
+          await upsertCategory({
+            emailAccountId,
+            newCategory: { name, description },
+          });
+        }
+      } else if (id) {
+        await deleteCategory({ emailAccountId, categoryId: id });
       }
     }
 
@@ -128,10 +146,13 @@ export const createCategoryAction = actionClient
   .metadata({ name: "createCategory" })
   .inputSchema(createCategoryBody)
   .action(
-    async ({ ctx: { emailAccountId }, parsedInput: { name, description } }) => {
+    async ({
+      ctx: { emailAccountId },
+      parsedInput: { id, name, description },
+    }) => {
       await upsertCategory({
         emailAccountId,
-        newCategory: { name, description },
+        newCategory: { id, name, description },
       });
 
       revalidatePath(prefixPath(emailAccountId, "/smart-categories"));

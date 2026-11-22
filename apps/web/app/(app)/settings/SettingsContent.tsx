@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { MouseEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -20,16 +21,19 @@ import { ApiKeysSection } from "@/app/(app)/[emailAccountId]/settings/ApiKeysSec
 import { McpSection } from "@/app/(app)/[emailAccountId]/settings/McpSection";
 import { EmailOtpSection } from "@/app/(app)/settings/EmailOtpSection";
 import { AppearanceSection } from "@/app/(app)/settings/AppearanceSection";
+import { LanguageSection } from "@/app/(app)/settings/LanguageSection";
 import { TeamSection } from "@/app/(app)/settings/TeamSection";
 import { BillingSection } from "@/app/(app)/[emailAccountId]/settings/BillingSection";
 import { CleanupDraftsSection } from "@/app/(app)/[emailAccountId]/settings/CleanupDraftsSection";
 import { SentMessageOpenTrackingSetting } from "@/app/(app)/[emailAccountId]/settings/SentMessageOpenTrackingSetting";
+import { SentWithSignatureSection } from "@/app/(app)/[emailAccountId]/settings/SentWithSignatureSection";
 import { useSlackNotifications } from "@/app/(app)/[emailAccountId]/settings/ConnectedAppsSection";
 import { DeleteSection } from "@/app/(app)/[emailAccountId]/settings/DeleteSection";
 import { ModelSection } from "@/app/(app)/[emailAccountId]/settings/ModelSection";
 import { DecisionModelSection } from "@/app/(app)/[emailAccountId]/settings/DecisionModelSection";
 import { OrgAnalyticsConsentSection } from "@/app/(app)/[emailAccountId]/settings/OrgAnalyticsConsentSection";
 import { ResetAnalyticsSection } from "@/app/(app)/[emailAccountId]/settings/ResetAnalyticsSection";
+import { ResetLabelColorsSection } from "@/app/(app)/[emailAccountId]/settings/ResetLabelColorsSection";
 import { WebhookSection } from "@/app/(app)/[emailAccountId]/settings/WebhookSection";
 import { CopyRulesSection } from "@/app/(app)/[emailAccountId]/settings/CopyRulesSection";
 import { RuleImportExportSetting } from "@/app/(app)/[emailAccountId]/assistant/settings/RuleImportExportSetting";
@@ -57,6 +61,7 @@ import { env } from "@/env";
 import { hasOrganizationAdminRole } from "@/utils/organizations/roles";
 
 export function SettingsContent() {
+  const { t } = useLingui();
   const { emailAccountId: activeEmailAccountId } = useAccount();
   const { data, isLoading, error } = useAccounts();
   const { canManageBilling } = usePremium();
@@ -102,7 +107,7 @@ export function SettingsContent() {
     <div className="space-y-10">
       <SettingsGroup
         icon={<MailIcon className="size-5" />}
-        title="Email Accounts"
+        title={t`Email Accounts`}
       >
         <LoadingContent loading={isLoading} error={error}>
           {emailAccounts.length > 0 && (
@@ -124,7 +129,7 @@ export function SettingsContent() {
               <Button asChild variant="outline">
                 <Link href="/accounts">
                   <MailIcon className="mr-2 size-4" />
-                  Add Account
+                  <Trans>Add Account</Trans>
                 </Link>
               </Button>
             </div>
@@ -135,7 +140,7 @@ export function SettingsContent() {
       {!env.NEXT_PUBLIC_BYPASS_PREMIUM_CHECKS && canManageBilling && (
         <SettingsGroup
           icon={<CreditCardIcon className="size-5" />}
-          title="Billing"
+          title={t`Billing`}
         >
           <ItemCard>
             <BillingSection />
@@ -144,7 +149,7 @@ export function SettingsContent() {
       )}
 
       {canInviteMembers && (
-        <SettingsGroup icon={<UsersIcon className="size-5" />} title="Team">
+        <SettingsGroup icon={<UsersIcon className="size-5" />} title={t`Team`}>
           <ItemCard>
             <TeamSection
               organizationId={organizationMembership?.organizationId}
@@ -156,7 +161,7 @@ export function SettingsContent() {
       {!env.NEXT_PUBLIC_AI_MODEL_SETTINGS_DISABLED && (
         <SettingsGroup
           icon={<SparklesIcon className="size-5" />}
-          title="AI Model"
+          title={t`AI Model`}
         >
           <ItemCard className="p-4">
             <ModelSection />
@@ -169,20 +174,25 @@ export function SettingsContent() {
         </SettingsGroup>
       )}
 
-      <SettingsGroup icon={<UserIcon className="size-5" />} title="Account">
+      <SettingsGroup icon={<UserIcon className="size-5" />} title={t`Account`}>
         <ItemCard>
           {env.NEXT_PUBLIC_EXTERNAL_API_ENABLED && <McpSection />}
           <EmailOtpSection hasMultipleAccounts={emailAccounts.length > 1} />
           <ItemSeparator />
           <AppearanceSection />
           <ItemSeparator />
+          <LanguageSection />
           <Item size="sm">
             <ItemContent>
-              <ItemTitle>Beta Features</ItemTitle>
+              <ItemTitle>
+                <Trans>Beta Features</Trans>
+              </ItemTitle>
             </ItemContent>
             <ItemActions>
               <Button asChild size="sm" variant="outline">
-                <Link href="/early-access">Open</Link>
+                <Link href="/early-access">
+                  <Trans>Open</Trans>
+                </Link>
               </Button>
             </ItemActions>
           </Item>
@@ -196,7 +206,7 @@ export function SettingsContent() {
         env.NEXT_PUBLIC_EXTERNAL_API_ENABLED) && (
         <SettingsGroup
           icon={<WebhookIcon className="size-5" />}
-          title="Developer"
+          title={t`Developer`}
         >
           <ItemCard>
             {env.NEXT_PUBLIC_WEBHOOK_ACTION_ENABLED !== false && (
@@ -280,7 +290,7 @@ function EmailAccountSettingsCard({
               className="gap-1 text-xs font-normal cursor-pointer hover:bg-muted"
             >
               <PlugIcon className="size-3" />
-              Connect Apps
+              <Trans>Connect Apps</Trans>
             </Badge>
           </Link>
         )}
@@ -295,6 +305,7 @@ function EmailAccountSettingsCard({
       {expanded && (
         <>
           <SentMessageOpenTrackingSetting emailAccountId={emailAccount.id} />
+          <SentWithSignatureSection emailAccountId={emailAccount.id} />
           <OrgAnalyticsConsentSection emailAccountId={emailAccount.id} />
           <ToggleAllRulesSection emailAccountId={emailAccount.id} />
           <RuleImportExportSetting emailAccountId={emailAccount.id} />
@@ -304,6 +315,7 @@ function EmailAccountSettingsCard({
             allAccounts={allAccounts}
           />
           <CleanupDraftsSection emailAccountId={emailAccount.id} />
+          <ResetLabelColorsSection emailAccountId={emailAccount.id} />
           <ResetAnalyticsSection emailAccountId={emailAccount.id} />
         </>
       )}

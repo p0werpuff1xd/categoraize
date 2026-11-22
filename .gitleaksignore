@@ -1,0 +1,17 @@
+# Known findings reviewed on 2026-11-17 (docs/ias/secrets-and-dependencies.md).
+# - postgres-url-with-password in b049db249: the Supabase database password was
+#   reset on 2026-11-16, so the value in history no longer works (C10a).
+# - The other entries are example or test values committed by upstream
+#   Inbox Zero contributors.
+37c78ba2e8d706c08e379b0550536182ad476907:fastapi_core/tests/test_hardening.py:generic-api-key:65
+b049db2496f951f5d0dd58650f9d20ab0b115a22:docs/plans/deployment-environment-setup.md:postgres-url-with-password:344
+b049db2496f951f5d0dd58650f9d20ab0b115a22:docs/plans/deployment-environment-setup.md:postgres-url-with-password:345
+b049db2496f951f5d0dd58650f9d20ab0b115a22:docs/plans/deployment-environment-setup.md:postgres-url-with-password:348
+1cad984bd1dfa7e841953d66e8b03f29273f9134:apps/web/ee/billing/apple/local-testing.ts:private-key:8
+1cad984bd1dfa7e841953d66e8b03f29273f9134:apps/web/scripts/emulator/README.md:generic-api-key:234
+66ae7ccc4fd57c193acc9567ecacf772f4e94a2b:README.md:github-fine-grained-pat:65
+af5056b9c7c27f65595737a0d78d581ca092da28:apps/web/.env.example:generic-api-key:11
+fa3909b940691aaddf1c8e4f5199a3bb5034e2db:apps/web/.env.example:generic-api-key:15
+fa3909b940691aaddf1c8e4f5199a3bb5034e2db:docker-compose.yml:generic-api-key:29
+08fcb6c39092d80eb12d15e08c66f64800731871:apps/web/scripts/emulator/README.md:generic-api-key:234
+dccf30f87b6af5500e86665fa622bc7e0ef6bd6f:apps/web/ee/billing/apple/local-testing.ts:private-key:8

@@ -1,0 +1,24 @@
+{
+ "rules": {
+  "threshold": 0.35,
+  "request_boost": 0.0,
+  "request_floor": 0.0,
+  "secondary_margin": 0.05,
+  "confident_band": 0.0,
+  "confident_margin": 0.04
+ },
+ "tuned_on": "data/matching dev half",
+ "dev": {
+  "rules": {
+   "accuracy": 0.8856,
+   "coverage": 0.7925,
+   "confident_accuracy": 0.9443,
+   "cascade_upper_bound": 0.9559,
+   "by_language": {
+    "en": 0.8929,
+    "taglish": 0.8884,
+    "tl": 0.8756
+   }
+  }
+ }
+}

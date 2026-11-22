@@ -179,6 +179,23 @@ describe("Apple premium helpers", () => {
     ).toBe("STARTER_MONTHLY");
   });
 
+  it("does not treat paused Stripe subscriptions as premium", () => {
+    const paused = {
+      tier: "STARTER_MONTHLY" as const,
+      stripeSubscriptionStatus: "paused",
+      adminGrantExpiresAt: null,
+      adminGrantTier: null,
+      lemonSqueezyRenewsAt: null,
+      appleExpiresAt: null,
+      appleRevokedAt: null,
+      appleSubscriptionStatus: null,
+    };
+
+    expect(isPremiumRecord(paused)).toBe(false);
+    expect(isActivePremium(paused)).toBe(false);
+    expect(getUserTier(paused)).toBeNull();
+  });
+
   it("treats missing premium records as premium when bypass checks are enabled", () => {
     envMock.NEXT_PUBLIC_BYPASS_PREMIUM_CHECKS = true;
 
@@ -230,6 +247,33 @@ describe("Apple premium helpers", () => {
 describe("digest access", () => {
   afterEach(() => {
     envMock.NEXT_PUBLIC_BYPASS_PREMIUM_CHECKS = false;
+  });
+
+  it("includes Apple subscribers that the app treats as active after their stored expiry", () => {
+    const appleBranch = getPremiumUserFilter().user.premium.OR.find((branch) =>
+      branch.AND.some((condition) => "appleRevokedAt" in condition),
+    );
+
+    // Each status must keep cron jobs running for users the app still
+    // treats as premium (see hasActiveAppleSubscription).
+    for (const status of ["ACTIVE", "BILLING_GRACE_PERIOD", "BILLING_RETRY"]) {
+      expect(
+        hasActiveAppleSubscription(
+          new Date(Date.now() - 60 * 60 * 1000),
+          null,
+          status,
+        ),
+      ).toBe(true);
+      expect(appleBranch?.AND).toContainEqual({
+        OR: expect.arrayContaining([
+          {
+            appleSubscriptionStatus: {
+              in: expect.arrayContaining([status]),
+            },
+          },
+        ]),
+      });
+    }
   });
 
   it("filters premium users by minimum tier when requested", () => {

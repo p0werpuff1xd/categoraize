@@ -1,9 +1,10 @@
 "use client";
 
-import Image from "next/image";
+import { Trans } from "@lingui/react/macro";
 import { Settings2Icon } from "lucide-react";
 import { PageHeading, TypographyP } from "@/components/Typography";
 import { IconCircle } from "@/app/(app)/[emailAccountId]/onboarding/IconCircle";
+import { SplitInboxIllustration } from "@/app/(app)/[emailAccountId]/onboarding/illustrations/SplitInboxIllustration";
 import { OnboardingWrapper } from "@/app/(app)/[emailAccountId]/onboarding/OnboardingWrapper";
 import { CategoriesSetup } from "@/app/(app)/[emailAccountId]/onboarding/OnboardingCategories";
 
@@ -25,10 +26,14 @@ export function StepLabels({
           </IconCircle>
 
           <div className="text-center mt-4">
-            <PageHeading>How do you want your inbox organized?</PageHeading>
+            <PageHeading>
+              <Trans>How do you want your inbox organized?</Trans>
+            </PageHeading>
             <TypographyP className="mt-2 max-w-lg mx-auto">
-              We'll use these labels to organize your inbox. You can add custom
-              labels and change them later.
+              <Trans>
+                We'll use these labels to organize your inbox. You can add
+                custom labels and change them later.
+              </Trans>
             </TypographyP>
           </div>
 
@@ -40,17 +45,8 @@ export function StepLabels({
         </OnboardingWrapper>
       </div>
 
-      <div className="fixed top-0 right-0 w-1/2 h-screen bg-white items-center justify-center hidden xl:flex px-10">
-        <div className="rounded-2xl p-4 bg-slate-50 border border-slate-200">
-          <Image
-            src="/images/assistant/labels.png"
-            alt="Categorize your emails"
-            width={1200}
-            height={800}
-            unoptimized
-            className="h-auto max-w-full rounded-xl border border-slate-200"
-          />
-        </div>
+      <div className="fixed top-0 right-0 w-1/2 h-screen bg-card items-center justify-center hidden xl:flex px-10">
+        <SplitInboxIllustration />
       </div>
     </div>
   );

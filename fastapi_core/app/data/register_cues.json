@@ -1,0 +1,5 @@
+{
+  "_note": "Rule cues for the sender-tone (register) detector; also used as features by the learned register model. Filipino/Taglish entries pending native-speaker review.",
+  "formal": ["po", "opo", "dear", "kindly", "good day", "good morning", "good afternoon", "respectfully", "sincerely", "regards", "best regards", "yours truly", "ma'am", "madam", "sir", "mr.", "ms.", "mrs.", "dr.", "engr.", "atty.", "please be advised", "we would like to", "magandang umaga", "magandang hapon", "magandang araw", "magandang gabi", "mangyaring", "maaari po", "lubos", "nawa", "gng.", "g.", "bb.", "pakisuyo", "salamat po", "maraming salamat po"],
+  "casual": ["haha", "hehe", "lol", "lmao", "pls", "plz", "tara", "bes", "besh", "pre", "sis", "beh", "omg", "yay", "huy", "uy", "musta", "guys", "hey", "yo", "dude", "bro", "gg", "nvm", "btw", "tbh", "ty", "thx", "k lang", "ok lang", "sige na", "g ka", "go na", "nga pala", "naman eh", "lezgo", "!!"]
+}

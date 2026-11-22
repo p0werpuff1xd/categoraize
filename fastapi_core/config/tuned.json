@@ -1,0 +1,114 @@
+{
+ "_note": "Tuned on dev only (n=30). One dev email is 0.033 accuracy, so neighbouring settings are statistically indistinguishable; the chosen beta and threshold sit at the grid edge. The grid was widened once (keyword 0.2->0.5, role 0.1->0.2) and then frozen to avoid fitting dev noise.",
+ "generated_at": "2026-11-18T10:12:13+00:00",
+ "category": {
+  "threshold": 0.35,
+  "keyword_weight": 0.3,
+  "role_weight": 0.02,
+  "rocchio_alpha": 1.0,
+  "rocchio_beta": 4.0
+ },
+ "dev_scores": {
+  "chosen": {
+   "dev_macro_f1": 0.8518,
+   "dev_accuracy": 0.8333
+  },
+  "zero_shot_B2": {
+   "dev_macro_f1": 0.1982,
+   "dev_accuracy": 0.1333
+  }
+ },
+ "grid": {
+  "thresholds": [
+   0.0,
+   0.1,
+   0.15,
+   0.2,
+   0.25,
+   0.3,
+   0.35
+  ],
+  "keyword_weights": [
+   0.0,
+   0.02,
+   0.05,
+   0.1,
+   0.2,
+   0.3,
+   0.5
+  ],
+  "role_weights": [
+   0.0,
+   0.02,
+   0.05,
+   0.1,
+   0.2
+  ],
+  "rocchio_alpha": 1.0,
+  "rocchio_betas": [
+   0.0,
+   0.5,
+   1.0,
+   2.0,
+   4.0
+  ],
+  "trials": 1225
+ },
+ "top5": [
+  {
+   "params": {
+    "threshold": 0.35,
+    "keyword_weight": 0.3,
+    "role_weight": 0.02,
+    "rocchio_alpha": 1.0,
+    "rocchio_beta": 4.0
+   },
+   "dev_macro_f1": 0.8518,
+   "dev_accuracy": 0.8333
+  },
+  {
+   "params": {
+    "threshold": 0.3,
+    "keyword_weight": 0.3,
+    "role_weight": 0.02,
+    "rocchio_alpha": 1.0,
+    "rocchio_beta": 4.0
+   },
+   "dev_macro_f1": 0.8518,
+   "dev_accuracy": 0.8333
+  },
+  {
+   "params": {
+    "threshold": 0.25,
+    "keyword_weight": 0.3,
+    "role_weight": 0.02,
+    "rocchio_alpha": 1.0,
+    "rocchio_beta": 4.0
+   },
+   "dev_macro_f1": 0.8518,
+   "dev_accuracy": 0.8333
+  },
+  {
+   "params": {
+    "threshold": 0.2,
+    "keyword_weight": 0.3,
+    "role_weight": 0.02,
+    "rocchio_alpha": 1.0,
+    "rocchio_beta": 4.0
+   },
+   "dev_macro_f1": 0.8518,
+   "dev_accuracy": 0.8333
+  },
+  {
+   "params": {
+    "threshold": 0.15,
+    "keyword_weight": 0.3,
+    "role_weight": 0.02,
+    "rocchio_alpha": 1.0,
+    "rocchio_beta": 4.0
+   },
+   "dev_macro_f1": 0.8518,
+   "dev_accuracy": 0.8333
+  }
+ ]
+}

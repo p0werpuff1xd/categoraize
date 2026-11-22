@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "work_tasks",
+    "name": "Work",
+    "description": "Work requests, task assignments, deliverables, project updates, and code or report reviews from colleagues, managers or clients."
+  },
+  {
+    "slug": "meetings",
+    "name": "Meetings",
+    "description": "Meeting invitations, rescheduling, availability requests, and coordination of calls, appointments and get-togethers with colleagues or vendors."
+  },
+  {
+    "slug": "school",
+    "name": "School",
+    "description": "Classes, assignments, exams, deadlines, grades, enrollment and messages from instructors, classmates or the school office."
+  },
+  {
+    "slug": "job_search",
+    "name": "Job Search",
+    "description": "Job applications, interview invitations, recruiter messages, assessments, job offers, requirements and job alerts."
+  },
+  {
+    "slug": "finance_billing",
+    "name": "Finance and Billing",
+    "description": "Bills, invoices, payments, receipts, refunds, subscriptions and expense reports."
+  },
+  {
+    "slug": "promotions",
+    "name": "Promotions and Newsletters",
+    "description": "Marketing offers, sales, discounts, abandoned carts, newsletters, webinars and referral programs from companies."
+  },
+  {
+    "slug": "alerts",
+    "name": "Alerts and Notifications",
+    "description": "Automated notifications: security sign-in alerts, delivery updates, system and server alerts, storage and account notices."
+  },
+  {
+    "slug": "personal",
+    "name": "Personal",
+    "description": "Messages from family and friends: invitations, plans, photos, reunions and casual conversation."
+  }
+]

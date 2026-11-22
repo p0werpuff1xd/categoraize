@@ -1,0 +1,17 @@
+=== [google] ja***@gmail.com timezone=Asia/Manila ===
+CATZ-TEST 1 deadline  (request timezone=Asia/Manila)
+  category: (none)
+  priority: 3
+  deadline: 2026-11-20T17:00:00+08:00
+  language: en
+CATZ-TEST 2 newsletter  (request timezone=Asia/Manila)
+  category: (none)
+  priority: 3
+  deadline: -
+  language: en
+CATZ-TEST 3 taglish request  (request timezone=Asia/Manila)
+  category: Family and Friends
+  priority: 2
+  deadline: -
+  language: mixed
+stored CATZ-TEST classifications from the mailbox: 0

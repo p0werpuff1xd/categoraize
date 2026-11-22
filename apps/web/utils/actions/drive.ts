@@ -15,6 +15,7 @@ import {
   fileAttachmentBody,
 } from "@/utils/actions/drive.validation";
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import { SafeError } from "@/utils/error";
 import { createDriveProviderWithRefresh } from "@/utils/drive/provider";
 import { createEmailProvider } from "@/utils/email/provider";
@@ -42,6 +43,11 @@ export const disconnectDriveAction = actionClient
 
       await prisma.driveConnection.delete({
         where: { id: connectionId, emailAccountId },
+      });
+      await recordAuditEvent({
+        eventType: "account_disconnected",
+        emailAccountId,
+        metadata: { kind: "drive", provider: connection.provider },
       });
     },
   );

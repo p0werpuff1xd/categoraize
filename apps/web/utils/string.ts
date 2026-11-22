@@ -1,4 +1,4 @@
-import he from "he";
+import * as he from "he";
 
 export function escapeHtml(text: string | null | undefined): string {
   if (!text) return "";
@@ -120,7 +120,7 @@ export function convertNewlinesToBr(text: string): string {
 // slice() counts UTF-16 code units, so a cut can land inside an emoji or other
 // astral character and leave a lone surrogate. Some LLM APIs reject a request
 // body that contains one as invalid JSON, so drop the half character instead.
-function sliceHead(str: string, length: number) {
+export function sliceHead(str: string, length: number) {
   const head = str.slice(0, length);
   return isHighSurrogate(head.charCodeAt(head.length - 1))
     ? head.slice(0, -1)

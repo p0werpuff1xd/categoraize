@@ -1,6 +1,7 @@
 "use client";
 
 import { type ComponentProps, memo, useCallback } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { BufferedThreadReader } from "@/app/(app)/[emailAccountId]/mail/BufferedThreadReader";
 import { MailPanelErrorBoundary } from "@/app/(app)/[emailAccountId]/mail/MailPanelErrorBoundary";
 import { MessageActionsMenu } from "@/app/(app)/[emailAccountId]/mail/MessageActionsMenu";
@@ -33,6 +34,7 @@ export const MailReaderPane = memo(function MailReaderPane({
   onClose,
   showFixWithChat,
   lastMessage,
+  lastReceivedMessage,
   isStarred,
   onToggleStar,
   onMarkSpam,
@@ -41,6 +43,7 @@ export const MailReaderPane = memo(function MailReaderPane({
   onMove,
   onTranslate,
   onComment,
+  onPrint,
   isMenuOpen,
   onMenuOpenChange,
   ...readerProps
@@ -56,6 +59,7 @@ export const MailReaderPane = memo(function MailReaderPane({
   onClose: () => void;
   showFixWithChat: boolean;
   lastMessage: ThreadMessage | null;
+  lastReceivedMessage: ThreadMessage | null;
   isStarred: boolean;
   onToggleStar: () => void;
   onMarkSpam: () => void;
@@ -64,9 +68,11 @@ export const MailReaderPane = memo(function MailReaderPane({
   onMove?: () => void;
   onTranslate?: () => void;
   onComment?: () => void;
+  onPrint?: () => void;
   isMenuOpen: boolean;
   onMenuOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useLingui();
   const { data: planData } = useThreadPlans({
     threadId: planSelection?.threadId,
     emailAccountId: planSelection?.emailAccountId,
@@ -86,11 +92,11 @@ export const MailReaderPane = memo(function MailReaderPane({
   if (readerKey && !readerEmailAccount) {
     return (
       <div
-        aria-label="Loading"
+        aria-label={t`Loading`}
         className="flex min-h-0 min-w-0 flex-1 items-center justify-center text-muted-foreground text-sm"
         role="status"
       >
-        Loading…
+        <Trans>Loading…</Trans>
       </div>
     );
   }
@@ -98,8 +104,9 @@ export const MailReaderPane = memo(function MailReaderPane({
   return (
     <MailPanelErrorBoundary
       resetKey={readerKey ?? "empty"}
-      title="Unable to show this conversation"
+      title={t`Unable to show this conversation`}
       onBack={onClose}
+      onError={() => onReady(readerKey ?? "empty")}
     >
       <EmailAccountScopeProvider emailAccount={readerEmailAccount}>
         <BufferedThreadReader
@@ -110,11 +117,13 @@ export const MailReaderPane = memo(function MailReaderPane({
         >
           <ThreadReader
             {...readerProps}
+            showChat={showFixWithChat}
             onBackToInbox={onClose}
             renderMessageMenu={renderMessageMenu}
             menu={
               <ThreadActionsMenu
                 message={lastMessage}
+                receivedMessage={lastReceivedMessage}
                 isStarred={isStarred}
                 onToggleStar={onToggleStar}
                 onMarkSpam={onMarkSpam}
@@ -123,6 +132,7 @@ export const MailReaderPane = memo(function MailReaderPane({
                 onMove={onMove}
                 onTranslate={onTranslate}
                 onComment={onComment}
+                onPrint={onPrint}
                 open={isMenuOpen}
                 onOpenChange={onMenuOpenChange}
               />

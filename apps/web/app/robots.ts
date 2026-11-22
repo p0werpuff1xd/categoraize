@@ -16,11 +16,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/components",
     },
-    sitemap: [
-      `${env.NEXT_PUBLIC_BASE_URL}/sitemap.xml`,
-      "https://docs.getinboxzero.com/sitemap.xml",
-    ],
+    sitemap: [`${env.NEXT_PUBLIC_BASE_URL}/sitemap.xml`],
   };
 }

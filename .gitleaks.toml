@@ -1,0 +1,28 @@
+[extend]
+useDefault = true
+
+# The default rules miss database URLs with an inline password; a Supabase
+# password leaked that way on 2026-10-20 (docs/ias/control-matrix.md C10a).
+[[rules]]
+id = "postgres-url-with-password"
+description = "PostgreSQL connection string with an inline password"
+regex = '''postgres(?:ql)?://[^:@\s/]+:([^@\s\[\]<>]{6,})@[A-Za-z0-9.-]+'''
+secretGroup = 1
+keywords = ["postgres://", "postgresql://"]
+
+[[rules.allowlists]]
+description = "Local development defaults, ALLCAPS placeholders and ${ENV} templates"
+regexTarget = "secret"
+regexes = [
+  '''^(password|postgres|[A-Z_]+|YOUR[-_].*|\[YOUR-PASSWORD\])$''',
+  '''\$\{''',
+]
+
+[[rules.allowlists]]
+description = "Test fixtures use fake connection strings"
+paths = ['''\.test\.(ts|tsx|mjs|js)$''']
+
+[allowlist]
+description = "Documentation placeholders such as YOUR_CRON_SECRET"
+regexTarget = "secret"
+regexes = ['''^YOUR_[A-Z0-9_]+$''']

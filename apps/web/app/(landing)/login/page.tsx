@@ -17,6 +17,8 @@ import { WELCOME_PATH } from "@/utils/config";
 import { CrispChatLoggedOutVisible } from "@/components/CrispChat";
 import { MutedText } from "@/components/Typography";
 import { normalizeInternalPath } from "@/utils/path";
+import { isConsentGateEnabled } from "@/utils/categoraize/consent";
+import { PRIVACY_PATH, TERMS_PATH } from "@/utils/categoraize/consent-paths";
 import { BRAND_NAME, SUPPORT_EMAIL, getBrandTitle } from "@/utils/branding";
 
 export const metadata: Metadata = {
@@ -59,7 +61,19 @@ export default async function AuthenticationPage(props: {
 
         {searchParams?.error && <ErrorAlert error={searchParams?.error} />}
 
-        {!isSelfHosted ? (
+        {isConsentGateEnabled() ? (
+          <MutedText className="px-8 pt-10 text-center">
+            Before we read your mailbox, you will be asked to accept the{" "}
+            <Link href={TERMS_PATH} className="underline">
+              Terms
+            </Link>{" "}
+            and the{" "}
+            <Link href={PRIVACY_PATH} className="underline">
+              Privacy Notice
+            </Link>
+            .
+          </MutedText>
+        ) : !isSelfHosted ? (
           <MutedText className="px-8 pt-10 text-center">
             By clicking continue, you agree to our terms and privacy policy.
           </MutedText>

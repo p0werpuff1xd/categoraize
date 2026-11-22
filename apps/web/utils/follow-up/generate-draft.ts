@@ -1,4 +1,5 @@
 import type { EmailProvider } from "@/utils/email/types";
+import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
 import { buildDraftReplyBody } from "@/utils/email/reply-body";
 import type { Logger } from "@/utils/logger";
 import type { EmailAccountWithAI } from "@/utils/llms/types";
@@ -69,6 +70,13 @@ export async function generateFollowUpDraft({
       return;
     }
 
+    if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+      logger.info("Skipping follow-up draft: external AI is turned off", {
+        threadId,
+      });
+      return;
+    }
+
     const recipientOverride = trackedMessage.headers.to || undefined;
 
     // Convert messages to LLM format
@@ -121,7 +129,11 @@ export async function generateFollowUpDraft({
         () =>
           prisma.threadTracker.update({
             where: { id: trackerId },
-            data: { followUpDraftId: draftId },
+            data: {
+              followUpDraftId: draftId,
+              followUpDraftContent: draftContent,
+              followUpDraftCreatedAt: new Date(),
+            },
           }),
         { logger },
       );

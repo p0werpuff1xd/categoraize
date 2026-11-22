@@ -15,7 +15,7 @@ import { env } from "@/env";
 import type { Logger } from "@/utils/logger";
 import { processDueSnoozedThreads } from "@/utils/snooze/process-due";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const BATCH_SIZE = 100;
 

@@ -35,13 +35,13 @@ test("starts a trial from the post-onboarding upgrade page", async ({
     { timeout: 60_000 },
   );
 
-  await page.goto("/welcome-upgrade");
+  await page.goto("/premium");
   await expect(
     page.getByRole("heading", { name: "Start your 7-day FREE trial" }),
   ).toBeVisible({ timeout: 60_000 });
   await loadedSignedInUser;
 
-  await capturePlaywrightCheckpoint(page, test.info(), "welcome-upgrade");
+  await capturePlaywrightCheckpoint(page, test.info(), "premium");
 
   await payOnStripeCheckout(page, STARTER_TIER);
 
@@ -55,6 +55,17 @@ test("starts a trial from the post-onboarding upgrade page", async ({
   await expect(
     page.locator(`button[aria-describedby="${STARTER_TIER}"]`),
   ).toHaveText("Current plan", { timeout: 60_000 });
+
+  // The same plan on the other billing interval is offered as a plan change.
+  await page.getByRole("radio", { name: "Monthly" }).click();
+  await expect(
+    page.locator(`button[aria-describedby="${STARTER_TIER}"]`),
+  ).toHaveText("Switch to this plan");
+  await capturePlaywrightCheckpoint(
+    page,
+    test.info(),
+    "billing-interval-switch",
+  );
 });
 
 test("records the paid conversion once the first invoice is paid", async ({

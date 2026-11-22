@@ -1,0 +1,3194 @@
+{
+ "system": "B4",
+ "split": "test",
+ "generated_at": "2026-11-21T11:27:09+00:00",
+ "config": {
+  "system": "B4",
+  "category_params": {
+   "threshold": 0.35,
+   "keyword_weight": 0.3,
+   "role_weight": 0.02,
+   "rocchio_alpha": 1.0,
+   "rocchio_beta": 4.0,
+   "source": "tuned.json"
+  },
+  "tagger": "v6",
+  "priority_model": "v1",
+  "register_model": "rules (no model file)"
+ },
+ "label_provenance": "AI-authored labels, human_reviewed=false on every record",
+ "results": {
+  "overall": {
+   "n": 100,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.77,
+     "low": 0.68,
+     "high": 0.85
+    },
+    "category_macro_f1": {
+     "value": 0.7697,
+     "low": 0.6809,
+     "high": 0.8412
+    },
+    "priority_exact": {
+     "value": 0.42,
+     "low": 0.33,
+     "high": 0.52
+    },
+    "priority_within1": {
+     "value": 0.87,
+     "low": 0.8,
+     "high": 0.93
+    },
+    "priority_qwk": {
+     "value": 0.5438,
+     "low": 0.3851,
+     "high": 0.6631
+    },
+    "priority_mae": {
+     "value": 0.72,
+     "low": 0.58,
+     "high": 0.86
+    },
+    "register_accuracy": {
+     "value": 0.85,
+     "low": 0.78,
+     "high": 0.91
+    },
+    "register_macro_f1": {
+     "value": 0.8461,
+     "low": 0.7665,
+     "high": 0.9105
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.2843,
+     "low": 0.2088,
+     "high": 0.3711
+    },
+    "task_recall": {
+     "value": 0.4754,
+     "low": 0.3559,
+     "high": 0.6
+    },
+    "task_f1": {
+     "value": 0.3558,
+     "low": 0.2638,
+     "high": 0.4524
+    },
+    "date_precision": {
+     "value": 0.39,
+     "low": 0.2912,
+     "high": 0.4894
+    },
+    "date_recall": {
+     "value": 0.5571,
+     "low": 0.4375,
+     "high": 0.6668
+    },
+    "date_f1": {
+     "value": 0.4588,
+     "low": 0.3509,
+     "high": 0.5596
+    },
+    "span_micro_f1": {
+     "value": 0.4084,
+     "low": 0.3385,
+     "high": 0.4765
+    },
+    "date_resolution_accuracy": {
+     "value": 0.5429,
+     "low": 0.4265,
+     "high": 0.6567
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 0.9571,
+     "low": 0.9032,
+     "high": 1.0
+    }
+   }
+  },
+  "en": {
+   "n": 34,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.7941,
+     "low": 0.6471,
+     "high": 0.9118
+    },
+    "category_macro_f1": {
+     "value": 0.8058,
+     "low": 0.6281,
+     "high": 0.9168
+    },
+    "priority_exact": {
+     "value": 0.4706,
+     "low": 0.3235,
+     "high": 0.6471
+    },
+    "priority_within1": {
+     "value": 0.8824,
+     "low": 0.7647,
+     "high": 0.9706
+    },
+    "priority_qwk": {
+     "value": 0.5692,
+     "low": 0.258,
+     "high": 0.7792
+    },
+    "priority_mae": {
+     "value": 0.6765,
+     "low": 0.4412,
+     "high": 0.9412
+    },
+    "register_accuracy": {
+     "value": 0.8235,
+     "low": 0.7059,
+     "high": 0.9412
+    },
+    "register_macro_f1": {
+     "value": 0.8177,
+     "low": 0.6503,
+     "high": 0.9383
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.2857,
+     "low": 0.1304,
+     "high": 0.44
+    },
+    "task_recall": {
+     "value": 0.381,
+     "low": 0.1765,
+     "high": 0.5882
+    },
+    "task_f1": {
+     "value": 0.3265,
+     "low": 0.1509,
+     "high": 0.5
+    },
+    "date_precision": {
+     "value": 0.5625,
+     "low": 0.3939,
+     "high": 0.7242
+    },
+    "date_recall": {
+     "value": 0.72,
+     "low": 0.5417,
+     "high": 0.8889
+    },
+    "date_f1": {
+     "value": 0.6316,
+     "low": 0.4561,
+     "high": 0.7869
+    },
+    "span_micro_f1": {
+     "value": 0.4906,
+     "low": 0.3604,
+     "high": 0.595
+    },
+    "date_resolution_accuracy": {
+     "value": 0.68,
+     "low": 0.5,
+     "high": 0.8621
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 0.92,
+     "low": 0.7998,
+     "high": 1.0
+    }
+   }
+  },
+  "mixed": {
+   "n": 33,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.7879,
+     "low": 0.6364,
+     "high": 0.9091
+    },
+    "category_macro_f1": {
+     "value": 0.7855,
+     "low": 0.5936,
+     "high": 0.9016
+    },
+    "priority_exact": {
+     "value": 0.3939,
+     "low": 0.2424,
+     "high": 0.5758
+    },
+    "priority_within1": {
+     "value": 0.9091,
+     "low": 0.7879,
+     "high": 1.0
+    },
+    "priority_qwk": {
+     "value": 0.6014,
+     "low": 0.3949,
+     "high": 0.7579
+    },
+    "priority_mae": {
+     "value": 0.697,
+     "low": 0.4848,
+     "high": 0.9098
+    },
+    "register_accuracy": {
+     "value": 0.9091,
+     "low": 0.8182,
+     "high": 1.0
+    },
+    "register_macro_f1": {
+     "value": 0.8993,
+     "low": 0.7734,
+     "high": 1.0
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.3429,
+     "low": 0.205,
+     "high": 0.4865
+    },
+    "task_recall": {
+     "value": 0.5714,
+     "low": 0.357,
+     "high": 0.7647
+    },
+    "task_f1": {
+     "value": 0.4286,
+     "low": 0.2641,
+     "high": 0.5819
+    },
+    "date_precision": {
+     "value": 0.3636,
+     "low": 0.2121,
+     "high": 0.5333
+    },
+    "date_recall": {
+     "value": 0.5217,
+     "low": 0.3182,
+     "high": 0.7273
+    },
+    "date_f1": {
+     "value": 0.4286,
+     "low": 0.2592,
+     "high": 0.6102
+    },
+    "span_micro_f1": {
+     "value": 0.4286,
+     "low": 0.2916,
+     "high": 0.5645
+    },
+    "date_resolution_accuracy": {
+     "value": 0.5217,
+     "low": 0.3182,
+     "high": 0.7273
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    }
+   }
+  },
+  "tl": {
+   "n": 33,
+   "metrics": {
+    "category_accuracy": {
+     "value": 0.7273,
+     "low": 0.5758,
+     "high": 0.8788
+    },
+    "category_macro_f1": {
+     "value": 0.7221,
+     "low": 0.496,
+     "high": 0.8544
+    },
+    "priority_exact": {
+     "value": 0.3939,
+     "low": 0.2424,
+     "high": 0.5758
+    },
+    "priority_within1": {
+     "value": 0.8182,
+     "low": 0.697,
+     "high": 0.9394
+    },
+    "priority_qwk": {
+     "value": 0.4641,
+     "low": 0.2196,
+     "high": 0.6484
+    },
+    "priority_mae": {
+     "value": 0.7879,
+     "low": 0.575,
+     "high": 1.0303
+    },
+    "register_accuracy": {
+     "value": 0.8182,
+     "low": 0.6667,
+     "high": 0.9394
+    },
+    "register_macro_f1": {
+     "value": 0.8195,
+     "low": 0.6502,
+     "high": 0.9362
+    },
+    "conflict_accuracy": {
+     "value": 1.0,
+     "low": 1.0,
+     "high": 1.0
+    },
+    "task_precision": {
+     "value": 0.2308,
+     "low": 0.1162,
+     "high": 0.3514
+    },
+    "task_recall": {
+     "value": 0.4737,
+     "low": 0.2497,
+     "high": 0.7061
+    },
+    "task_f1": {
+     "value": 0.3103,
+     "low": 0.1633,
+     "high": 0.4615
+    },
+    "date_precision": {
+     "value": 0.2571,
+     "low": 0.1212,
+     "high": 0.4194
+    },
+    "date_recall": {
+     "value": 0.4091,
+     "low": 0.2105,
+     "high": 0.6154
+    },
+    "date_f1": {
+     "value": 0.3158,
+     "low": 0.1538,
+     "high": 0.4912
+    },
+    "span_micro_f1": {
+     "value": 0.313,
+     "low": 0.2124,
+     "high": 0.4068
+    },
+    "date_resolution_accuracy": {
+     "value": 0.4091,
+     "low": 0.2105,
+     "high": 0.6154
+    },
+    "date_resolution_on_gold_spans": {
+     "value": 0.9545,
+     "low": 0.85,
+     "high": 1.0
+    }
+   }
+  }
+ },
+ "confusion_matrix": {
+  "work_tasks": {
+   "work_tasks": 10,
+   "meetings": 1,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 1,
+   "promotions": 0,
+   "alerts": 1,
+   "personal": 1,
+   "none": 0
+  },
+  "meetings": {
+   "work_tasks": 3,
+   "meetings": 8,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 1,
+   "none": 0
+  },
+  "school": {
+   "work_tasks": 5,
+   "meetings": 0,
+   "school": 7,
+   "job_search": 0,
+   "finance_billing": 1,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 0
+  },
+  "job_search": {
+   "work_tasks": 0,
+   "meetings": 3,
+   "school": 0,
+   "job_search": 6,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 0
+  },
+  "finance_billing": {
+   "work_tasks": 1,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 12,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 0,
+   "none": 0
+  },
+  "promotions": {
+   "work_tasks": 0,
+   "meetings": 1,
+   "school": 1,
+   "job_search": 2,
+   "finance_billing": 0,
+   "promotions": 9,
+   "alerts": 0,
+   "personal": 0,
+   "none": 0
+  },
+  "alerts": {
+   "work_tasks": 1,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 11,
+   "personal": 0,
+   "none": 0
+  },
+  "personal": {
+   "work_tasks": 0,
+   "meetings": 0,
+   "school": 0,
+   "job_search": 0,
+   "finance_billing": 0,
+   "promotions": 0,
+   "alerts": 0,
+   "personal": 14,
+   "none": 0
+  }
+ },
+ "per_email": [
+  {
+   "id": "test-en-001",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "meetings",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.6814
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.0695
+    }
+   ]
+  },
+  {
+   "id": "test-en-002",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.5583
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2912
+    }
+   ]
+  },
+  {
+   "id": "test-en-003",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "finance_billing",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.7638
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    }
+   ]
+  },
+  {
+   "id": "test-en-004",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.2584
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-en-005",
+   "language": "en",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 5,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.6568
+    }
+   ]
+  },
+  {
+   "id": "test-en-006",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.7642
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.2478
+    }
+   ]
+  },
+  {
+   "id": "test-en-007",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.4888
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.8428
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    }
+   ]
+  },
+  {
+   "id": "test-en-008",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.6988
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.6532
+    }
+   ]
+  },
+  {
+   "id": "test-en-009",
+   "language": "en",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 1.5601
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.4469
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.435
+    }
+   ]
+  },
+  {
+   "id": "test-en-010",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-en-011",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.894
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-en-012",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-en-013",
+   "language": "en",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.6402
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0038
+    }
+   ]
+  },
+  {
+   "id": "test-en-014",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.3093
+    }
+   ]
+  },
+  {
+   "id": "test-en-015",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 0.7078
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.6191
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    }
+   ]
+  },
+  {
+   "id": "test-en-016",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 1,
+   "pred_priority": 1,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.1445
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.3791
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0582
+    }
+   ]
+  },
+  {
+   "id": "test-en-017",
+   "language": "en",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.7658
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-en-018",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.9627
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    }
+   ]
+  },
+  {
+   "id": "test-en-019",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.6432
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0021
+    }
+   ]
+  },
+  {
+   "id": "test-en-020",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.7468
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0519
+    }
+   ]
+  },
+  {
+   "id": "test-en-021",
+   "language": "en",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.4109
+    }
+   ]
+  },
+  {
+   "id": "test-en-022",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 1,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.7925
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.6954
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.3791
+    }
+   ]
+  },
+  {
+   "id": "test-en-023",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.2574
+    }
+   ]
+  },
+  {
+   "id": "test-en-024",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "job_search",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.4571
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-en-025",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.153
+    }
+   ]
+  },
+  {
+   "id": "test-en-026",
+   "language": "en",
+   "gold_category": "promotions",
+   "pred_category": "meetings",
+   "gold_priority": 1,
+   "pred_priority": 4,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.34
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-en-027",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.4721
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0309
+    }
+   ]
+  },
+  {
+   "id": "test-en-028",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.0627
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.3761
+    }
+   ]
+  },
+  {
+   "id": "test-en-029",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0198
+    }
+   ]
+  },
+  {
+   "id": "test-en-030",
+   "language": "en",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.0941
+    }
+   ]
+  },
+  {
+   "id": "test-en-031",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.1463
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-en-032",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 4,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 0.7078
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.435
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    }
+   ]
+  },
+  {
+   "id": "test-en-033",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 1.5601
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.9473
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    }
+   ]
+  },
+  {
+   "id": "test-en-034",
+   "language": "en",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.2054
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-001",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 5,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.5863
+    },
+    {
+     "factor": "has a task",
+     "contribution": 1.4667
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.3487
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-002",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.7626
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-003",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.1733
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-004",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.5618
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-005",
+   "language": "mixed",
+   "gold_category": "work_tasks",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.4888
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.4755
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-006",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 5,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.4351
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.0695
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-007",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.6536
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5816
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-008",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.4888
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.1979
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-009",
+   "language": "mixed",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 1.5601
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.8882
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.4354
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-010",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-011",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.5305
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-012",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-013",
+   "language": "mixed",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.6183
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0033
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-014",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.0672
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-015",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.8972
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7078
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-016",
+   "language": "mixed",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.4223
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-017",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.4888
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.1467
+    },
+    {
+     "factor": "sender tone",
+     "contribution": -0.4538
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-018",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.6364
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.001
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-019",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.9061
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0428
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-020",
+   "language": "mixed",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.5863
+    },
+    {
+     "factor": "has a task",
+     "contribution": 1.4667
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.2051
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-021",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.3745
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-022",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.5367
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-023",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": "job_search",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.0507
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-024",
+   "language": "mixed",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.2882
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-025",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.6106
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-026",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.3845
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.3763
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-027",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.0509
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-028",
+   "language": "mixed",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 3,
+   "pred_priority": 1,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 0.3791
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.2957
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0136
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-029",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 5,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.0269
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-030",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.0334
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-031",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "sender tone",
+     "contribution": -0.1477
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-032",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.4966
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0412
+    }
+   ]
+  },
+  {
+   "id": "test-mixed-033",
+   "language": "mixed",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 1.5601
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.9058
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.7666
+    }
+   ]
+  },
+  {
+   "id": "test-tl-001",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.795
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.7726
+    }
+   ]
+  },
+  {
+   "id": "test-tl-002",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.4078
+    }
+   ]
+  },
+  {
+   "id": "test-tl-003",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.9074
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5816
+    }
+   ]
+  },
+  {
+   "id": "test-tl-004",
+   "language": "tl",
+   "gold_category": "work_tasks",
+   "pred_category": "work_tasks",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.3748
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-tl-005",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": true,
+   "pred_conflict": true,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.5863
+    },
+    {
+     "factor": "has a task",
+     "contribution": 1.4667
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.4532
+    }
+   ]
+  },
+  {
+   "id": "test-tl-006",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.7394
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.654
+    }
+   ]
+  },
+  {
+   "id": "test-tl-007",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": "meetings",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.4888
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.3804
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    }
+   ]
+  },
+  {
+   "id": "test-tl-008",
+   "language": "tl",
+   "gold_category": "meetings",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.4748
+    }
+   ]
+  },
+  {
+   "id": "test-tl-009",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.4974
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-tl-010",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": "work_tasks",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.5211
+    }
+   ]
+  },
+  {
+   "id": "test-tl-011",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.5926
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-tl-012",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.5405
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.3021
+    }
+   ]
+  },
+  {
+   "id": "test-tl-013",
+   "language": "tl",
+   "gold_category": "school",
+   "pred_category": "school",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.6639
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.3157
+    }
+   ]
+  },
+  {
+   "id": "test-tl-014",
+   "language": "tl",
+   "gold_category": "job_search",
+   "pred_category": "meetings",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.6143
+    }
+   ]
+  },
+  {
+   "id": "test-tl-015",
+   "language": "tl",
+   "gold_category": "job_search",
+   "pred_category": "job_search",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.5177
+    }
+   ]
+  },
+  {
+   "id": "test-tl-016",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7053
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.4627
+    }
+   ]
+  },
+  {
+   "id": "test-tl-017",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.7877
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-tl-018",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "formal",
+   "pred_register": "formal",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.8817
+    },
+    {
+     "factor": "sender tone",
+     "contribution": 0.7078
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    }
+   ]
+  },
+  {
+   "id": "test-tl-019",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": "work_tasks",
+   "gold_priority": 3,
+   "pred_priority": 5,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 5,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 1.5863
+    },
+    {
+     "factor": "has a task",
+     "contribution": 1.4667
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.1103
+    }
+   ]
+  },
+  {
+   "id": "test-tl-020",
+   "language": "tl",
+   "gold_category": "finance_billing",
+   "pred_category": "finance_billing",
+   "gold_priority": 2,
+   "pred_priority": 4,
+   "gold_register": "formal",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.3817
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-tl-021",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 1.5601
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.7217
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.221
+    }
+   ]
+  },
+  {
+   "id": "test-tl-022",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.1036
+    }
+   ]
+  },
+  {
+   "id": "test-tl-023",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": "school",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.8199
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.1869
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0439
+    }
+   ]
+  },
+  {
+   "id": "test-tl-024",
+   "language": "tl",
+   "gold_category": "promotions",
+   "pred_category": "promotions",
+   "gold_priority": 1,
+   "pred_priority": 2,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.9076
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-tl-025",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 4,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.564
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-tl-026",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": "work_tasks",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 0,
+   "priority_why": [
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.5169
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": 0.3765
+    }
+   ]
+  },
+  {
+   "id": "test-tl-027",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 5,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 4,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": -0.2919
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    }
+   ]
+  },
+  {
+   "id": "test-tl-028",
+   "language": "tl",
+   "gold_category": "alerts",
+   "pred_category": "alerts",
+   "gold_priority": 3,
+   "pred_priority": 4,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 2.802
+    },
+    {
+     "factor": "sender role",
+     "contribution": -0.2185
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.0758
+    }
+   ]
+  },
+  {
+   "id": "test-tl-029",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 5,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.9043
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-tl-030",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 4,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 2,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.2177
+    },
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    }
+   ]
+  },
+  {
+   "id": "test-tl-031",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 3,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "has a task",
+     "contribution": 0.6316
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.2159
+    }
+   ]
+  },
+  {
+   "id": "test-tl-032",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 3,
+   "pred_priority": 3,
+   "gold_register": "neutral",
+   "pred_register": "neutral",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 3,
+   "priority_why": [
+    {
+     "factor": "email content (embedding)",
+     "contribution": 1.7805
+    },
+    {
+     "factor": "sender role",
+     "contribution": 0.5428
+    },
+    {
+     "factor": "looks like a promotion",
+     "contribution": 0.0028
+    }
+   ]
+  },
+  {
+   "id": "test-tl-033",
+   "language": "tl",
+   "gold_category": "personal",
+   "pred_category": "personal",
+   "gold_priority": 2,
+   "pred_priority": 2,
+   "gold_register": "casual",
+   "pred_register": "casual",
+   "gold_conflict": false,
+   "pred_conflict": false,
+   "span_errors": 1,
+   "priority_why": [
+    {
+     "factor": "sender tone",
+     "contribution": 1.5601
+    },
+    {
+     "factor": "email content (embedding)",
+     "contribution": 0.841
+    },
+    {
+     "factor": "deadline proximity",
+     "contribution": -0.7666
+    }
+   ]
+  }
+ ]
+}

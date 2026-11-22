@@ -1,33 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/new-landing/common/Button";
-import { landingPageAnalytics } from "@/hooks/useAnalytics";
-import { cn } from "@/utils";
 
 interface CallToActionProps {
-  buttonSize?: "xl" | "lg";
-  className?: string;
-  text?: string;
+  size?: "md" | "lg" | "xl";
 }
 
-export function CallToAction({
-  text = "Get started",
-  buttonSize = "xl",
-  className,
-}: CallToActionProps) {
-  const posthog = usePostHog();
-
+export function CallToAction({ size = "lg" }: CallToActionProps) {
   return (
-    <div className={cn("flex justify-center items-center gap-4", className)}>
-      <Button size={buttonSize} asChild>
-        <Link
-          href="/login"
-          onClick={() => landingPageAnalytics.getStartedClicked(posthog)}
-        >
-          <span className="relative z-10">{text}</span>
-        </Link>
+    <div className="flex flex-col sm:flex-row items-center gap-3">
+      <Button size={size} asChild>
+        <Link href="/login">Get started free</Link>
+      </Button>
+      <Button size={size} variant="secondary" asChild>
+        <Link href="/login">Sign in</Link>
       </Button>
     </div>
   );

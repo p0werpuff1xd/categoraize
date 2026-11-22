@@ -1,24 +1,18 @@
-import { CallToAction } from "@/components/new-landing/CallToAction";
+import Link from "next/link";
+import { Button } from "@/components/new-landing/common/Button";
 import { PatternBanner } from "@/components/new-landing/PatternBanner";
-import { BRAND_NAME } from "@/utils/branding";
 
 export function FinalCTA() {
   return (
     <PatternBanner
-      title={
-        <>
-          Get back an hour a day.
-          <br />
-          {`Start using ${BRAND_NAME}.`}
-        </>
-      }
-      subtitle="Less time in your inbox. More time for what actually matters."
+      title="Reclaim your focus. Start sorting smarter."
+      subtitle="Stop guessing which email needs you now. CategorAIze handles the triage—you handle what matters."
     >
-      <CallToAction
-        text="Get started for free"
-        buttonSize="lg"
-        className="mt-6"
-      />
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <Button size="xl" asChild>
+          <Link href="/login">Get started free</Link>
+        </Button>
+      </div>
     </PatternBanner>
   );
 }

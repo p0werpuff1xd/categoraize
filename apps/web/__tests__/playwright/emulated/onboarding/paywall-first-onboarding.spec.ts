@@ -47,7 +47,7 @@ test("paywall-first arm shows pricing, then onboarding after payment, then setup
     { timeout: 60_000 },
   );
   await page.goto(`/${emailAccountId}/onboarding?paywallFirst=true`);
-  await expect(page).toHaveURL(/\/welcome-upgrade\?returnTo=onboarding$/, {
+  await expect(page).toHaveURL(/\/premium\?returnTo=onboarding$/, {
     timeout: 60_000,
   });
   await expect(

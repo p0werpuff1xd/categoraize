@@ -1,0 +1,24 @@
+ISO-1 classification -> category of another account
+0
+ISO-2 span -> classification of another account
+0
+ISO-3 feedback event -> classification of another account
+0
+ISO-4 priority override -> category of another account
+0
+ISO-5 sender centroid -> (upstream) category of another account
+0
+ISO-6 calendar -> connection of another account (n/a: calendar has no account column; check connection owner exists)
+0
+ISO-7 duplicate classifications for one message in one account (parallel sync)
+0
+ISO-8 same messageId stored under two accounts (expected 0 unless the same mail truly went to both)
+0
+ISO-9 deadline alert whose message is classified only under another account
+0
+INFO same category name in more than one account (allowed by @@unique(emailAccountId,name))
+0
+INFO same sender contact in more than one account (separate rows per account)
+0
+INFO email accounts per user (consent is per user)
+1

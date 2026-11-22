@@ -21,7 +21,7 @@ import { markOutlookRateLimitCatchUp } from "@/utils/redis/outlook-rate-limit-ca
 
 import { notifyMailboxChanged } from "@/utils/mailbox-push";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const POST = withError("outlook/webhook", async (request) => {
   const searchParams = new URL(request.url).searchParams;

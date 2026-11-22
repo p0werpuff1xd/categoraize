@@ -1,0 +1,176 @@
+{
+ "version": "v9",
+ "trained_at": "2026-11-18T10:20:02+00:00",
+ "data": {
+  "train": "data/categoraize-dataset/data/train.jsonl (300, template-synthetic, bodies only) x5 plus 9014 older tagger examples (generated synthetic, team-written, LLM-written; v6 recipe; no real user mail)",
+  "early_stopping": "dev.jsonl (30, hand-written), best epoch by entity F1"
+ },
+ "seed": 13,
+ "epochs": 12,
+ "config": {
+  "word_dim": 100,
+  "char_dim": 30,
+  "char_filters": 50,
+  "casing_dim": 4,
+  "hidden": 128,
+  "dropout": 0.5,
+  "max_word_chars": 24
+ },
+ "history": [
+  {
+   "epoch": 1,
+   "loss": 3.0701,
+   "dev_entity_f1": 0.5053,
+   "seconds": 27.4
+  },
+  {
+   "epoch": 2,
+   "loss": 1.0258,
+   "dev_entity_f1": 0.5055,
+   "seconds": 27.0
+  },
+  {
+   "epoch": 3,
+   "loss": 0.7074,
+   "dev_entity_f1": 0.4894,
+   "seconds": 28.4
+  },
+  {
+   "epoch": 4,
+   "loss": 0.5595,
+   "dev_entity_f1": 0.4783,
+   "seconds": 26.1
+  },
+  {
+   "epoch": 5,
+   "loss": 0.469,
+   "dev_entity_f1": 0.5055,
+   "seconds": 25.4
+  },
+  {
+   "epoch": 6,
+   "loss": 0.4146,
+   "dev_entity_f1": 0.5,
+   "seconds": 25.0
+  },
+  {
+   "epoch": 7,
+   "loss": 0.3656,
+   "dev_entity_f1": 0.4828,
+   "seconds": 25.3
+  },
+  {
+   "epoch": 8,
+   "loss": 0.3374,
+   "dev_entity_f1": 0.5,
+   "seconds": 25.9
+  },
+  {
+   "epoch": 9,
+   "loss": 0.3143,
+   "dev_entity_f1": 0.5057,
+   "seconds": 25.4
+  },
+  {
+   "epoch": 10,
+   "loss": 0.2877,
+   "dev_entity_f1": 0.4828,
+   "seconds": 25.0
+  },
+  {
+   "epoch": 11,
+   "loss": 0.2715,
+   "dev_entity_f1": 0.5055,
+   "seconds": 25.0
+  },
+  {
+   "epoch": 12,
+   "loss": 0.2571,
+   "dev_entity_f1": 0.5,
+   "seconds": 26.4
+  }
+ ],
+ "best_epoch": 9,
+ "dev": {
+  "overall": {
+   "task_precision": 0.4348,
+   "task_recall": 0.5,
+   "task_f1": 0.4651,
+   "date_precision": 0.5217,
+   "date_recall": 0.5714,
+   "date_f1": 0.5455,
+   "span_micro_f1": 0.5057
+  },
+  "en": {
+   "task_precision": 0.3333,
+   "task_recall": 0.4,
+   "task_f1": 0.3636,
+   "date_precision": 0.875,
+   "date_recall": 1.0,
+   "date_f1": 0.9333,
+   "span_micro_f1": 0.6923
+  },
+  "mixed": {
+   "task_precision": 0.3333,
+   "task_recall": 0.375,
+   "task_f1": 0.3529,
+   "date_precision": 0.25,
+   "date_recall": 0.2857,
+   "date_f1": 0.2667,
+   "span_micro_f1": 0.3125
+  },
+  "tl": {
+   "task_precision": 0.625,
+   "task_recall": 0.7143,
+   "task_f1": 0.6667,
+   "date_precision": 0.4286,
+   "date_recall": 0.4286,
+   "date_f1": 0.4286,
+   "span_micro_f1": 0.5517
+  }
+ },
+ "compared_with": {
+  "version": "v6",
+  "dev": {
+   "overall": {
+    "task_precision": 0.4231,
+    "task_recall": 0.55,
+    "task_f1": 0.4783,
+    "date_precision": 0.3793,
+    "date_recall": 0.5238,
+    "date_f1": 0.44,
+    "span_micro_f1": 0.4583
+   },
+   "en": {
+    "task_precision": 0.25,
+    "task_recall": 0.4,
+    "task_f1": 0.3077,
+    "date_precision": 0.7,
+    "date_recall": 1.0,
+    "date_f1": 0.8235,
+    "span_micro_f1": 0.6
+   },
+   "mixed": {
+    "task_precision": 0.4,
+    "task_recall": 0.5,
+    "task_f1": 0.4444,
+    "date_precision": 0.2222,
+    "date_recall": 0.2857,
+    "date_f1": 0.25,
+    "span_micro_f1": 0.3529
+   },
+   "tl": {
+    "task_precision": 0.625,
+    "task_recall": 0.7143,
+    "task_f1": 0.6667,
+    "date_precision": 0.2,
+    "date_recall": 0.2857,
+    "date_f1": 0.2353,
+    "span_micro_f1": 0.4375
+   }
+  }
+ },
+ "promoted": false,
+ "test": null,
+ "not_promoted_reason": "Dev span F1 rose (0.506 vs 0.458, 41 spans) but v9 scored lower than v6 on the older provisional test set (0.945 vs 0.988), equal on the LLM holdout (0.854 vs 0.850), and tags sender-completed FYI statements as TASK (breaks tests/test_thread_status.py, which feeds Reply Zero). v6 stays current."
+}

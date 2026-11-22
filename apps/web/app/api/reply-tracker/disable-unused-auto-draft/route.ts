@@ -4,7 +4,7 @@ import { hasPostCronSecret } from "@/utils/cron";
 import { captureException } from "@/utils/error";
 import { disableUnusedAutoDrafts } from "./disable-unused-auto-drafts";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export const POST = withError(
   "reply-tracker/disable-unused-auto-draft",

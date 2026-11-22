@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Item,
   ItemContent,
@@ -28,10 +29,32 @@ import { logOut } from "@/utils/user";
 import { useStatLoader } from "@/providers/StatLoaderProvider";
 import { usePremium } from "@/hooks/usePremium";
 import { hasActiveAppleSubscription } from "@/utils/premium";
+import { useAccounts } from "@/hooks/useAccounts";
+import { LoadingContent } from "@/components/LoadingContent";
 
 export function DeleteSection() {
+  const { i18n, t } = useLingui();
   const { onCancelLoadBatch } = useStatLoader();
   const { premium } = usePremium();
+  const {
+    data: accountsData,
+    isLoading: isLoadingAccounts,
+    error: accountsError,
+  } = useAccounts();
+  const connectedEmails =
+    accountsData?.emailAccounts.map((account) => account.email) ?? [];
+  const connectedEmailParts = new Intl.ListFormat(i18n.locale, {
+    type: "conjunction",
+  }).formatToParts(connectedEmails);
+  const connectedEmailList = connectedEmailParts.map((part, index) =>
+    part.type === "element" ? (
+      <span key={index} className="font-medium text-foreground">
+        {part.value}
+      </span>
+    ) : (
+      part.value
+    ),
+  );
   const hasAppleSubscription = hasActiveAppleSubscription(
     premium?.appleExpiresAt || null,
     premium?.appleRevokedAt || null,
@@ -62,18 +85,14 @@ export function DeleteSection() {
         if (result?.serverError) throw new Error(result.serverError);
       },
       {
-        loading: "Deleting account...",
-        success: "Account deleted!",
-        error: (err: unknown) =>
-          `Error deleting account: ${
-            err instanceof Error ? err.message : "Unknown error"
-          }`,
+        loading: t`Deleting account...`,
+        success: t`Account deleted!`,
+        error: (err: unknown) => {
+          const message = err instanceof Error ? err.message : t`Unknown error`;
+          return t`Error deleting account: ${message}`;
+        },
       },
     );
-  };
-
-  const handleConfirmCancellation = () => {
-    setHasConfirmedCancellation(true);
   };
 
   const shouldBlockDeletion = hasSubscription && !hasConfirmedCancellation;
@@ -81,41 +100,47 @@ export function DeleteSection() {
   return (
     <Item size="sm">
       <ItemContent>
-        <ItemTitle>Delete account</ItemTitle>
+        <ItemTitle>
+          <Trans>Delete account</Trans>
+        </ItemTitle>
         <ItemDescription>
-          Permanently delete your account and all data.
+          <Trans>
+            Removes your Inbox Zero data. Your emails aren't affected.
+          </Trans>
         </ItemDescription>
       </ItemContent>
       <ItemActions>
         <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <AlertDialogTrigger asChild>
             <Button variant="destructiveSoft" size="sm">
-              Delete
+              <Trans>Delete</Trans>
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {shouldBlockDeletion
-                  ? "Cancel subscription first"
-                  : "Are you absolutely sure?"}
+                  ? t`Cancel subscription first`
+                  : t`Delete your Inbox Zero account?`}
               </AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div>
                   {shouldBlockDeletion ? (
                     <>
                       <p className="mb-3">
-                        Please cancel your subscription before deleting your
-                        account.
+                        <Trans>
+                          Please cancel your subscription before deleting your
+                          account.
+                        </Trans>
                       </p>
                       <p className="mb-3">
                         {hasAppleSubscription ? (
-                          <>
+                          <Trans>
                             You can manage your subscription from your iPhone or
                             iPad subscription settings.
-                          </>
+                          </Trans>
                         ) : (
-                          <>
+                          <Trans>
                             You can manage your subscription by clicking "Manage
                             Subscription" above or going to the{" "}
                             <Link
@@ -126,32 +151,65 @@ export function DeleteSection() {
                               premium page
                             </Link>{" "}
                             and clicking "Manage subscription".
-                          </>
+                          </Trans>
                         )}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Already cancelled your subscription? Click the button
-                        below to proceed.
+                        <Trans>
+                          Already cancelled your subscription? Click the button
+                          below to proceed.
+                        </Trans>
                       </p>
                     </>
                   ) : (
-                    <p>
-                      This action cannot be undone. This will permanently delete
-                      your user and all associated accounts.
-                    </p>
+                    <div className="space-y-3">
+                      <LoadingContent
+                        loading={isLoadingAccounts}
+                        error={accountsError}
+                      >
+                        <p>
+                          <Trans>
+                            This permanently deletes your Inbox Zero data and
+                            disconnects {connectedEmailList}. Your emails aren't
+                            affected.
+                          </Trans>
+                        </p>
+                      </LoadingContent>
+                      {connectedEmails.length > 1 && (
+                        <Link
+                          href="/accounts"
+                          className="text-foreground underline"
+                          onClick={() => setIsDialogOpen(false)}
+                        >
+                          <Trans>Remove just one account instead</Trans>
+                        </Link>
+                      )}
+                    </div>
                   )}
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
               {shouldBlockDeletion ? (
-                <AlertDialogAction onClick={handleConfirmCancellation}>
-                  I've already cancelled my subscription
+                <AlertDialogAction
+                  onClick={(event) => {
+                    // Keep the dialog open so it advances to the delete confirmation
+                    event.preventDefault();
+                    setHasConfirmedCancellation(true);
+                  }}
+                >
+                  <Trans>I've already cancelled my subscription</Trans>
                 </AlertDialogAction>
               ) : (
-                <AlertDialogAction onClick={handleDeleteAccount}>
-                  Delete account
+                <AlertDialogAction
+                  className={buttonVariants({ variant: "destructive" })}
+                  disabled={!accountsData || Boolean(accountsError)}
+                  onClick={handleDeleteAccount}
+                >
+                  <Trans>Delete account</Trans>
                 </AlertDialogAction>
               )}
             </AlertDialogFooter>

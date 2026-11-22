@@ -8,7 +8,7 @@ export const POST = createForwardingQueueHandler({
   schema: sendSummaryEmailBody,
   path: "/api/resend/summary",
   invalidPayloadMessage: "Invalid resend summary queue payload",
-  visibilityTimeoutSeconds: 55,
+  visibilityTimeoutSeconds: 295,
   getLoggerContext: (payload) => ({
     emailAccountId: payload.emailAccountId,
   }),

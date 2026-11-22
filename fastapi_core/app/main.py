@@ -1,157 +1,602 @@
+"""CategorAIze NLP service: stateless FastAPI process called by the web app.
+
+The web app sends category data with each request and stores the results;
+this service keeps no per-user state.
+"""
+
 import os
 import secrets
-from fastapi import Depends, FastAPI, Header, HTTPException
-from datetime import UTC, datetime
+import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from .algorithms.cosine_similarity import rank_categories
-from .algorithms.priority_scoring import calculate_priority
-from .algorithms.rocchio import update_centroids
-from .nlp.extraction import extract_deadlines, extract_instructions
-from .nlp.preprocessing import preprocess
-from .nlp.summarizer import summarize
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
+
+from .algorithms.classifier import choose_category, cosine, rank_categories
+from .algorithms.feedback import FeedbackError, update_centroids
+from .algorithms.label_library import LABEL_TEMPLATES
+from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict, prototype_language
+from .algorithms.thread_status import ThreadMessage, asks_question, determine_status
+from .ml import priority_model
+from .ml.priority_rules import compute_priority
+from .nlp.date_codes import has_conflict, resolve_phrase, resolved_datetime
+from .nlp.extractor import resolve_date
+from .nlp.register import detect_register
+from .nlp.language import detect_language
+from .nlp.pii import mask_pii
+from .nlp.regex_tagger import has_deadline_marker_before
+from .nlp.summarizer import split_sentences, summarize
+from .nlp.taglish_cleaner import normalize
 from .schemas import (
-    ClassificationRequest,
-    ClassificationResponse,
-    EmbeddingRequest,
-    EmbeddingResponse,
+    CategoryInput,
+    CategoryMatch,
+    CentroidOutput,
+    ChooseRuleRequest,
+    ChooseRuleResponse,
+    ClassifyRequest,
+    ClassifyResponse,
+    ClusterResult,
+    DiscoverRequest,
+    DiscoverResponse,
+    EmbedRequest,
+    EmbedResponse,
     FeedbackRequest,
     FeedbackResponse,
+    MatchRequest,
+    MatchResponse,
+    Priority,
+    PriorityFactors,
+    PriorityRequest,
+    PriorityResponse,
+    RegisterRequest,
+    RegisterResponse,
+    Span,
+    SuggestedLabel,
+    SummarizeRequest,
+    SummarizeResponse,
+    TaskSpan,
+    TasksRequest,
+    TasksResponse,
+    ThreadStatusRequest,
+    ThreadStatusResponse,
 )
-from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, embed_texts
+from .security import auth_failures, harden_request
+from .services.embeddings import MODEL_NAME, VECTOR_DIMENSION, model_manager
+from .services.learned import learned_models
+from .services.tagger import tagger_manager
 
-app = FastAPI(title="CategorAIze Intelligence Service", version="0.1.0")
+SERVICE_VERSION = "0.3.0"
 
 
-def require_service_token(authorization: str | None = Header(default=None)) -> None:
-    expected = os.getenv("NLP_SERVICE_TOKEN")
-    if not expected:
-        return
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing intelligence service token")
-    provided = authorization.removeprefix("Bearer ")
-    if not secrets.compare_digest(provided, expected):
-        raise HTTPException(status_code=401, detail="Invalid intelligence service token")
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    if os.getenv("CATEGORAIZE_SKIP_MODEL_LOAD") != "1":
+        model_manager.start_background_load()
+        tagger_manager.active()
+        learned_models.load()
+    yield
+
+
+app = FastAPI(title="CategorAIze NLP Service", version=SERVICE_VERSION, lifespan=lifespan)
+# Size and rate limits (IAS Phase 10 H). No CORS middleware on purpose.
+app.middleware("http")(harden_request)
+
+
+def require_internal_key(x_internal_key: str | None = Header(default=None)) -> None:
+    expected = os.getenv("CATEGORAIZE_INTERNAL_KEY")
+    # Fail closed: without a configured key no request is trusted.
+    if not expected or not x_internal_key or not secrets.compare_digest(x_internal_key, expected):
+        auth_failures.record()
+        raise HTTPException(status_code=401, detail="missing or invalid X-Internal-Key")
+
+
+def require_model_ready() -> None:
+    if not model_manager.ready:
+        detail = "model failed to load" if model_manager.status == "error" else "model is loading"
+        raise HTTPException(status_code=503, detail=detail, headers={"Retry-After": "5"})
+
+
+@app.exception_handler(FeedbackError)
+async def feedback_error_handler(_request: Request, error: FeedbackError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(error)})
 
 
 @app.get("/healthz")
-def healthz() -> dict[str, str]:
-    return {
-        "status": "ok",
-        "service": "categoraiize-intelligence",
-        "version": app.version,
+def healthz() -> JSONResponse:
+    body = {
+        "status": model_manager.status,
+        "service": "categoraize-nlp",
+        "version": SERVICE_VERSION,
+        "model": MODEL_NAME,
+        "dimension": VECTOR_DIMENSION,
+        "tagger": tagger_manager.describe(),
+        "learned_models": learned_models.describe(),
+        "auth_failures": auth_failures.count,
     }
+    return JSONResponse(status_code=200 if model_manager.ready else 503, content=body)
 
 
 @app.post(
     "/api/v1/embed",
-    response_model=EmbeddingResponse,
-    dependencies=[Depends(require_service_token)],
+    response_model=EmbedResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
 )
-def embed(request: EmbeddingRequest) -> EmbeddingResponse:
-    try:
-        embeddings = embed_texts(request.texts)
-    except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
-    return EmbeddingResponse(
-        model=MODEL_NAME,
-        dimension=VECTOR_DIMENSION,
-        embeddings=embeddings,
+def embed(request: EmbedRequest) -> EmbedResponse:
+    texts = [_mask(text) for text in request.texts]
+    texts = [_search_gloss(text) for text in texts] if request.gloss else texts
+    return EmbedResponse(model=MODEL_NAME, dimension=VECTOR_DIMENSION, vectors=model_manager.embed(texts))
+
+
+@app.post(
+    "/api/v1/classify",
+    response_model=ClassifyResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def classify(request: ClassifyRequest) -> ClassifyResponse:
+    started = time.perf_counter()
+    timings: dict[str, float] = {}
+
+    # IAS Phase 11 J: mask PII before any processing. The web app masks first;
+    # it sends mask_pii=false only for a user who turned masking off, so span
+    # offsets always match the text the web app stores.
+    pii_counts: dict[str, int] = {"phone": 0, "card": 0, "gov_id": 0}
+    if request.mask_pii:
+        subject, body = mask_pii(request.subject), mask_pii(request.body)
+        for counts in (subject.counts, body.counts):
+            for key, value in counts.as_dict().items():
+                pii_counts[key] += value
+        request = request.model_copy(update={"subject": subject.text, "body": body.text})
+
+    missing_centroids = [category for category in request.categories if category.centroid is None]
+    email_text = f"{request.subject}\n\n{request.body}".strip()
+    email_vector = model_manager.embed_email(request.subject, request.body)
+    description_vectors = dict(
+        zip(
+            (category.id for category in missing_centroids),
+            model_manager.embed([_category_text(category) for category in missing_centroids]),
+        )
+    )
+    timings["embed"] = _elapsed_ms(started)
+
+    step = time.perf_counter()
+    ranked = rank_categories(
+        email_vector,
+        [(category.id, category.centroid or description_vectors[category.id]) for category in request.categories],
+    )
+    chosen = choose_category(ranked, request.threshold)
+    if request.pinned_category_id is not None:
+        chosen = next((item for item in ranked if item.id == request.pinned_category_id), None)
+        if chosen is None:
+            raise HTTPException(status_code=422, detail="pinned_category_id is not in categories")
+    suggestion = None if chosen else _suggest_label(email_vector, request)
+    timings["classify"] = _elapsed_ms(step)
+
+    step = time.perf_counter()
+    spans = _extract_spans(request)
+    language = detect_language(email_text)
+    timings["tagging"] = _elapsed_ms(step)
+
+    base_priority = request.uncategorized_base_priority
+    if chosen:
+        base_priority = next(category.base_priority for category in request.categories if category.id == chosen.id)
+    validated_deadlines = [
+        *request.confirmed_deadlines,
+        *(span.resolved for span in spans if span.is_deadline and not span.ambiguous and span.resolved),
+    ]
+    priority = compute_priority(
+        base_priority=base_priority,
+        validated_deadlines=validated_deadlines,
+        now=request.now or datetime.now(request.received_at.tzinfo),
+        sender_role=request.sender.role,
+        is_vip=request.sender.is_vip,
+        calendar_busy=[(period.start, period.end) for period in request.calendar_busy]
+        if request.calendar_busy is not None
+        else None,
+    )
+    timings["total"] = _elapsed_ms(started)
+
+    return ClassifyResponse(
+        email_id=request.email_id,
+        language=language,
+        category=CategoryMatch(id=chosen.id, similarity=chosen.similarity) if chosen else None,
+        ranked=[CategoryMatch(id=item.id, similarity=item.similarity) for item in ranked],
+        threshold=request.threshold,
+        suggested_label=suggestion,
+        spans=spans,
+        priority=Priority(level=priority.level, factors=PriorityFactors(**priority.factors), deadline=priority.deadline),
+        embedding=email_vector,
+        timings_ms=timings,
+        pii_masked=pii_counts,
+    )
+
+
+@app.post(
+    "/api/v1/match",
+    response_model=MatchResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def match(request: MatchRequest) -> MatchResponse:
+    started = time.perf_counter()
+    request = request.model_copy(update={"subject": _mask(request.subject), "body": _mask(request.body)})
+    query_vector = model_manager.embed_email(request.subject, request.body)
+    needs_text = [candidate for candidate in request.candidates if candidate.centroid is None]
+    text_vectors = dict(
+        zip((candidate.id for candidate in needs_text), model_manager.embed([c.text for c in needs_text]))
+    )
+    ranked = rank_categories(
+        query_vector,
+        [(candidate.id, candidate.centroid or text_vectors[candidate.id]) for candidate in request.candidates],
+    )
+    best = choose_category(ranked, request.threshold)
+    _name, tag, _version = tagger_manager.active()
+    has_task = any(span.label == "TASK" for text in (request.subject, request.body) for span in tag(text))
+    return MatchResponse(
+        ranked=[CategoryMatch(id=item.id, similarity=item.similarity) for item in ranked],
+        best=CategoryMatch(id=best.id, similarity=best.similarity) if best else None,
+        threshold=request.threshold,
+        embedding=query_vector,
+        has_task=has_task,
+        timings_ms={"total": _elapsed_ms(started)},
+    )
+
+
+@app.post(
+    "/api/v1/choose-rule",
+    response_model=ChooseRuleResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def choose_rule_endpoint(request: ChooseRuleRequest) -> ChooseRuleResponse:
+    request = request.model_copy(update={"subject": _mask(request.subject), "body": _mask(request.body)})
+    params = load_rule_params()
+    _name, tag, _version = tagger_manager.active()
+    has_request = asks_question(request.body) or any(
+        span.label == "TASK" for text in (request.subject, request.body) for span in tag(text)
+    )
+    decision = choose_rule(
+        model_manager.embed_email(request.subject, request.body),
+        [
+            RuleInput(rule.id, rule.name, rule.instructions, rule.reply_needed, rule.system_type)
+            for rule in request.rules
+        ],
+        has_request=has_request,
+        allow_multiple=request.allow_multiple,
+        embed=_embed_cached,
+        params=params,
+        language=prototype_language(f"{request.subject}\n{request.body}"),
+    )
+    return ChooseRuleResponse(
+        ranked=[CategoryMatch(id=rule_id, similarity=score) for rule_id, score in decision.ranked],
+        matched=decision.matched,
+        confident=decision.confident,
+        reasons=decision.reasons,
+        has_request=has_request,
+        params=params_dict(params),
+    )
+
+
+@app.post(
+    "/api/v1/thread-status",
+    response_model=ThreadStatusResponse,
+    dependencies=[Depends(require_internal_key)],
+)
+def thread_status_endpoint(request: ThreadStatusRequest) -> ThreadStatusResponse:
+    _name, tag, _version = tagger_manager.active()
+    decision = determine_status(
+        [ThreadMessage(m.from_user, _mask(m.subject), _mask(m.body), m.automated) for m in request.messages], tag
+    )
+    return ThreadStatusResponse(
+        status=decision.status, confident=decision.confident, reason=decision.reason, signals=decision.signals
+    )
+
+
+@app.post(
+    "/api/v1/summarize",
+    response_model=SummarizeResponse,
+    dependencies=[Depends(require_internal_key), Depends(require_model_ready)],
+)
+def summarize_email(request: SummarizeRequest) -> SummarizeResponse:
+    _name, tag, _version = tagger_manager.active()
+    body, subject = _mask(request.body), _mask(request.subject)
+    sentences = split_sentences(body) or split_sentences(subject)
+    return SummarizeResponse(
+        sentences=summarize(
+            sentences,
+            embed=model_manager.embed,
+            span_labels=lambda sentence: {span.label for span in tag(sentence)},
+            limit=request.max_sentences,
+        )
     )
 
 
 @app.post(
     "/api/v1/feedback",
     response_model=FeedbackResponse,
-    dependencies=[Depends(require_service_token)],
+    dependencies=[Depends(require_internal_key)],
 )
 def feedback(request: FeedbackRequest) -> FeedbackResponse:
     correct, incorrect = update_centroids(
-        correct=request.correct_centroid,
-        incorrect=request.incorrect_centroid,
-        email=request.email_vector,
+        email=request.embedding,
+        correct=request.correct.centroid,
+        incorrect=request.incorrect.centroid if request.incorrect else None,
+        correct_id=request.correct.id,
+        incorrect_id=request.incorrect.id if request.incorrect else None,
         alpha=request.alpha,
         beta=request.beta,
     )
     return FeedbackResponse(
-        correct_centroid=correct,
-        incorrect_centroid=incorrect,
+        correct=CentroidOutput(id=request.correct.id, centroid=correct),
+        incorrect=CentroidOutput(id=request.incorrect.id, centroid=incorrect)
+        if request.incorrect and incorrect is not None
+        else None,
         alpha=request.alpha,
         beta=request.beta,
     )
 
 
 @app.post(
-    "/api/v1/classify",
-    response_model=ClassificationResponse,
-    dependencies=[Depends(require_service_token)],
+    "/api/v1/discover",
+    response_model=DiscoverResponse,
+    dependencies=[Depends(require_internal_key)],
 )
-def classify(request: ClassificationRequest) -> ClassificationResponse:
-    ranked = rank_categories(
-        request.email_vector,
-        [(category.id, category.vector) for category in request.categories],
-        request.threshold,
-    )
-    winner = ranked[0] if ranked else None
-    text = f"{request.subject}\n{request.body}".strip()
-    processed = preprocess(text)
-    message_at = request.message_at or datetime.now(UTC)
-    instructions = extract_instructions(text)
-    deadlines = extract_deadlines(
-        text,
-        message_at=message_at,
-        timezone=request.timezone,
-    )
-    factors = request.priority_factors
-    has_validated_deadline = any(not item.needs_review for item in deadlines)
-    priority = calculate_priority(
-        urgency=factors.get("urgency", 0.0),
-        deadline=factors.get("deadline", 1.0 if has_validated_deadline else 0.0),
-        sender=factors.get("sender", 0.0),
-        calendar=factors.get("calendar", 0.5),
-        dampener=factors.get("dampener", 1.0),
-    )
-    common = {
-        "language": processed.language,
-        "summary": summarize(text),
-        "instructions": [
-            {"source_text": item.source_text, "action": item.action, "confidence": item.confidence}
-            for item in instructions
-        ],
-        "deadlines": [
-            {
-                "source_text": item.source_text,
-                "due_date": item.due_date.isoformat() if item.due_date else None,
-                "confidence": item.confidence,
-                "needs_review": item.needs_review,
-            }
-            for item in deadlines
-        ],
-        "priority": {
-            "level": priority.level.value,
-            "score": priority.score,
-            "factors": priority.factors,
-            "weights": priority.weights,
-            "dampener": priority.dampener,
-        },
-    }
-    if winner is None or not bool(winner["meets_threshold"]):
-        return ClassificationResponse(
-            category_id=None,
-            category_name=None,
-            similarity=float(winner["similarity"]) if winner else 0.0,
-            threshold=request.threshold,
-            status="UNCATEGORIZED",
-            ranked_matches=ranked,
-            **common,
-        )
+def discover(request: DiscoverRequest) -> DiscoverResponse:
+    """Cluster uncategorized email vectors into candidate categories.
 
-    category = next(category for category in request.categories if category.id == winner["category_id"])
-    return ClassificationResponse(
-        category_id=category.id,
-        category_name=category.name,
-        similarity=float(winner["similarity"]),
-        threshold=request.threshold,
-        status="CLASSIFIED",
-        ranked_matches=ranked,
-        **common,
+    The web app sends only IDs and pre-computed vectors (never text). Clusters
+    are formed with agglomerative clustering using cosine distance; scikit-learn's
+    HDBSCAN is used instead when available and min_cluster_size > 2. The caller
+    derives candidate names from the user's own emails; this endpoint never
+    creates categories automatically.
+    """
+    import math
+
+    import numpy as np
+
+    vectors_np = np.array([item.vector for item in request.vectors], dtype=np.float32)
+    ids = [item.id for item in request.vectors]
+    n = len(ids)
+
+    # Normalize for cosine distance.
+    norms = np.linalg.norm(vectors_np, axis=1, keepdims=True)
+    norms = np.where(norms == 0, 1.0, norms)
+    vectors_norm = vectors_np / norms
+
+    # Choose algorithm: HDBSCAN when available (sklearn ≥ 1.3), else agglomerative.
+    labels: np.ndarray
+    try:
+        from sklearn.cluster import HDBSCAN
+
+        clusterer = HDBSCAN(
+            min_cluster_size=request.min_cluster_size,
+            min_samples=1,
+            metric="cosine",
+            cluster_selection_epsilon=0.0,
+        )
+        labels = clusterer.fit_predict(vectors_norm)
+    except ImportError:
+        from sklearn.cluster import AgglomerativeClustering
+
+        n_clusters = max(2, n // request.min_cluster_size)
+        clusterer = AgglomerativeClustering(n_clusters=n_clusters, metric="cosine", linkage="average")
+        labels = clusterer.fit_predict(vectors_norm)
+
+    # Group by label; label -1 is noise.
+    groups: dict[int, list[int]] = {}
+    for index, label in enumerate(labels.tolist()):
+        groups.setdefault(label, []).append(index)
+
+    clusters: list[ClusterResult] = []
+    noise_ids: list[str] = [ids[i] for i in groups.get(-1, [])]
+
+    for label, indices in sorted(groups.items()):
+        if label == -1 or len(indices) < request.min_cluster_size:
+            noise_ids.extend(ids[i] for i in indices)
+            continue
+        members = vectors_norm[indices]
+        centroid_raw = members.mean(axis=0)
+        c_norm = np.linalg.norm(centroid_raw)
+        centroid = (centroid_raw / c_norm if c_norm > 0 else centroid_raw).tolist()
+        # Cohesion: mean cosine similarity of members to centroid.
+        cohesion = float(np.mean(members @ np.array(centroid, dtype=np.float32)))
+        # Round to 4 decimal places; guard against non-finite from degenerate inputs.
+        cohesion = round(cohesion, 4) if math.isfinite(cohesion) else 0.0
+        clusters.append(ClusterResult(
+            cluster_id=label,
+            member_ids=[ids[i] for i in indices],
+            centroid=centroid,
+            cohesion=cohesion,
+        ))
+
+    return DiscoverResponse(clusters=clusters, noise_ids=noise_ids)
+
+
+@app.post("/api/v1/tasks", response_model=TasksResponse, dependencies=[Depends(require_internal_key)])
+def tasks_endpoint(request: TasksRequest) -> TasksResponse:
+    subject, body = _masked_text(request)
+    received = request.received_at.astimezone(ZoneInfo(request.timezone))
+    spans = _task_spans(subject, body, received)
+    busy = [(period.start, period.end) for period in request.calendar_busy] if request.calendar_busy else None
+    name, _, version = tagger_manager.active()
+    return TasksResponse(
+        spans=spans,
+        calendar_checked=request.calendar_busy is not None,
+        calendar_conflict=has_conflict([span.resolved for span in spans if span.label == "DATE"], busy),
+        tagger={"name": name, "version": version},
     )
+
+
+@app.post("/api/v1/register", response_model=RegisterResponse, dependencies=[Depends(require_internal_key)])
+def register_endpoint(request: RegisterRequest) -> RegisterResponse:
+    subject, body = _masked_text(request)
+    model = learned_models.get("register")
+    embedding = None
+    if model is not None:
+        require_model_ready()
+        embedding = model_manager.embed_email(subject, body)
+    result = detect_register(subject, body, embedding=embedding, model=model)
+    return RegisterResponse(register=result.register, source=result.source, probabilities=result.probabilities,
+                            cues=result.cues)
+
+
+@app.post("/api/v1/priority", response_model=PriorityResponse, dependencies=[Depends(require_internal_key)])
+def priority_endpoint(request: PriorityRequest) -> PriorityResponse:
+    subject, body = _masked_text(request)
+    received = request.received_at.astimezone(ZoneInfo(request.timezone))
+    spans = _task_spans(subject, body, received)
+    has_task = any(span.label == "TASK" for span in spans)
+    dates = [span.resolved for span in spans if span.label == "DATE" and not span.ambiguous]
+    proximity = priority_model.deadline_proximity(dates, received)
+    category = priority_model.PROMOTION_SLUG if request.is_promotion else None
+
+    register_lm, priority_lm = learned_models.get("register"), learned_models.get("priority")
+    embedding = None
+    if register_lm is not None or priority_lm is not None:
+        require_model_ready()
+        embedding = model_manager.embed_email(subject, body)
+    register = detect_register(subject, body, embedding=embedding, model=register_lm).register
+
+    if priority_lm is not None and embedding is not None:
+        promo_vector = priority_lm.meta.get("promo_vector") or [0.0] * len(embedding)
+        feature_vector = priority_model.features(
+            embedding,
+            sender_role=request.sender.role,
+            is_vip=request.sender.is_vip,
+            has_task=has_task,
+            deadline_proximity=proximity,
+            promo_score=cosine(embedding, promo_vector),
+            register=register,
+        )
+        result = priority_model.predict(priority_lm, feature_vector, is_vip=request.sender.is_vip, has_task=has_task,
+                                        category=category, override=request.override_priority)
+        level, source, why, guardrails = result.level, result.source, result.why, result.guardrails
+    else:
+        level, why, guardrails = _rule_priority(request, {"subject": subject, "body": body}, spans, received,
+                                                has_task, category)
+        source = "rules"
+    return PriorityResponse(level=level, source=source, why=why, guardrails=guardrails, register=register,
+                            has_task=has_task, deadline_proximity=round(proximity, 4))
+
+
+def _rule_priority(request: PriorityRequest, texts: dict[str, str], spans: list[TaskSpan], received: datetime,
+                   has_task: bool, category: str | None) -> tuple[int, list[dict], list[str]]:
+    deadlines = []
+    for span in spans:
+        moment = resolved_datetime(span.resolved, received.tzinfo) if span.label == "DATE" else None
+        if moment is None or span.ambiguous or moment.date() < received.date():
+            continue
+        if has_task or has_deadline_marker_before(texts[span.source], span.start):
+            deadlines.append(moment)
+    result = compute_priority(
+        base_priority=request.category_base_priority,
+        validated_deadlines=deadlines,
+        now=received,
+        sender_role=request.sender.role,
+        is_vip=request.sender.is_vip,
+        calendar_busy=[(p.start, p.end) for p in request.calendar_busy] if request.calendar_busy else None,
+    )
+    # VIP floor is already part of the rules; only the cap and the override remain.
+    level, guardrails = priority_model.apply_guardrails(
+        result.level, is_vip=False, has_task=has_task, category=category, override=request.override_priority
+    )
+    if result.factors["vip_pin"]:
+        guardrails.insert(0, "vip_floor")
+    ranked = sorted(((name, value) for name, value in result.factors.items() if value), key=lambda item: -abs(item[1]))
+    return level, [{"factor": name.replace("_", " "), "contribution": float(value)} for name, value in ranked[:3]], guardrails
+
+
+def _task_spans(subject: str, body: str, received: datetime) -> list[TaskSpan]:
+    _name, tag, _version = tagger_manager.active()
+    spans: list[TaskSpan] = []
+    for source, text in (("subject", subject), ("body", body)):
+        for raw in tag(text):
+            resolved, ambiguous = resolve_phrase(raw.text, received) if raw.label == "DATE" else (None, False)
+            spans.append(TaskSpan(label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end,
+                                  resolved=resolved, ambiguous=ambiguous))
+    return spans
+
+
+def _masked_text(request) -> tuple[str, str]:
+    if not request.mask_pii:
+        return request.subject, request.body
+    return _mask(request.subject), _mask(request.body)
+
+
+def _mask(text: str) -> str:
+    """IAS Phase 11 J: phone, card and government ID numbers never reach the models."""
+    return mask_pii(text).text
+
+
+def _search_gloss(text: str) -> str:
+    """Filipino/Taglish search text becomes its English gloss; English stays as is.
+
+    A short Filipino query otherwise matches other Filipino emails by language
+    rather than the English email it is about.
+    """
+    if detect_language(text) in {"tl", "mixed"}:
+        return normalize(text) or text
+    return text
+
+
+_DESCRIPTION_CACHE: dict[str, list[float]] = {}
+_DESCRIPTION_CACHE_LIMIT = 5000
+
+
+def _embed_cached(texts: list[str]) -> list[list[float]]:
+    """Rule descriptions repeat on every email; embed each one once."""
+    missing = [text for text in dict.fromkeys(texts) if text not in _DESCRIPTION_CACHE]
+    if missing:
+        if len(_DESCRIPTION_CACHE) + len(missing) > _DESCRIPTION_CACHE_LIMIT:
+            _DESCRIPTION_CACHE.clear()
+        _DESCRIPTION_CACHE.update(zip(missing, model_manager.embed(missing)))
+    return [_DESCRIPTION_CACHE[text] for text in texts]
+
+
+def _category_text(category: CategoryInput) -> str:
+    return f"{category.name}: {category.description}" if category.description else category.name
+
+
+def _suggest_label(email_vector: list[float], request: ClassifyRequest) -> SuggestedLabel | None:
+    existing = {category.name.casefold() for category in request.categories}
+    template_vectors = model_manager.template_vectors()
+    best: SuggestedLabel | None = None
+    for template in LABEL_TEMPLATES:
+        if template.name.casefold() in existing or template.key not in template_vectors:
+            continue
+        similarity = cosine(email_vector, template_vectors[template.key])
+        if similarity >= request.threshold and (best is None or similarity > best.similarity):
+            best = SuggestedLabel(
+                key=template.key, name=template.name, description=template.description, similarity=similarity
+            )
+    return best
+
+
+def _extract_spans(request: ClassifyRequest) -> list[Span]:
+    spans: list[Span] = []
+    received_day = request.received_at.astimezone(ZoneInfo(request.timezone)).date()
+    tagger_name, tag, _version = tagger_manager.active()
+    for source, text in (("subject", request.subject), ("body", request.body)):
+        raw_spans = tag(text)
+        has_task = any(span.label == "TASK" for span in raw_spans)
+        for raw in raw_spans:
+            span = Span(
+                label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end, tagger=tagger_name
+            )
+            if raw.label == "DATE":
+                resolved = resolve_date(raw.text, received_at=request.received_at, timezone=request.timezone)
+                span.resolved = resolved.value
+                span.ambiguous = resolved.ambiguous
+                # A date only counts as a deadline when it is attached to a request and not in the past.
+                span.is_deadline = bool(
+                    resolved.value
+                    and resolved.value.date() >= received_day
+                    and (has_task or has_deadline_marker_before(text, raw.start))
+                )
+            spans.append(span)
+    return spans
+
+
+def _elapsed_ms(start: float) -> float:
+    return round((time.perf_counter() - start) * 1000, 2)
+

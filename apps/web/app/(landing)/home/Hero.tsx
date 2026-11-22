@@ -1,112 +1,49 @@
-import Image from "next/image";
-import { Gmail } from "@/components/new-landing/icons/Gmail";
-import { Outlook } from "@/components/new-landing/icons/Outlook";
-import {
-  Section,
-  SectionContent,
-} from "@/components/new-landing/common/Section";
-import {
-  PageHeading,
-  Paragraph,
-} from "@/components/new-landing/common/Typography";
-import { CallToAction } from "@/components/new-landing/CallToAction";
+import Link from "next/link";
+import { Badge } from "@/components/new-landing/common/Badge";
+import { Heading } from "@/components/new-landing/common/Typography";
 import { HeroReveal } from "@/components/new-landing/common/HeroReveal";
-import { UnicornScene } from "@/components/new-landing/UnicornScene";
-import {
-  Badge,
-  type BadgeVariant,
-} from "@/components/new-landing/common/Badge";
-import { BrandScroller } from "@/components/new-landing/BrandScroller";
-import { HeroVideoDialog } from "@/app/(landing)/home/HeroVideoDialog";
+import { Button } from "@/components/new-landing/common/Button";
+import { SquaresPattern } from "@/app/(landing)/home/SquaresPattern";
 
-interface HeroProps {
-  badge?: React.ReactNode;
-  badgeVariant?: BadgeVariant;
-  children?: React.ReactNode;
-  cta?: React.ReactNode;
-  subtitle?: React.ReactNode;
-  title?: React.ReactNode;
-}
-
-export function Hero({
-  title,
-  subtitle,
-  badge,
-  badgeVariant = "blue",
-  children,
-  cta,
-}: HeroProps) {
+export function Hero() {
   return (
-    <Section className={badge ? "mt-7 md:mt-7" : "mt-10 md:mt-20"}>
-      {badge ? (
-        <HeroReveal className="mb-7 flex justify-center">
-          <Badge variant={badgeVariant}>{badge}</Badge>
+    <div className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 text-center">
+      <SquaresPattern />
+
+      <div className="relative z-10 mx-auto max-w-4xl px-6">
+        <HeroReveal>
+          <Badge variant="blue">AI email sorting · P1–P5 priority</Badge>
         </HeroReveal>
-      ) : null}
-      <PageHeading>{title}</PageHeading>
-      <HeroReveal delay={0.125 * 5}>
-        <Paragraph size="lg" className="mx-auto mt-6 max-w-[640px]">
-          {subtitle}
-        </Paragraph>
-      </HeroReveal>
-      <SectionContent noMarginTop className="mt-6 md:mt-8">
-        <div className="mb-8 space-y-3">
-          <HeroReveal delay={0.125 * 7}>{cta ?? <CallToAction />}</HeroReveal>
-          <HeroReveal delay={0.125 * 8}>
-            <div className="mb-12 flex items-center justify-center gap-2">
-              <Paragraph color="light" size="sm">
-                Works with
-              </Paragraph>
-              <Outlook />
-              <Gmail />
-            </div>
-          </HeroReveal>
-        </div>
-        {children}
-      </SectionContent>
-    </Section>
-  );
-}
 
-export function HeroVideoPlayer({
-  video,
-}: {
-  video?: { muxPlaybackId: string; thumbnailTime?: number; title: string };
-}) {
-  const muxThumbnail = video?.thumbnailTime !== undefined;
+        <HeroReveal delay={0.05} className="mt-6">
+          <Heading className="mx-auto max-w-[820px]">
+            Sort your inbox by{" "}
+            <span className="bg-gradient-to-r from-[#2965EC] to-[#5C89F8] bg-clip-text text-transparent">
+              priority, language & context
+            </span>
+          </Heading>
+        </HeroReveal>
 
-  return (
-    <HeroReveal className="relative w-full" delay={0.125 * 9}>
-      <div className="relative block overflow-hidden rounded-3xl border border-[#EFEFEF] md:rounded-[43px]">
-        <HeroVideoDialog
-          playbackId={video?.muxPlaybackId}
-          thumbnailTime={video?.thumbnailTime}
-          title={video?.title}
-        />
-        <Image
-          src={
-            muxThumbnail
-              ? `https://image.mux.com/${video.muxPlaybackId}/thumbnail.jpg?time=${video.thumbnailTime}&width=2560`
-              : "/images/new-landing/video-thumbnail.webp"
-          }
-          alt={video?.title ?? "an organized inbox"}
-          width={2560}
-          height={muxThumbnail ? 1440 : 1404}
-          sizes="(min-width: 1280px) 1152px, (min-width: 1024px) calc(100vw - 64px), calc(100vw - 48px)"
-          preload
-          className="h-auto w-full"
-        />
-        <UnicornScene className="h-[calc(100%+5px)] opacity-30" />
+        <HeroReveal delay={0.1} className="mt-5">
+          <p className="font-geist text-[#848484] text-lg md:text-xl mx-auto max-w-[600px]">
+            CategorAIze reads your Gmail in English, Filipino and Taglish, ranks
+            every message from P1 (urgent) to P5 (noise), and surfaces tasks and
+            deadlines before you even open the thread.
+          </p>
+        </HeroReveal>
+
+        <HeroReveal
+          delay={0.15}
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
+        >
+          <Button size="xl" asChild>
+            <Link href="/login">Get started free</Link>
+          </Button>
+          <Button size="xl" variant="secondary" asChild>
+            <Link href="/login">Sign in</Link>
+          </Button>
+        </HeroReveal>
       </div>
-    </HeroReveal>
-  );
-}
-
-export function HeroContent() {
-  return (
-    <>
-      <BrandScroller />
-      <HeroVideoPlayer />
-    </>
+    </div>
   );
 }

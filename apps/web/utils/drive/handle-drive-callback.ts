@@ -17,6 +17,7 @@ import {
 } from "@/utils/redis/oauth-code";
 import { DRIVE_STATE_COOKIE_NAME } from "./constants";
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import { validateSignedOAuthState } from "@/utils/oauth/state";
 import { prefixPath } from "@/utils/path";
 
@@ -246,7 +247,7 @@ async function upsertDriveConnection(params: {
   refreshToken: string;
   expiresAt: Date | null;
 }) {
-  return await prisma.driveConnection.upsert({
+  const connection = await prisma.driveConnection.upsert({
     where: {
       emailAccountId_provider: {
         emailAccountId: params.emailAccountId,
@@ -270,4 +271,10 @@ async function upsertDriveConnection(params: {
       isConnected: true,
     },
   });
+  await recordAuditEvent({
+    eventType: "oauth_scope_changed",
+    emailAccountId: params.emailAccountId,
+    metadata: { kind: "drive", provider: params.provider, granted: true },
+  });
+  return connection;
 }

@@ -38,7 +38,12 @@ type QueueReaderEmailOptions = {
   emailAccountId: string;
   messageIds: string[];
   online: boolean;
-  onQueued?: () => Promise<void>;
+  /**
+   * Called with the send's operation id just before it can appear in the
+   * thread. What it returns is called if the send is not admitted.
+   */
+  onSubmitting?: (operationId: string) => () => void;
+  onQueued?: (operationId: string) => Promise<void>;
   mutationId?: string;
   holdForUndo?: boolean;
   /** The mailbox draft's saved copies, which the queued send replaces. */
@@ -60,8 +65,7 @@ export async function queueReaderEmail(
   // to the next id in the chain. Deriving ids keeps a send that is still
   // pending anywhere in the chain blocking duplicates.
   for (let attempt = 0; ; attempt += 1) {
-    const commandId =
-      attempt === 0 ? mutationId : `${mutationId}-retry-${attempt}`;
+    const commandId = sendCommandId(mutationId, attempt);
     try {
       return await queueReaderEmailOnce(options, commandId);
     } catch (error) {
@@ -83,6 +87,7 @@ async function queueReaderEmailOnce(
     emailAccountId,
     messageIds,
     online,
+    onSubmitting,
     onQueued,
     holdForUndo,
     providerDraftMessageIds,
@@ -108,24 +113,31 @@ async function queueReaderEmailOnce(
   const undoHoldUntil = holdForUndo
     ? getUndoSendHoldUntil(online, nowMs)
     : undefined;
-  const admission = await client.submitSend({
-    commandId,
-    conversationId: threadId,
-    draft: { accountId: emailAccountId, draftId },
-    draftRevision,
-    notBeforeMs: !online ? nowMs + OFFLINE_DISPATCH_HOLD_MS : undoHoldUntil,
-    replyTo: messageIds[0]
-      ? { accountId: emailAccountId, messageId: messageIds[0] }
-      : null,
-  });
+  const revertSubmitting = onSubmitting?.(commandId);
+  const admission = await client
+    .submitSend({
+      commandId,
+      conversationId: threadId,
+      draft: { accountId: emailAccountId, draftId },
+      draftRevision,
+      notBeforeMs: !online ? nowMs + OFFLINE_DISPATCH_HOLD_MS : undoHoldUntil,
+      replyTo: messageIds[0]
+        ? { accountId: emailAccountId, messageId: messageIds[0] }
+        : null,
+    })
+    .catch((error: unknown) => {
+      revertSubmitting?.();
+      throw error;
+    });
   if (admission.status === "rejected") {
+    revertSubmitting?.();
     const copy = admissionRejectionCopy(admission.code);
     if (!copy && admission.code === "invalid") {
       throw new ConflictingSendError();
     }
     throw new Error(copy ?? "Could not queue this email. Try again.");
   }
-  await onQueued?.();
+  await onQueued?.(commandId);
   if (undoHoldUntil !== undefined) {
     return {
       status: "held",
@@ -285,7 +297,11 @@ function operationOutcome(
   const operation = handle.getSnapshot().data;
   if (!operation) return;
   if (operation.status === "succeeded") {
-    return { status: "sent", messageId: "", threadId };
+    return {
+      status: "sent",
+      messageId: operation.sentMessage?.messageId ?? "",
+      threadId: operation.sentMessage?.conversationId ?? threadId,
+    };
   }
   if (operation.status === "failed" || operation.status === "needs_attention") {
     return {
@@ -303,4 +319,18 @@ function operationOutcome(
   if (operation.status === "cancelled" || operation.status === "superseded") {
     return { status: "cancelled" };
   }
+}
+
+/** Whether an outbox send came from this compose, including its resends after undo. */
+export function isSendCommandFor(operationId: string, mutationId: string) {
+  return (
+    operationId === mutationId ||
+    operationId.startsWith(`${mutationId}${RESEND_SUFFIX}`)
+  );
+}
+
+const RESEND_SUFFIX = "-retry-";
+
+function sendCommandId(mutationId: string, attempt: number) {
+  return attempt === 0 ? mutationId : `${mutationId}${RESEND_SUFFIX}${attempt}`;
 }

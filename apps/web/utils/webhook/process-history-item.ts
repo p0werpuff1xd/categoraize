@@ -21,11 +21,20 @@ import type { ParsedMessage, RuleWithActions } from "@/utils/types";
 import type { EmailAccountForDrafting } from "@/utils/ai/choose-rule/choose-args";
 import type { Logger } from "@/utils/logger";
 import { runWithBackgroundLoggerFlush } from "@/utils/logger-flush";
-import { captureException, SafeError } from "@/utils/error";
+import {
+  captureException,
+  isHandledUserKeyError,
+  isKnownApiError,
+  SafeError,
+} from "@/utils/error";
 import { logErrorWithDedupe } from "@/utils/log-error-with-dedupe";
 import { sendToReplyPushNotification } from "@/utils/to-reply-push";
 import { sendOtpPushNotification } from "@/utils/otp-push";
 import { internalDateToDate } from "@/utils/date";
+import { isCategoraizeEnabled } from "@/utils/categoraize/client";
+import { enqueueCategoraizeProcessing } from "@/utils/categoraize/queue";
+
+const MAX_WEBHOOK_MESSAGE_AGE_MS = 24 * 60 * 60 * 1000;
 
 export type SharedProcessHistoryOptions = {
   provider: EmailProvider;
@@ -148,6 +157,15 @@ export async function processHistoryItem(
       return;
     }
 
+    // Preserve sent-message tracking and filebot replies when catching up old mail.
+    const receivedAt = internalDateToDate(parsedMessage.internalDate, {
+      fallbackToNow: false,
+    });
+    if (Date.now() - receivedAt.getTime() > MAX_WEBHOOK_MESSAGE_AGE_MS) {
+      logger.info("Skipping. Message too old.");
+      return;
+    }
+
     // check if unsubscribed
     const email = canonicalizeEmailAddress(parsedMessage.headers.from);
     const sender = await prisma.newsletter.findFirst({
@@ -160,9 +178,6 @@ export async function processHistoryItem(
 
     if (sender) {
       await provider.blockUnsubscribedEmail(messageId);
-      const receivedAt = internalDateToDate(parsedMessage.internalDate, {
-        fallbackToNow: false,
-      });
       logger.info("Skipping. Blocked unsubscribed email.", {
         senderId: sender.id,
         receivedAt: Number.isFinite(receivedAt.getTime())
@@ -170,6 +185,18 @@ export async function processHistoryItem(
           : null,
       });
       return;
+    }
+
+    // CategorAIze runs on its own NLP service, so it does not depend on LLM (AI) access.
+    if (isCategoraizeEnabled()) {
+      try {
+        await enqueueCategoraizeProcessing({
+          payload: { emailAccountId, threadId: actualThreadId, messageId },
+          logger,
+        });
+      } catch (error) {
+        logger.warn("CategorAIze enqueue failed", { error });
+      }
     }
 
     try {
@@ -356,6 +383,10 @@ export async function processHistoryItem(
       logger,
       message: "Error processing message",
       error,
+      level:
+        isKnownApiError(error) || isHandledUserKeyError(error)
+          ? "warn"
+          : "error",
       dedupeKeyParts: {
         scope: "webhook/process-history-item",
         emailAccountId,

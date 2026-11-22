@@ -207,6 +207,7 @@ describe("queueReaderEmail", () => {
       status: "rejected",
       code: "invalid",
     });
+    const revertSubmitting = vi.fn();
     await expect(
       queueReaderEmail({
         client,
@@ -215,10 +216,13 @@ describe("queueReaderEmail", () => {
         messageIds: ["message"],
         mutationId: "mutation",
         online: true,
+        onSubmitting: () => revertSubmitting,
         threadId: "thread",
       }),
     ).rejects.toThrow("different content");
     expect(client.submitSend).toHaveBeenCalledOnce();
+    // The pending send's message must not stay hidden as if this one replaced it.
+    expect(revertSubmitting).toHaveBeenCalledOnce();
   });
 
   it("explains a full command queue instead of a generic send failure", async () => {
@@ -259,6 +263,30 @@ describe("queueReaderEmail", () => {
       threadId: "thread",
     });
     expect(handle.close).toHaveBeenCalledOnce();
+  });
+
+  it("reports where the sent copy landed", async () => {
+    const handle = createHandle({ status: "executing" });
+    const client = createClient({ handle });
+    const pending = queueReaderEmail({
+      client,
+      email: createEmail(),
+      emailAccountId: "account",
+      messageIds: [],
+      online: true,
+      settlementTimeoutMs: 1000,
+      threadId: "local-compose-id",
+    });
+    await vi.waitFor(() => expect(handle.subscribe).toHaveBeenCalled());
+    handle.set({
+      status: "succeeded",
+      sentMessage: { messageId: "sent-1", conversationId: "thread-1" },
+    });
+    await expect(pending).resolves.toEqual({
+      messageId: "sent-1",
+      status: "sent",
+      threadId: "thread-1",
+    });
   });
 
   it("does not turn an uncertain delivery into an automatic retry", async () => {
@@ -338,7 +366,7 @@ describe("queueReaderEmail", () => {
         notBeforeMs: outcome.holdUntil,
       }),
     );
-    expect(onQueued).toHaveBeenCalledOnce();
+    expect(onQueued).toHaveBeenCalledExactlyOnceWith("mutation");
     expect(client.observeOperation).not.toHaveBeenCalled();
   });
 

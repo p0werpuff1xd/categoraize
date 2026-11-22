@@ -1,0 +1,32 @@
+=== [google] ja***@gmail.com timezone=Asia/Manila ===
+[33m[categoraize/calendar]: Skipping unavailable Google calendar {
+        }
+      ]
+    }
+  ]
+}[0m
+CATZ-TEST 1 deadline  (request timezone=Asia/Manila)
+  category: (none)
+  priority: 3
+  factors: {"category_base":3,"deadline":0,"sender_role":0,"calendar":0,"vip_pin":0}
+  deadline: 2026-11-20T17:00:00+08:00
+  spans: TASK:"please send the signed budget report"; DATE:"Friday 5pm"=>2026-11-20T17:00:00+08:00
+  language: en
+  register: -
+CATZ-TEST 2 newsletter  (request timezone=Asia/Manila)
+  category: (none)
+  priority: 3
+  factors: {"category_base":3,"deadline":0,"sender_role":0,"calendar":0,"vip_pin":0}
+  deadline: -
+  spans: TASK:"CATZ-TEST 2 newsletter"; DATE:"webinars"
+  language: en
+  register: -
+CATZ-TEST 3 taglish request  (request timezone=Asia/Manila)
+  category: Family and Friends
+  priority: 2
+  factors: {"category_base":2,"deadline":0,"sender_role":0,"calendar":0,"vip_pin":0}
+  deadline: -
+  spans: TASK:"CATZ-TEST 3 taglish request"; TASK:"pakisend naman yung updated schedule"; DATE:"mag-Thursday"
+  language: mixed
+  register: -
+stored CATZ-TEST classifications from the mailbox: 0

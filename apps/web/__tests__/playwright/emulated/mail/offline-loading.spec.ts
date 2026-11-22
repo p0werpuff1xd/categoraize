@@ -254,26 +254,33 @@ test("opens saved mail offline, reconnects, and clears it on sign-out", async ({
 
     await context.setOffline(false);
     // Confirm the browser can reach the server before testing a connected reload.
+    // The router replays navigations queued while offline, which can reload
+    // the page under this check.
     await expect
       .poll(() =>
-        page.evaluate(async () => {
-          try {
-            const response = await fetch("/api/auth/ok", {
-              cache: "no-store",
-              signal: AbortSignal.timeout(3000),
-            });
-            return response.ok;
-          } catch {
-            return false;
-          }
-        }),
+        page
+          .evaluate(async () => {
+            try {
+              const response = await fetch("/api/auth/ok", {
+                cache: "no-store",
+                signal: AbortSignal.timeout(3000),
+              });
+              return response.ok;
+            } catch {
+              return false;
+            }
+          })
+          .catch((error: unknown) => {
+            if (String(error).includes("Execution context was destroyed"))
+              return false;
+            throw error;
+          }),
       )
       .toBe(true);
     await page.reload({ waitUntil: "domcontentloaded", timeout: 15_000 });
     await expect(
       conversationWithSubject(page, conversations, "Archive Action Message"),
     ).toBeVisible();
-    await capturePlaywrightCheckpoint(page, testInfo, "mail-after-reconnect");
 
     await expect.poll(() => mailEngineOpfsExists(page)).toBe(true);
     await signOutFromAppNav(page);
@@ -366,7 +373,7 @@ async function mailEngineOpfsExists(page: Page) {
   }, MAIL_ENGINE_OPFS_DIRECTORY);
 }
 
-// Mail hides SideNav. NavUser / Sign out only render on non-mail routes.
+// Signs out through NavUser on a non-mail route, which renders SideNav.
 async function signOutFromAppNav(page: Page) {
   await page.goto("/settings");
   await expect(

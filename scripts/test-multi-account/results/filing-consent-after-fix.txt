@@ -1,0 +1,24 @@
+LLM call sites in document filing:
+utils/ai/document-filing/analyze-document.ts:4:import { createGenerateObject } from "@/utils/llms";
+utils/ai/document-filing/analyze-document.ts:86:  const generateObject = createGenerateObject({
+utils/ai/document-filing/parse-filing-reply.ts:4:import { createGenerateObject } from "@/utils/llms";
+utils/ai/document-filing/parse-filing-reply.ts:89:  const generateObject = createGenerateObject({
+
+Callers of the filing engine / reply parser:
+utils/actions/drive.ts
+utils/ai/document-filing/parse-filing-reply.ts
+utils/drive/filing-engine.ts
+utils/drive/handle-filing-reply.ts
+utils/drive/process-filing-attachments.ts
+app/api/user/drive/preview/route.ts
+
+Consent checks on the filing path (expected at least one if gated):
+utils/drive/filing-engine.ts:24:import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
+utils/drive/filing-engine.ts:104:    if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+utils/drive/handle-filing-reply.ts:2:import { isExternalLlmAllowed } from "@/utils/categoraize/consent";
+utils/drive/handle-filing-reply.ts:89:  if (!(await isExternalLlmAllowed(emailAccount.userId))) {
+RESULT: PASS (gated)
+
+Current gate in filing-engine.ts:
+50:    filingEnabled: boolean;
+97:    if (!emailAccount.filingEnabled || !emailAccount.filingPrompt) {

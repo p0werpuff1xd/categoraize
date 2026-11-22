@@ -7,6 +7,7 @@ import { MEETING_RECORDER_MIN_TIER } from "@/utils/meeting-recorder/config";
 import { isMeetingBotProviderConfigured } from "@/utils/meeting-recorder/create-bot-provider";
 import { CANCELLABLE_STATUSES } from "@/utils/meeting-recorder/recording-lifecycle";
 import {
+  getReconcileAccountSelect,
   reconcileAccount,
   releaseAccountBookings,
   sweepRecordings,
@@ -15,7 +16,7 @@ import { withError } from "@/utils/middleware";
 import { getPremiumUserFilter } from "@/utils/premium";
 import prisma from "@/utils/prisma";
 
-export const maxDuration = 800;
+export const maxDuration = 60;
 const MEETING_RECORDER_ACCOUNT_CONCURRENCY = 5;
 
 export const GET = withError("meeting-recorder/schedule", async (request) => {
@@ -57,12 +58,7 @@ async function scheduleAllMeetingRecordings(logger: Logger) {
       ...premiumFilter,
       calendarConnections: { some: { isConnected: true } },
     },
-    select: {
-      id: true,
-      email: true,
-      meetingRecorderJoinRule: true,
-      name: true,
-    },
+    select: getReconcileAccountSelect(new Date()),
   });
   // Accounts holding live bookings that the main reconcile query no longer
   // covers: downgraded plans, a disable whose settings-time release failed, or

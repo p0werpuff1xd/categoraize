@@ -1,4 +1,5 @@
 import prisma from "@/utils/prisma";
+import { recordAuditEvent } from "@/utils/categoraize/audit";
 import type { Logger } from "@/utils/logger";
 import { sendReconnectionEmail } from "@inboxzero/transactional-email";
 import { env } from "@/env";
@@ -8,6 +9,7 @@ import {
   ErrorType,
 } from "@/utils/error-messages";
 import { createUnsubscribeToken } from "@/utils/unsubscribe";
+import { skipDraftCleanupForDisconnectedAccount } from "@/utils/ai/draft-cleanup";
 
 const clearedCredentials = {
   access_token: null,
@@ -21,7 +23,8 @@ const clearedCredentials = {
  * - invalid_grant: User revoked access or tokens expired
  * - insufficientPermissions: User hasn't granted all required scopes
  * - policy_enforced: Provider policy blocks access until user changes settings
- * - mail_service_not_enabled: Provider mailbox is unavailable for this account
+ * - mail_service_not_enabled: Gmail is disabled for this Google account
+ * - mailbox_unavailable: Outlook mailbox is inactive, deleted, or on-premise
  */
 export async function cleanupInvalidTokens({
   emailAccountId,
@@ -37,7 +40,8 @@ export async function cleanupInvalidTokens({
     | "invalid_grant"
     | "insufficient_permissions"
     | "policy_enforced"
-    | "mail_service_not_enabled";
+    | "mail_service_not_enabled"
+    | "mailbox_unavailable";
   logger: Logger;
 }) {
   if (failedAccessToken === undefined && failedRefreshToken === undefined) {
@@ -122,6 +126,18 @@ export async function cleanupInvalidTokens({
     logger.info("Account changed before credential cleanup");
     return { status: "skipped" as const };
   }
+
+  await recordAuditEvent({
+    eventType: "account_disconnected",
+    userId: emailAccount.userId,
+    emailAccountId: emailAccount.id,
+    metadata: { kind: "mailbox", reason: "invalid_token" },
+  });
+
+  await skipDraftCleanupForDisconnectedAccount({
+    emailAccountId: emailAccount.id,
+    logger,
+  });
 
   const errorMessage = getAccountActionRequiredMessage(
     emailAccount.email,
@@ -209,7 +225,8 @@ function getAccountActionRequiredMessage(
     | "invalid_grant"
     | "insufficient_permissions"
     | "policy_enforced"
-    | "mail_service_not_enabled",
+    | "mail_service_not_enabled"
+    | "mailbox_unavailable",
 ) {
   switch (reason) {
     case "insufficient_permissions":
@@ -218,6 +235,8 @@ function getAccountActionRequiredMessage(
       return `The connection for ${email} is blocked by your Google account security policy. Please review your Google security settings and reconnect your account to resume automation.`;
     case "mail_service_not_enabled":
       return `Gmail is not enabled for ${email}. Please enable Gmail for this account and reconnect it to resume automation.`;
+    case "mailbox_unavailable":
+      return `The mailbox for ${email} can't be reached. It may be inactive, unlicensed, or hosted on-premise. Please fix the mailbox in Microsoft 365 and reconnect it to resume automation.`;
     default:
       return `The connection for ${email} was disconnected. Please reconnect your account to resume automation.`;
   }

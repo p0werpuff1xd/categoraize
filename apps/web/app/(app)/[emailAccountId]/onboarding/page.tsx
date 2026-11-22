@@ -2,33 +2,35 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { t } from "@lingui/core/macro";
 import { Onboarding } from "@/app/(app)/[emailAccountId]/onboarding/Onboarding";
+import { OnboardingPermissionsGate } from "@/app/(app)/[emailAccountId]/onboarding/OnboardingPermissionsGate";
 import {
   ConversionAnalyticsScript,
   ConversionQueryParamEvents,
 } from "@/components/ConversionAnalytics";
-import { PAYWALL_FIRST_UPGRADE_PATH } from "@/app/(app)/[emailAccountId]/onboarding/onboardingFlow";
-import { shouldShowPaywallFirst } from "@/app/(app)/[emailAccountId]/onboarding/paywallFirst";
 import { registerUtmTracking } from "@/app/(landing)/welcome/utms";
 import { auth } from "@/utils/auth";
 import prisma from "@/utils/prisma";
-import { isPremiumRecord, premiumEntitlementSelect } from "@/utils/premium";
 import { BRAND_NAME, getBrandTitle } from "@/utils/branding";
+import { initLingui } from "@/utils/i18n/server";
 
 export const maxDuration = 300;
 
-export const metadata: Metadata = {
-  title: getBrandTitle("Onboarding"),
-  description: `Learn how ${BRAND_NAME} works and get set up.`,
-  alternates: { canonical: "/onboarding" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const i18n = await initLingui();
+  return {
+    title: getBrandTitle(t(i18n)`Onboarding`),
+    description: t(i18n)`Learn how ${BRAND_NAME} works and get set up.`,
+    alternates: { canonical: "/onboarding" },
+  };
+}
 
 export default async function OnboardingPage(props: {
   params: Promise<{ emailAccountId: string }>;
   searchParams: Promise<{
     step?: string | string[];
     force?: string | string[];
-    paywallFirst?: string | string[];
   }>;
 }) {
   const [searchParams, { emailAccountId }, cookieStore] = await Promise.all([
@@ -38,7 +40,6 @@ export default async function OnboardingPage(props: {
   ]);
   const step = getSingleSearchParamValue(searchParams.step);
   const force = getSingleSearchParamValue(searchParams.force);
-  const paywallFirst = getSingleSearchParamValue(searchParams.paywallFirst);
 
   const authPromise = auth();
   const utmValues = registerUtmTracking({ authPromise, cookieStore });
@@ -51,23 +52,9 @@ export default async function OnboardingPage(props: {
   const user = session?.user
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: {
-          email: true,
-          premium: { select: premiumEntitlementSelect },
-        },
+        select: { signupIntent: true },
       })
     : null;
-
-  if (
-    user &&
-    (await shouldShowPaywallFirst({
-      email: user.email,
-      isPremium: isPremiumRecord(user.premium),
-      forced: paywallFirst,
-    }))
-  ) {
-    redirect(PAYWALL_FIRST_UPGRADE_PATH);
-  }
 
   return (
     <>
@@ -75,9 +62,11 @@ export default async function OnboardingPage(props: {
         <ConversionQueryParamEvents />
       </Suspense>
       <ConversionAnalyticsScript />
-      <Suspense>
-        <Onboarding step={step} />
-      </Suspense>
+      <OnboardingPermissionsGate step={step}>
+        <Suspense>
+          <Onboarding step={step} signupIntent={user?.signupIntent ?? null} />
+        </Suspense>
+      </OnboardingPermissionsGate>
     </>
   );
 }

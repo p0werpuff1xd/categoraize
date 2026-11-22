@@ -1,60 +1,83 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 import { withEmailAccount } from "@/utils/middleware";
-import prisma from "@/utils/prisma";
+import { getClassificationStats } from "@/utils/categoraize/classification-stats";
+import { loadTriageRows } from "@/utils/categoraize/triage-rows";
 
-const priorityValues = ["URGENT", "HIGH", "MEDIUM", "LOW"] as const;
+export type CategoraizeClassificationsResponse = Awaited<
+  ReturnType<typeof getData>
+>;
 
 export const GET = withEmailAccount(
   "categorai/classifications",
   async (request) => {
     const params = request.nextUrl.searchParams;
-    const priority = params.get("priority");
-    const categoryId = params.get("categoryId");
-    const reviewed = params.get("reviewed");
-    const limit = Math.min(Math.max(Number(params.get("limit") ?? 50), 1), 100);
-    const offset = Math.max(Number(params.get("offset") ?? 0), 0);
-
-    const classifications = await prisma.categorizeClassification.findMany({
-      where: {
+    const minPriority = Number(params.get("minPriority") ?? 0);
+    const limit = Math.min(Math.max(Number(params.get("limit") ?? 50), 1), 200);
+    return NextResponse.json(
+      await getData({
         emailAccountId: request.auth.emailAccountId,
-        ...(priority &&
-        priorityValues.includes(priority as (typeof priorityValues)[number])
-          ? { priority: priority as (typeof priorityValues)[number] }
-          : {}),
-        ...(categoryId ? { categoryId } : {}),
-        ...(reviewed === "true" || reviewed === "false"
-          ? { isReviewedByUser: reviewed === "true" }
-          : {}),
-      },
-      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-      take: limit,
-      skip: offset,
-      select: {
-        id: true,
-        threadId: true,
-        messageId: true,
-        categoryId: true,
-        categoryName: true,
-        confidence: true,
-        priority: true,
-        priorityBand: true,
-        priorityScore: true,
-        urgency: true,
-        importance: true,
-        rawPriorityScore: true,
-        deadlineFactor: true,
-        senderFactor: true,
-        calendarFactor: true,
-        priorityDampener: true,
-        priorityOverride: true,
-        detectedLang: true,
-        actionDirective: true,
-        summary: true,
-        isReviewedByUser: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json({ classifications, limit, offset });
+        categoryId: params.get("categoryId"),
+        minPriority: Number.isInteger(minPriority) ? minPriority : 0,
+        limit,
+      }),
+    );
   },
 );
+
+async function getData({
+  emailAccountId,
+  categoryId,
+  minPriority,
+  limit,
+}: {
+  emailAccountId: string;
+  categoryId: string | null;
+  minPriority: number;
+  limit: number;
+}) {
+  const where: Prisma.CategorizeClassificationWhereInput = {};
+  if (categoryId === "uncategorized") where.categoryId = null;
+  else if (categoryId) where.categoryId = categoryId;
+
+  const [enriched, stats] = await Promise.all([
+    loadTriageRows({ emailAccountId, where, take: 500 }),
+    getClassificationStats(emailAccountId),
+  ]);
+
+  const counts = [1, 2, 3, 4, 5].map((level) => {
+    const atLevel = enriched.filter((row) => row.priority === level);
+    return {
+      level,
+      total: atLevel.length,
+      unread: atLevel.filter((row) => !row.read).length,
+    };
+  });
+
+  // Triage order: priority, then nearest validated deadline, then newest.
+  const classifications = enriched
+    .filter((row) => row.priority >= minPriority)
+    .sort(
+      (a, b) =>
+        b.priority - a.priority ||
+        compareDeadlines(a.deadlineAt, b.deadlineAt) ||
+        (b.receivedAt?.getTime() ?? 0) - (a.receivedAt?.getTime() ?? 0),
+    )
+    .slice(0, limit);
+
+  return {
+    classifications,
+    counts,
+    total: stats.total,
+    // Rows beyond the 500 most recent are not ranked or counted.
+    truncated: stats.total > enriched.length,
+    latestAnalyzedAt: stats.latestAnalyzedAt,
+  };
+}
+
+function compareDeadlines(a: Date | null, b: Date | null) {
+  if (a && b) return a.getTime() - b.getTime();
+  if (a) return -1;
+  if (b) return 1;
+  return 0;
+}

@@ -1,0 +1,32 @@
+{
+ "splits": {
+  "train": {
+   "emails": 300,
+   "with_calendar": 12,
+   "gold_conflicts": 6,
+   "match_from_gold_dates": 300,
+   "match_from_normalizer": 300,
+   "accuracy_from_gold_dates": 1.0,
+   "accuracy_from_normalizer": 1.0
+  },
+  "dev": {
+   "emails": 30,
+   "with_calendar": 0,
+   "gold_conflicts": 0,
+   "match_from_gold_dates": 30,
+   "match_from_normalizer": 30,
+   "accuracy_from_gold_dates": 1.0,
+   "accuracy_from_normalizer": 1.0
+  },
+  "test": {
+   "emails": 100,
+   "with_calendar": 7,
+   "gold_conflicts": 4,
+   "match_from_gold_dates": 100,
+   "match_from_normalizer": 100,
+   "accuracy_from_gold_dates": 1.0,
+   "accuracy_from_normalizer": 1.0
+  }
+ },
+ "mismatched_ids": []
+}

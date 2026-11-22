@@ -6,6 +6,8 @@ import { getSummary } from "@/utils/redis/summary";
 import { getEmailAccountWithAi } from "@/utils/user/get";
 import { emailToContentForAI } from "@/utils/ai/content-sanitizer";
 import { assertHasAiAccess } from "@/utils/premium/limits";
+import { summarizeEmail } from "@/utils/categoraize/client";
+import { runCategoraizeOrLlm } from "@/utils/categoraize/features";
 
 export const POST = withEmailAccount(async (request) => {
   const emailAccountId = request.auth.emailAccountId;
@@ -35,11 +37,22 @@ export const POST = withEmailAccount(async (request) => {
   const cachedSummary = await getSummary(prompt);
   if (cachedSummary) return new NextResponse(cachedSummary);
 
-  const stream = await summarise({
-    text: prompt,
-    userEmail: userAi.email,
-    userAi,
+  return runCategoraizeOrLlm<Response>({
+    feature: "summaries",
+    userId: userAi.userId,
+    logger: request.logger,
+    // Extractive: up to two original sentences, nothing generated.
+    categoraize: async () => {
+      const sentences = await summarizeEmail({ subject: "", body: prompt });
+      return new NextResponse(sentences.join("\n"));
+    },
+    llm: async () => {
+      const stream = await summarise({
+        text: prompt,
+        userEmail: userAi.email,
+        userAi,
+      });
+      return stream.toTextStreamResponse();
+    },
   });
-
-  return stream.toTextStreamResponse();
 });

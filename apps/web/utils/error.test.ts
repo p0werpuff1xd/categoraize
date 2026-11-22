@@ -18,9 +18,12 @@ import {
   captureException,
   checkCommonErrors,
   EMAIL_PROVIDER_RATE_LIMIT_MESSAGE,
+  GMAIL_SERVICE_UNAVAILABLE_MESSAGE,
+  isGmailServiceUnavailableError,
   EmailProviderRateLimitError,
   getActionErrorMessage,
   getUserFacingErrorMessage,
+  isGeminiSpendingCapError,
   isInsufficientCreditsError,
   getAIApiCallError,
   isContentFilterRefusal,
@@ -33,6 +36,7 @@ import {
   isOutlookItemNotFoundError,
   isOutlookThrottlingError,
   markAsHandledUserKeyError,
+  SafeError,
 } from "./error";
 
 describe("isAiQuotaExceededError", () => {
@@ -141,6 +145,29 @@ describe("getUserFacingErrorMessage", () => {
 describe("captureException", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("does not report a Google account without Gmail to Sentry", () => {
+    captureException(
+      createGmailApiError("failedPrecondition", "Mail service not enabled"),
+    );
+
+    expect(mockSentryCaptureException).not.toHaveBeenCalled();
+  });
+
+  it("forwards diagnostic tags separately from extra context", () => {
+    const error = new Error("startup failed");
+    const tags = {
+      runtimeMode: "desktop-ipc",
+      platform: "desktop",
+      stage: "desktop-sync",
+    };
+    const extra = { worker: false, locks: false, opfs: false };
+    captureException(error, { tags, extra });
+    expect(mockSentryCaptureException).toHaveBeenCalledWith(error, {
+      tags,
+      extra,
+    });
   });
 
   it("forwards attached LLM repair metadata to Sentry extra context", () => {
@@ -388,6 +415,24 @@ describe("isInsufficientCreditsError", () => {
   });
 });
 
+describe("isGeminiSpendingCapError", () => {
+  it("recognizes a Gemini project that hit its spending cap", () => {
+    const error = createGeminiResourceExhaustedError(
+      "Your project has exceeded its monthly spending cap. Please go to AI Studio to manage your project spend cap.",
+    );
+
+    expect(isGeminiSpendingCapError(error)).toBe(true);
+  });
+
+  it("does not treat an ordinary Gemini rate limit as a spending cap", () => {
+    const error = createGeminiResourceExhaustedError(
+      "Resource has been exhausted (e.g. check quota).",
+    );
+
+    expect(isGeminiSpendingCapError(error)).toBe(false);
+  });
+});
+
 describe("getAIApiCallError", () => {
   it("returns the provider error behind exhausted retries", () => {
     const apiError = createAPICallError({
@@ -455,6 +500,34 @@ describe("markAsHandledUserKeyError / isHandledUserKeyError", () => {
   });
 });
 
+describe("isGmailServiceUnavailableError", () => {
+  it("detects when Gmail is disabled for the account", () => {
+    expect(
+      isGmailServiceUnavailableError(
+        createGmailApiError("failedPrecondition", "Mail service not enabled"),
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    [
+      "a bare precondition failure",
+      "failedPrecondition",
+      "Precondition check failed.",
+    ],
+    [
+      "a push client conflict",
+      "failedPrecondition",
+      "Only one user push notification client allowed per developer (call /stop then try again)",
+    ],
+    ["another Gmail error", "invalidArgument", "Invalid label name"],
+  ])("ignores %s", (_name, reason, message) => {
+    expect(
+      isGmailServiceUnavailableError(createGmailApiError(reason, message)),
+    ).toBe(false);
+  });
+});
+
 describe("isOutlookThrottlingError", () => {
   it.each([
     ["ApplicationThrottled code", { code: "ApplicationThrottled" }],
@@ -474,6 +547,12 @@ describe("isOutlookThrottlingError", () => {
 
   it("returns false for unrelated errors", () => {
     expect(isOutlookThrottlingError({ code: "NotFound" })).toBe(false);
+  });
+
+  it("does not claim our own 429 responses as Outlook throttling", () => {
+    expect(
+      isOutlookThrottlingError(new SafeError("Too many requests", 429)),
+    ).toBe(false);
   });
 });
 
@@ -535,14 +614,42 @@ describe("isKnownOutlookError", () => {
       { message: "Access is denied. Check credentials and try again." },
     ],
     ["item not found errors", { code: "ErrorItemNotFound" }],
+    [
+      "inactive mailbox errors",
+      {
+        code: "ExtensionError",
+        message:
+          "Operation: Create; Exception: [Status Code: NotFound; Reason: The mailbox is either inactive, soft-deleted, or is hosted on-premise.]",
+      },
+    ],
+    [
+      "permanent mailbox errors",
+      {
+        code: "ExtensionError",
+        message:
+          "Operation: Create; Exception: [Status Code: Forbidden; Reason: The operation failed with a permanent mailbox error.]",
+      },
+    ],
   ])("detects %s", (_caseName, error) => {
     expect(isKnownOutlookError(error)).toBe(true);
+  });
+
+  it("detects Graph server errors that carry no message", () => {
+    expect(isKnownOutlookError(createGraphServerError(503))).toBe(true);
   });
 
   it("returns false for unknown errors", () => {
     expect(isKnownOutlookError({ message: "Something unexpected" })).toBe(
       false,
     );
+  });
+
+  it("returns false for non-Graph errors with a 5xx status", () => {
+    expect(
+      isKnownOutlookError(
+        createAPICallError({ message: "Upstream failed", statusCode: 503 }),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -578,6 +685,21 @@ describe("isKnownApiError", () => {
         finishReason: "content-filter",
         text: "I'm sorry, but I cannot assist with that request.",
       }),
+      true,
+    ],
+    [
+      "Gmail insufficient-scope errors with the reason on the cause",
+      Object.assign(
+        new Error("Request had insufficient authentication scopes."),
+        {
+          code: 403,
+          cause: {
+            code: 403,
+            message: "Request had insufficient authentication scopes.",
+            errors: [{ reason: "insufficientPermissions" }],
+          },
+        },
+      ),
       true,
     ],
   ])("returns %s for %s", (_caseName, error, expected) => {
@@ -664,7 +786,45 @@ describe("checkCommonErrors", () => {
   ])("maps provider rate-limit mode errors for %s", (_caseName, error, expected) => {
     expect(checkCommonErrors(error, "/api/test", logger)).toEqual(expected);
   });
+
+  it("maps a Google account without Gmail to a known 403 response", () => {
+    expect(
+      checkCommonErrors(
+        createGmailApiError("failedPrecondition", "Mail service not enabled"),
+        "/api/messages",
+        logger,
+      ),
+    ).toEqual({
+      type: "Gmail Service Unavailable",
+      message: GMAIL_SERVICE_UNAVAILABLE_MESSAGE,
+      code: 403,
+    });
+  });
+
+  it("maps Graph server errors to a safe 503 response", () => {
+    expect(
+      checkCommonErrors(createGraphServerError(500), "/api/test", logger),
+    ).toEqual({
+      type: "Outlook Service Unavailable",
+      message:
+        "Microsoft is temporarily unavailable. Please try again shortly.",
+      code: 503,
+    });
+  });
 });
+
+// Mirrors the Graph SDK's GraphError when Graph answers with a 5xx and no
+// error payload: an empty message and the raw status.
+function createGraphServerError(statusCode: number) {
+  // biome-ignore lint/suspicious/useErrorMessage: Graph leaves the message empty
+  return Object.assign(new Error(""), {
+    statusCode,
+    code: null,
+    requestId: null,
+    date: new Date(),
+    body: true,
+  });
+}
 
 type ActionErrorInput = Parameters<typeof getActionErrorMessage>[0];
 type ActionErrorOptions = Parameters<typeof getActionErrorMessage>[1];
@@ -702,6 +862,16 @@ function createAPICallError({
     statusCode,
     responseHeaders: {},
     responseBody,
+  });
+}
+
+function createGeminiResourceExhaustedError(message: string): APICallError {
+  return createAPICallError({
+    message,
+    statusCode: 429,
+    responseBody: JSON.stringify({
+      error: { code: 429, message, status: "RESOURCE_EXHAUSTED" },
+    }),
   });
 }
 
@@ -745,5 +915,13 @@ function createProviderRateLimitError(provider: "google" | "microsoft") {
     name: "ProviderRateLimitModeError",
     provider,
     retryAt: new Date(Date.now() + 60_000).toISOString(),
+  });
+}
+
+function createGmailApiError(reason: string, message: string) {
+  return Object.assign(new Error(message), {
+    status: 400,
+    code: 400,
+    errors: [{ message, reason }],
   });
 }

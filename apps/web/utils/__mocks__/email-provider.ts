@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import type { EmailProvider } from "@/utils/email/types";
+import { getGmailDefaultLabelColor } from "@/utils/label";
 
 /**
  * Creates a mock EmailProvider for testing
@@ -47,6 +48,7 @@ export const createMockEmailProvider = (
   getLabelById: vi.fn().mockResolvedValue(null),
   getLabelByName: vi.fn().mockResolvedValue(null),
   getMessageByRfc822MessageId: vi.fn().mockResolvedValue(null),
+  getMessageSource: vi.fn().mockResolvedValue(Buffer.from("")),
   getFolders: vi.fn().mockResolvedValue([]),
   getFolderCounts: vi.fn().mockResolvedValue([]),
   getSendAsAddresses: vi.fn().mockResolvedValue([]),
@@ -77,7 +79,6 @@ export const createMockEmailProvider = (
   getSentThreadsExcluding: vi.fn().mockResolvedValue([]),
   getThreadMessages: vi.fn().mockResolvedValue([]),
   getThreadMessagesInInbox: vi.fn().mockResolvedValue([]),
-  getPreviousConversationMessages: vi.fn().mockResolvedValue([]),
   archiveThread: vi.fn().mockResolvedValue(undefined),
   archiveThreadWithLabel: vi.fn().mockResolvedValue(undefined),
   bulkArchiveThreads: vi.fn().mockResolvedValue({
@@ -120,6 +121,7 @@ export const createMockEmailProvider = (
     .fn()
     .mockResolvedValue({ id: "label1", name: "Test Label", type: "user" }),
   deleteLabel: vi.fn().mockResolvedValue(undefined),
+  getDefaultLabelColor: vi.fn(getGmailDefaultLabelColor),
   updateLabel: vi.fn().mockResolvedValue(undefined),
   getOrCreateInboxZeroLabel: vi
     .fn()

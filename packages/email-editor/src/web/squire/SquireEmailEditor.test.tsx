@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -58,9 +59,6 @@ describe("Squire email editor", () => {
     expect(
       screen.getByRole("button", { name: "Show signature and quoted message" }),
     ).toBeTruthy();
-    expect(
-      screen.queryByRole("button", { name: "Remove signature" }),
-    ).toBeNull();
   });
 
   it("shows the full signature for editing when expanded", async () => {
@@ -71,9 +69,6 @@ describe("Squire email editor", () => {
     const signature = textbox().querySelector("[data-smartmail]");
     expect(signature?.querySelector("table")).toBeTruthy();
     expect(signature?.textContent).toContain("Head of Examples");
-    expect(
-      screen.getByRole("button", { name: "Remove signature" }),
-    ).toBeTruthy();
   });
 
   it("includes the collapsed signature in the edited body", async () => {
@@ -102,7 +97,7 @@ describe("Squire email editor", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Show signature" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remove signature" }));
+    await deleteSignature(textbox());
 
     expect(textbox().querySelector("[data-smartmail]")).toBeNull();
     expect(screen.queryByRole("button", { name: /signature/u })).toBeNull();
@@ -131,20 +126,67 @@ describe("Squire email editor", () => {
     expect(onStateChange).toHaveBeenCalled();
   });
 
+  it("sends no trailing line break after the signature is deleted", async () => {
+    const { handle, textbox } = await renderEditor({
+      preservedBlocks: [SIGNATURE],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Show signature" }));
+    act(() => {
+      handle().insertText("Draft body");
+    });
+
+    await deleteSignature(textbox());
+
+    expect(handle().getValue().editableHtml).toBe("<div>Draft body</div>");
+  });
+
+  it("sends a typed URL as a link even when nothing was typed after it", async () => {
+    const { handle, textbox } = await renderEditor({
+      initialHtml: "<div>Body</div>",
+      mode: "original",
+    });
+    // Squire links a URL only once a space or Enter follows it, so a URL at
+    // the end of the message reaches send as plain text.
+    const typed = document.createElement("div");
+    typed.textContent = "See example.com/settings";
+    await act(async () => {
+      textbox().append(typed);
+    });
+
+    const { editableHtml } = handle().getValue();
+    expect(editableHtml).toContain(
+      '<a href="http://example.com/settings" rel="noopener noreferrer" target="_blank">example.com/settings</a>',
+    );
+  });
+
+  it("keeps a line break inside inline content followed by more text", async () => {
+    const { handle } = await renderEditor({
+      initialHtml:
+        "<div><b>123 Main St<br></b><i>Springfield</i></div><div>Body</div>",
+      mode: "original",
+    });
+    act(() => {
+      handle().insertText("x");
+    });
+
+    expect(handle().getValue().editableHtml).toContain(
+      "123 Main St<br></b><i>Springfield",
+    );
+  });
+
   it("undoes and redoes removing the signature", async () => {
     const { handle, textbox } = await renderEditor({
       preservedBlocks: [SIGNATURE],
     });
     fireEvent.click(screen.getByRole("button", { name: "Show signature" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remove signature" }));
+    await deleteSignature(textbox());
     expect(textbox().querySelector("[data-smartmail]")).toBeNull();
 
     await act(async () => {
       fireEvent.keyDown(textbox(), { key: "z", ctrlKey: true });
     });
     expect(textbox().querySelector("[data-smartmail]")).toBeTruthy();
-    // Back to the untouched draft: the original signature is re-attached.
-    expect(handle().getValue().preservedBlockIds).toContain("signature");
+    expect(handle().getValue().editableHtml).toContain("Example Person");
 
     await act(async () => {
       fireEvent.keyDown(textbox(), { key: "y", ctrlKey: true });
@@ -212,7 +254,7 @@ describe("Squire email editor", () => {
     }
 
     expect(handle().getValue().editableHtml).toBe(
-      '<div>Bodyxxx<br></div><div data-smartmail="gmail_signature"><div><br></div><div>Sig</div></div>',
+      '<div>Bodyxxx</div><div data-smartmail="gmail_signature"><div><br></div><div>Sig</div></div>',
     );
   });
 
@@ -253,9 +295,6 @@ describe("Squire email editor", () => {
 
     expect(textbox().textContent).toContain("New");
     expect(textbox().textContent).not.toContain("Old");
-    expect(
-      screen.getByRole("button", { name: "Remove signature" }),
-    ).toBeTruthy();
   });
 
   it("swaps in an image signature that shows proxied and sends its original URL", async () => {
@@ -395,6 +434,125 @@ describe("Squire email editor", () => {
     expect(textbox().textContent).toContain("Snippet");
     expect(textbox().querySelector("[data-smartmail]")).toBeNull();
     expect(screen.queryByRole("button", { name: /signature/u })).toBeNull();
+  });
+
+  it.each(
+    ["Backspace", "Delete"].flatMap((key) =>
+      ["<br>", "   ", "&nbsp;"].map((blank) => ({ key, blank })),
+    ),
+  )("breaks out of a blank quoted line ($blank) with $key without deleting adjacent text", async ({
+    key,
+    blank,
+  }) => {
+    const { textbox, handle } = await renderEditor({
+      initialHtml: `<blockquote><div>First question</div><div>${blank}</div><div>Second question</div></blockquote>`,
+    });
+    const emptyLine = textbox().querySelector("blockquote > div:nth-child(2)");
+    if (!emptyLine) throw new Error("Missing empty quoted line");
+    act(() => textbox().focus());
+    const range = document.createRange();
+    range.selectNodeContents(emptyLine);
+    range.collapse(true);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+
+    await act(async () => {
+      fireEvent.keyDown(textbox(), { key });
+    });
+    expect(textbox().querySelectorAll("blockquote")).toHaveLength(2);
+
+    await act(async () => {
+      fireEvent.keyDown(textbox(), { key: "z", ctrlKey: true });
+    });
+    expect(textbox().querySelectorAll("blockquote")).toHaveLength(1);
+    expect(textbox().querySelector("blockquote")?.children).toHaveLength(3);
+
+    await act(async () => {
+      fireEvent.keyDown(textbox(), { key: "y", ctrlKey: true });
+    });
+    act(() => handle().insertText("My answer"));
+
+    expect(textbox().querySelectorAll("blockquote")).toHaveLength(2);
+    expect(textbox().querySelectorAll("blockquote")[0].textContent).toBe(
+      "First question",
+    );
+    expect(textbox().querySelectorAll("blockquote")[1].textContent).toBe(
+      "Second question",
+    );
+    expect(textbox().children[1].textContent?.trim()).toBe("My answer");
+  });
+
+  it.each([
+    {
+      tag: "ul",
+      html: "<ul><li><br></li><li>Keep this</li></ul>",
+      selector: "li",
+    },
+    {
+      tag: "table",
+      html: "<table><tbody><tr><td><br></td><td>Keep this</td></tr></tbody></table>",
+      selector: "td",
+    },
+  ])("keeps an empty quoted $tag inside its quote when deleting", async ({
+    tag,
+    html,
+    selector,
+  }) => {
+    const { textbox } = await renderEditor({
+      initialHtml: `<blockquote><div>Before</div>${html}<div>After</div></blockquote>`,
+    });
+    act(() => textbox().focus());
+    // jsdom does not implement inherited editability, which Squire checks
+    // before merging the next block during normal deletion.
+    for (const element of textbox().querySelectorAll("*")) {
+      Object.defineProperty(element, "isContentEditable", { value: true });
+    }
+    const emptyBlock = textbox().querySelector(selector);
+    if (!emptyBlock) throw new Error("Missing structural block");
+    const range = document.createRange();
+    range.selectNodeContents(emptyBlock);
+    range.collapse(true);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+
+    await act(async () => {
+      fireEvent.keyDown(textbox(), { key: "Delete" });
+    });
+
+    expect(textbox().querySelectorAll("blockquote")).toHaveLength(1);
+    expect(textbox().querySelector(`blockquote ${tag}`)?.textContent).toContain(
+      "Keep this",
+    );
+    expect(textbox().querySelector(`:scope > ${tag}`)).toBeNull();
+  });
+
+  it("quotes text and leaves the caret on a new line below it", async () => {
+    const { handle, textbox } = await renderEditor({});
+
+    act(() => {
+      handle().insertQuote("First <line>\nSecond line");
+      handle().insertText("My answer");
+    });
+
+    expect(textbox().innerHTML).toBe(
+      "<blockquote><div>First &lt;line&gt;</div><div>Second line</div></blockquote><div>My answer</div>",
+    );
+  });
+
+  it("keeps a quote off a line that already has text", async () => {
+    const { handle } = await renderEditor({
+      initialHtml: "<div>Thanks</div>",
+      mode: "edited",
+    });
+
+    act(() => {
+      handle().insertQuote("Quoted");
+      handle().insertText("Reply");
+    });
+
+    expect(handle().getValue().editableHtml).toBe(
+      "<div>Thanks</div><blockquote><div>Quoted</div></blockquote><div>Reply</div>",
+    );
   });
 
   it("collapses a signature restored from an earlier session", async () => {
@@ -672,7 +830,65 @@ describe("Squire email editor", () => {
     expect(onImageFiles).toHaveBeenCalledWith([file]);
     expect(paste.defaultPrevented).toBe(true);
   });
+
+  it("formats pasted Markdown text", async () => {
+    const { textbox } = await renderEditor({});
+
+    pasteText(
+      textbox(),
+      "> **Apps on your PC:** Open **Settings**.\n>\n> - one\n> - two",
+    );
+
+    const quote = textbox().querySelector("blockquote");
+    expect(quote?.querySelector("b")?.textContent).toBe("Apps on your PC:");
+    expect(quote?.querySelectorAll("li")).toHaveLength(2);
+    expect(textbox().textContent).not.toContain("**");
+  });
+
+  it("formats single-marker emphasis and strikethrough", async () => {
+    const { textbox } = await renderEditor({});
+
+    pasteText(textbox(), "An *important* and ~~removed~~ note");
+
+    expect(textbox().querySelector("i, em")?.textContent).toBe("important");
+    expect(textbox().querySelector("s, del")?.textContent).toBe("removed");
+  });
+
+  it("hands a pasted image to the app even with Markdown text alongside", async () => {
+    const onImageFiles = vi.fn();
+    const { textbox } = await renderEditor({ onImageFiles });
+    const file = new File(["x"], "photo.png", { type: "image/png" });
+
+    pasteText(textbox(), "**caption**", [file]);
+
+    expect(onImageFiles).toHaveBeenCalledWith([file]);
+    expect(textbox().querySelector("b")).toBeNull();
+  });
+
+  it("keeps Markdown literal when pasting without formatting", async () => {
+    const { textbox } = await renderEditor({});
+
+    fireEvent.keyDown(textbox(), { key: "Shift", shiftKey: true });
+    pasteText(textbox(), "**bold**");
+
+    expect(textbox().querySelector("b")).toBeNull();
+    expect(textbox().textContent).toContain("**bold**");
+  });
 });
+
+function pasteText(target: HTMLElement, text: string, files: File[] = []) {
+  const paste = new Event("paste", { bubbles: true, cancelable: true });
+  Object.defineProperty(paste, "clipboardData", {
+    value: {
+      files,
+      getData: (type: string) => (type === "text/plain" ? text : ""),
+      types: ["text/plain"],
+    },
+  });
+  act(() => {
+    target.dispatchEvent(paste);
+  });
+}
 
 async function renderEditor(props: Partial<EmailEditorProps>) {
   const ref = createRef<EmailEditorHandle>();
@@ -685,8 +901,12 @@ async function renderEditor(props: Partial<EmailEditorProps>) {
       {...props}
     />,
   );
-  // The Squire engine is loaded lazily.
-  await screen.findByRole("textbox", { name: "Email message" });
+  // The Squire engine is loaded lazily, and fills the textbox only once it
+  // attaches, which is when it makes the root editable.
+  const root = await screen.findByRole("textbox", { name: "Email message" });
+  await waitFor(() =>
+    expect(root.getAttribute("contenteditable")).toBe("true"),
+  );
   return {
     handle: () => {
       if (!ref.current) throw new Error("Editor handle is not ready");
@@ -695,4 +915,25 @@ async function renderEditor(props: Partial<EmailEditorProps>) {
     onStateChange,
     textbox: () => screen.getByRole("textbox", { name: "Email message" }),
   };
+}
+
+// Selects from the end of the body through the signature and deletes it, the
+// way a user removes a signature they don't want.
+async function deleteSignature(textbox: HTMLElement) {
+  const signature = textbox.querySelector("[data-smartmail]");
+  if (!signature?.previousSibling) throw new Error("No signature to delete");
+  const range = document.createRange();
+  range.setStart(
+    signature.previousSibling,
+    signature.previousSibling.childNodes.length,
+  );
+  range.setEnd(textbox, textbox.childNodes.length);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  fireEvent.keyDown(textbox, { key: "Backspace" });
+  // Squire reports the edit asynchronously.
+  await waitFor(() =>
+    expect(screen.queryByRole("button", { name: /signature/u })).toBeNull(),
+  );
 }

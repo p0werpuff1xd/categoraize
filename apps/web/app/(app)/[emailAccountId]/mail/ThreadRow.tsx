@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useMemo, type Ref } from "react";
+import { CopyIcon, PaperclipIcon } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { MailThreadRow } from "@inboxzero/mail-ui/MailThreadRow";
 import { isThreadStarred } from "@/app/(app)/[emailAccountId]/mail/star-state";
 import { MailLabelChip } from "@/app/(app)/[emailAccountId]/mail/MailLabelChip";
@@ -10,22 +12,23 @@ import type {
   ListThread,
   MailLayoutMode,
 } from "@/app/(app)/[emailAccountId]/mail/types";
-import { EmailDate } from "@/components/email-list/EmailDate";
 import { SentMessageOpenStatus } from "@/components/email-list/SentMessageOpenStatus";
 import { getEmailThreadLabels } from "@/components/EmailMessageCellLabels";
+import { toastError, toastSuccess } from "@/components/Toast";
 import { Tooltip } from "@/components/Tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { mailCheckboxClassName } from "@/app/(app)/[emailAccountId]/mail/SelectAllCheckbox";
+import { getMailRowCheckboxClassName } from "@/app/(app)/[emailAccountId]/mail/SelectAllCheckbox";
 import {
   Avatar,
   AvatarFallbackColor,
   AvatarImage,
 } from "@/components/ui/avatar";
 import type { EmailLabels } from "@/providers/email-label-types";
-import { cn } from "@/utils";
-import { internalDateToDate } from "@/utils/date";
+import { formatShortDate, internalDateToDate } from "@/utils/date";
 import { decodeSnippet } from "@/utils/gmail/decode";
 import { GmailLabel } from "@/utils/gmail/label";
+import { getConversationSubject } from "@/utils/email/subject";
+import { getThreadOtpCode } from "./otp-code";
 
 export type ThreadRowProps = {
   thread: ListThread;
@@ -46,6 +49,8 @@ export type ThreadRowProps = {
   onToggleSelect: (index: number) => void;
   onSelectRangeTo: (index: number) => void;
   rowRef?: Ref<HTMLDivElement>;
+  /** This tab, or another, holds an unsent reply for the thread. */
+  hasLocalDraft?: boolean;
   sentMessageOpen?: {
     firstOpenedAt: string | null;
     lastOpenedAt: string | null;
@@ -69,8 +74,10 @@ export const ThreadRow = memo(function ThreadRow({
   onToggleSelect,
   onSelectRangeTo,
   rowRef,
+  hasLocalDraft = false,
   sentMessageOpen,
 }: ThreadRowProps) {
+  const { t, i18n } = useLingui();
   const message = thread.messages.at(-1);
   const labels = useMemo(
     () =>
@@ -87,16 +94,24 @@ export const ThreadRow = memo(function ThreadRow({
       getThreadParticipantNames(
         [...(thread.participantMessages ?? []), ...thread.messages],
         accountEmail,
+        t`me`,
       ).join(", "),
-    [thread.messages, thread.participantMessages, accountEmail],
+    [thread.messages, thread.participantMessages, accountEmail, t],
   );
 
   if (!message) return null;
 
   const chips = labels.slice(0, layout === "list" && !compact ? 3 : 2);
-  const isDraft = thread.messages.some((message) =>
-    message.labelIds?.includes(GmailLabel.DRAFT),
+  const isDraft =
+    hasLocalDraft ||
+    thread.messages.some((message) =>
+      message.labelIds?.includes(GmailLabel.DRAFT),
+    );
+  const hasAttachment = thread.messages.some(
+    (message) => message.hasAttachment,
   );
+  const snippet = decodeSnippet(thread.snippet || message.snippet);
+  const otpCode = getThreadOtpCode(thread, userLabels);
 
   return (
     <MailThreadRow
@@ -104,13 +119,26 @@ export const ThreadRow = memo(function ThreadRow({
       compact={compact}
       date={
         <div className="flex items-center justify-end gap-1.5">
+          {hasAttachment ? (
+            <>
+              <PaperclipIcon
+                aria-hidden
+                className="size-3.5 shrink-0 text-muted-foreground"
+              />
+              <span className="sr-only">
+                <Trans>Has attachment</Trans>
+              </span>
+            </>
+          ) : null}
           {sentMessageOpen ? (
             <SentMessageOpenStatus compact open={sentMessageOpen} />
           ) : null}
-          <EmailDate
-            className="font-normal text-xs"
-            date={internalDateToDate(message.internalDate)}
-          />
+          <span className="text-muted-foreground text-xs">
+            {formatShortDate(internalDateToDate(message.internalDate), {
+              lowercase: true,
+              locale: i18n.locale,
+            })}
+          </span>
         </div>
       }
       expandedPreview={expandedPreview}
@@ -121,9 +149,12 @@ export const ThreadRow = memo(function ThreadRow({
       isSelected={isSelected}
       isStarred={isThreadStarred(thread.messages)}
       isUnread={isThreadUnread(thread.messages)}
-      labels={chips.map((label) => (
-        <MailLabelChip color={label.color} key={label.id} name={label.name} />
-      ))}
+      labels={[
+        ...chips.map((label) => (
+          <MailLabelChip color={label.color} key={label.id} name={label.name} />
+        )),
+        ...(otpCode ? [<OtpCodeButton code={otpCode} key="otp-code" />] : []),
+      ]}
       layout={layout}
       messageCount={thread.messages.length}
       onOpen={onOpen}
@@ -136,36 +167,62 @@ export const ThreadRow = memo(function ThreadRow({
           <Checkbox
             aria-label={ariaLabel}
             checked={checked}
-            className={cn(
-              mailCheckboxClassName,
-              "transition-opacity",
-              visible
-                ? "opacity-100"
-                : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-            )}
+            className={getMailRowCheckboxClassName(visible)}
             onClick={onClick}
           />
         </Tooltip>
       )}
       rowRef={rowRef}
       selectionEnabled={selectionEnabled}
-      snippet={decodeSnippet(thread.snippet || message.snippet)}
-      subject={message.headers.subject}
+      snippet={snippet}
+      strings={{
+        draft: t`Draft`,
+        starredConversation: t`Starred conversation`,
+        selectConversation: (participants) =>
+          t`Select conversation with ${participants}`,
+      }}
+      subject={getConversationSubject(thread.messages)}
     />
   );
 });
+
+function OtpCodeButton({ code }: { code: string }) {
+  const { t } = useLingui();
+  return (
+    <button
+      aria-label={t`Copy code ${code}`}
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-1.5 py-px font-medium text-foreground text-xs tabular-nums leading-4 hover:bg-muted"
+      onClick={async (event) => {
+        event.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(code);
+          toastSuccess({ description: t`Code copied` });
+        } catch {
+          toastError({ description: t`Failed to copy code` });
+        }
+      }}
+      // Enter would otherwise bubble to the row and open the thread.
+      onKeyDown={(event) => event.stopPropagation()}
+      type="button"
+    >
+      {code}
+      <CopyIcon aria-hidden className="size-3 text-muted-foreground" />
+    </button>
+  );
+}
 
 function AccountAvatar({
   account,
 }: {
   account: { email: string; image: string | null; name: string | null };
 }) {
+  const { t } = useLingui();
   const label = account.name || account.email;
   const initial = label.trim().at(0)?.toUpperCase() || "A";
 
   return (
     <Avatar
-      aria-label={`Inbox: ${label}`}
+      aria-label={t`Inbox: ${label}`}
       className="size-5"
       title={account.email}
     >

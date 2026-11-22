@@ -6,7 +6,7 @@ import type { Logger } from "@/utils/logger";
 import { ensureEmailAccountsWatched } from "@/utils/email/watch-manager";
 import { notifyLapsedWatches } from "@/utils/email/notify-lapsed-watches";
 
-export const maxDuration = 800;
+export const maxDuration = 60;
 
 export const GET = withError("watch/all", async (request) => {
   if (!hasCronSecret(request)) {

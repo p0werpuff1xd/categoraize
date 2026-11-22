@@ -115,6 +115,31 @@ describe("handleAccountLinking", () => {
     }
   });
 
+  it("explains when the same user's address is already connected with the other provider", async () => {
+    mockExistingEmailAccount({
+      provider: "google",
+      userId: "target-user-id",
+    });
+
+    const result = await handleAccountLinking({
+      existingAccountId: null,
+      hasEmailAccount: false,
+      existingUserId: null,
+      targetUserId: "target-user-id",
+      provider: "microsoft",
+      providerEmail: "existing@gmail.com",
+      logger,
+    });
+
+    expect(result.type).toBe("redirect");
+    if (result.type === "redirect") {
+      const url = new URL(result.response.headers.get("location") || "");
+      expect(url.searchParams.get("error")).toBe(
+        "email_in_use_by_other_provider",
+      );
+    }
+  });
+
   it("should redirect with account_already_exists when creating an account whose email belongs to a different user on the same provider", async () => {
     mockExistingEmailAccount();
 

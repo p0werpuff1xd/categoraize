@@ -1,0 +1,7 @@
+=== [google] ja***@gmail.com (timezone=Asia/Manila) ===
+google: OK 0 busy period(s) in 816 ms
+  covers CATZ-TEST window Fri, Nov 20, 16:00..Fri, Nov 20, 18:00: NO
+  timezone-aware ISO strings: yes
+unified (what the app merges): 0 period(s)
+calendar_busy sent to NLP service: 0 period(s), keys=-
+=== Cross-account ===

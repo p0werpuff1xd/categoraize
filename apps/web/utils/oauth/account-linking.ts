@@ -102,7 +102,7 @@ export async function handleAccountLinking({
       return {
         type: "redirect",
         response: createAccountLinkingRedirect({
-          query: { error: "account_already_exists" },
+          query: { error: "email_in_use_by_other_provider" },
         }),
       };
     }

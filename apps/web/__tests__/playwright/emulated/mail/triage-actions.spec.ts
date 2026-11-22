@@ -8,6 +8,7 @@ import {
   openMail,
   openMailboxFromSidebar,
   readLatestMailMutation,
+  toggleMailLayout,
 } from "./mail-test-helpers";
 
 const commandModifier = process.platform === "darwin" ? "Meta" : "Control";
@@ -195,9 +196,7 @@ test("advances the split reader after archiving an open conversation", async ({
   if (settings.layout === "SPLIT") {
     await expect(emptyReader).toBeVisible();
   } else {
-    await page
-      .getByRole("button", { name: "Switch list or split view" })
-      .click();
+    await toggleMailLayout(page);
     await expect(emptyReader).toBeVisible();
   }
   const conversation = conversationWithSubject(
@@ -233,6 +232,14 @@ test("advances the split reader after archiving an open conversation", async ({
       ).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toBeHidden();
+      await emailBody.click();
+      await emailBody.press("Shift+Slash");
+      const shortcutsDialog = page.getByRole("dialog", {
+        name: "Keyboard shortcuts",
+      });
+      await expect(shortcutsDialog).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(shortcutsDialog).toBeHidden();
       await emailBody.click();
       await emailBody.press("e");
     } else {
@@ -344,7 +351,7 @@ test("selects and clears all conversations from the split tabs row", async ({
 
   await options.first().hover();
   await options.first().getByRole("checkbox").click();
-  await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+  await expect(selectAll).toHaveAttribute("aria-checked", "false");
 
   await selectAll.click();
 
@@ -360,7 +367,7 @@ test("selects and clears all conversations from the split tabs row", async ({
   await expect(
     page.getByText(`${conversationCount - 1} selected`, { exact: true }),
   ).toBeVisible();
-  await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+  await expect(selectAll).toHaveAttribute("aria-checked", "false");
 
   await selectAll.click();
   await expect(selectAll).toBeChecked();
