@@ -20,7 +20,7 @@ const features = [
     badge: { label: "Priority", variant: "purple" as const },
     title: "P1 to P5 priority scoring",
     description:
-      "Every message gets a priority from P1 (respond now) down to P5 (noise). The score weighs sender importance, deadlines, your calendar load, and task signals—not just keywords.",
+      "Every message gets a priority from P5 (critical, respond now) down to P1 (minimal, noise). The score weighs sender importance, deadlines, your calendar load, and task signals—not just keywords.",
   },
   {
     badge: { label: "Extraction", variant: "green" as const },
@@ -44,7 +44,7 @@ const features = [
     badge: { label: "Automation", variant: "orange" as const },
     title: "Rules that act on priority",
     description:
-      "Build AI-powered rules that trigger on priority level, category, language or sender. Auto-archive P5 noise, label P1 messages, and get out of the way of everything in between.",
+      "Build AI-powered rules that trigger on priority level, category, language or sender. Auto-archive P1 noise, label P5 critical messages, and get out of the way of everything in between.",
   },
 ];
 

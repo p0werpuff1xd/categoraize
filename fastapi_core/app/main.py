@@ -21,7 +21,7 @@ from .algorithms.label_library import LABEL_TEMPLATES
 from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict, prototype_language
 from .algorithms.thread_status import ThreadMessage, asks_question, determine_status
 from .ml import priority_model
-from .ml.priority_rules import compute_priority
+from .ml.priority_rules import compute_category_priority, compute_priority
 from .nlp.date_codes import has_conflict, resolve_phrase, resolved_datetime
 from .nlp.extractor import resolve_date
 from .nlp.register import detect_register
@@ -186,15 +186,19 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
     timings["tagging"] = _elapsed_ms(step)
 
     base_priority = request.uncategorized_base_priority
+    category_slug = None
     if chosen:
-        base_priority = next(category.base_priority for category in request.categories if category.id == chosen.id)
-    validated_deadlines = [
-        *request.confirmed_deadlines,
-        *(span.resolved for span in spans if span.is_deadline and not span.ambiguous and span.resolved),
+        chosen_category = next(category for category in request.categories if category.id == chosen.id)
+        base_priority = chosen_category.base_priority
+        category_slug = chosen_category.slug
+    extracted_deadlines = [
+        span.resolved for span in spans if span.is_deadline and not span.ambiguous and span.resolved
     ]
-    priority = compute_priority(
+    priority = compute_category_priority(
         base_priority=base_priority,
-        validated_deadlines=validated_deadlines,
+        category_slug=category_slug,
+        extracted_deadlines=extracted_deadlines,
+        confirmed_deadlines=request.confirmed_deadlines,
         now=request.now or datetime.now(request.received_at.tzinfo),
         sender_role=request.sender.role,
         is_vip=request.sender.is_vip,

@@ -51,6 +51,9 @@ class CategoryInput(StrictModel):
     description: str = Field(default="", max_length=2_000)
     base_priority: int = Field(default=3, ge=1, le=5)
     centroid: Vector | None = None
+    # Canonical template key (e.g. "promotions") when the category is one of the
+    # curated templates; user-named categories leave this null.
+    slug: str | None = Field(default=None, max_length=64)
 
 
 class BusyPeriod(StrictModel):

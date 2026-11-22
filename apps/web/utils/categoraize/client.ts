@@ -154,6 +154,8 @@ export type CategoraizeClassifyRequest = {
     description: string;
     base_priority: number;
     centroid: number[] | null;
+    /** Canonical key for curated categories (e.g. "promotions"); null otherwise. */
+    slug?: string | null;
   }>;
   threshold?: number;
   calendar_busy?: Array<{ start: string; end: string }> | null;

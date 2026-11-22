@@ -5,8 +5,10 @@ clamped to 1-5; a VIP sender is raised to at least P4.
 """
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
+
+from .priority_model import PROMOTION_CAP, PROMOTION_SLUG
 
 MIN_LEVEL = 1
 MAX_LEVEL = 5
@@ -60,6 +62,38 @@ def compute_priority(
         },
         deadline=deadline,
     )
+
+
+def compute_category_priority(
+    *,
+    base_priority: int,
+    category_slug: str | None,
+    extracted_deadlines: Sequence[datetime],
+    confirmed_deadlines: Sequence[datetime],
+    now: datetime,
+    sender_role: str | None,
+    is_vip: bool,
+    calendar_busy: Sequence[tuple[datetime, datetime]] | None,
+) -> PriorityResult:
+    """Priority for a classified email, with the promotions guardrails applied.
+
+    Promotional mail is capped at PROMOTION_CAP, and deadlines pulled from its
+    text ("ends tomorrow", "today only") are ignored. Only deadlines the user
+    confirmed still count, because marketing copy routinely contains dates.
+    """
+    is_promotion = category_slug == PROMOTION_SLUG
+    deadlines = list(confirmed_deadlines) if is_promotion else [*confirmed_deadlines, *extracted_deadlines]
+    result = compute_priority(
+        base_priority=base_priority,
+        validated_deadlines=deadlines,
+        now=now,
+        sender_role=sender_role,
+        is_vip=is_vip,
+        calendar_busy=calendar_busy,
+    )
+    if is_promotion and result.level > PROMOTION_CAP:
+        return replace(result, level=PROMOTION_CAP)
+    return result
 
 
 def _nearest_deadline(deadlines: Sequence[datetime], now: datetime) -> datetime | None:
