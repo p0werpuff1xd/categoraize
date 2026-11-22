@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="114 150 780 780" role="img" aria-label="CategorAIze">
+<defs>
+<!-- palette from the app's primary #4F46E5 (globals.css --primary) -->
+<linearGradient id="purple" x2="0" y2="1"><stop stop-color="#a5b4fc"/><stop offset=".55" stop-color="#818cf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+<linearGradient id="gold" x2="0" y2="1"><stop stop-color="#818cf8"/><stop offset=".55" stop-color="#6366f1"/><stop offset="1" stop-color="#4f46e5"/></linearGradient>
+<linearGradient id="blue" x2="0" y2="1"><stop stop-color="#6366f1"/><stop offset=".52" stop-color="#4f46e5"/><stop offset="1" stop-color="#4338ca"/></linearGradient>
+<linearGradient id="green" x2="0" y2="1"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#3730a3"/></linearGradient>
+<linearGradient id="edge" x2="0" y2="1"><stop stop-color="#312e81"/><stop offset="1" stop-color="#1e1b4b"/></linearGradient>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".65" stop-color="#eef2ff"/><stop offset="1" stop-color="#c7d2fe"/></linearGradient>
+<linearGradient id="front" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e0e7ff"/></linearGradient>
+<linearGradient id="at" x2="0" y2="1"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#3730a3"/></linearGradient>
+</defs>
+<!-- rear envelope -->
+<path d="M157 467 Q157 442 178 423 L430 211 Q497 158 559 213 L830 428 Q850 444 850 468 L850 865 Q850 921 793 921 L212 921 Q157 921 157 865Z" fill="url(#edge)"/>
+<!-- folders: flat color blocks, no inner glyphs or hairline strokes -->
+<path d="M249 354 L280 226 Q290 188 335 188 L462 188 Q482 188 500 204 L536 237 L686 237 Q751 237 751 299 L751 567 L249 567Z" fill="url(#purple)"/>
+<path d="M226 563 L226 382 Q226 330 284 330 L694 330 Q751 330 751 389 L751 594Z" fill="url(#gold)"/>
+<path d="M240 657 L240 506 Q240 449 301 449 L728 449 Q786 449 786 510 L786 689Z" fill="url(#blue)"/>
+<path d="M334 705 Q358 663 414 663 H480 Q506 663 532 628 L555 598 Q579 571 624 571 L779 571 Q821 571 829 607 L831 739 L343 753Z" fill="url(#green)"/>
+<!-- side flaps -->
+<path d="M172 515 L476 736 L176 906 Q164 889 164 858 L164 527 Q164 520 172 515Z" fill="url(#paper)" stroke="#1e1b4b" stroke-width="22" stroke-linejoin="round"/>
+<path d="M839 515 L538 736 L834 907 Q847 889 847 857 L847 527 Q847 520 839 515Z" fill="url(#paper)" stroke="#1e1b4b" stroke-width="22" stroke-linejoin="round"/>
+<!-- front flap -->
+<path d="M177 865 L464 652 Q509 616 552 650 L837 864 Q822 919 773 919 H237 Q191 919 177 865Z" fill="url(#front)" stroke="#fff" stroke-width="24" stroke-linejoin="round"/>
+<!-- @ symbol, enlarged for small sizes -->
+<text x="505" y="848" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="250" font-weight="900" fill="url(#at)">@</text>
+</svg>
