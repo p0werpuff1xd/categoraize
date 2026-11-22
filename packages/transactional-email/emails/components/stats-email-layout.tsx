@@ -15,7 +15,7 @@ import {
 import type { ReactNode } from "react";
 import { StatsEmailFooter } from "./stats-email-footer";
 
-export const ACCENT = "#2563EB";
+export const ACCENT = "#4F46E5";
 
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 

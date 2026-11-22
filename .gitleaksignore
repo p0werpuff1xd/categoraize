@@ -15,3 +15,5 @@ fa3909b940691aaddf1c8e4f5199a3bb5034e2db:apps/web/.env.example:generic-api-key:1
 fa3909b940691aaddf1c8e4f5199a3bb5034e2db:docker-compose.yml:generic-api-key:29
 08fcb6c39092d80eb12d15e08c66f64800731871:apps/web/scripts/emulator/README.md:generic-api-key:234
 dccf30f87b6af5500e86665fa622bc7e0ef6bd6f:apps/web/ee/billing/apple/local-testing.ts:private-key:8
+# - generic-api-key in 4a8271cc1: SECRET_MARKER is a fake log-leak test marker (C10-D01), reviewed 2026-11-21.
+4a8271cc1673c8f1b36f32ec7cc17b32198a0321:fastapi_core/tests/component/test_c10_api.py:generic-api-key:15

@@ -1,7 +1,7 @@
 "use client";
 
 import { Trans } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Mail } from "lucide-react";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;

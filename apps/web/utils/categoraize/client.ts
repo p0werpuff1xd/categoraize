@@ -41,6 +41,14 @@ const priorityFactorsSchema = z.object({
   vip_pin: z.number().int(),
 });
 
+const learnedPrioritySchema = z.object({
+  level: z.number().int().min(1).max(5),
+  model_level: z.number().int().min(1).max(5),
+  category_offset: z.number().int(),
+  why: z.array(z.object({ factor: z.string(), contribution: z.number() })),
+  guardrails: z.array(z.string()),
+});
+
 const classifyResponseSchema = z.object({
   email_id: z.string(),
   language: z.enum(["en", "tl", "mixed", "unknown"]),
@@ -65,6 +73,14 @@ const classifyResponseSchema = z.object({
   timings_ms: z.record(z.string(), z.number()),
   // Counts of numbers the service masked (it masks again as a safety net).
   pii_masked: z.record(z.string(), z.number()).optional(),
+  // Absent from older services and null when no learned model is loaded.
+  learned_priority: learnedPrioritySchema.nullish(),
+  sender_register: z
+    .object({
+      value: z.enum(["formal", "neutral", "casual"]),
+      source: z.enum(["learned", "rules"]),
+    })
+    .nullish(),
 });
 
 const centroidOutputSchema = z.object({
@@ -113,6 +129,7 @@ export type CategoraizeMatch = z.infer<typeof matchResponseSchema>;
 export type CategoraizeClassification = z.infer<typeof classifyResponseSchema>;
 export type CategoraizeSpan = z.infer<typeof spanSchema>;
 export type CategoraizePriorityFactors = z.infer<typeof priorityFactorsSchema>;
+export type CategoraizeLearnedPriority = z.infer<typeof learnedPrioritySchema>;
 
 export type CategoraizeContactRoleLabel =
   | "Direct Report"
@@ -174,7 +191,7 @@ export type CategoraizeServiceStatus =
 export async function getCategoraizeServiceStatus(): Promise<CategoraizeServiceStatus> {
   if (!isCategoraizeEnabled()) return "disabled";
   try {
-    const response = await fetch(`${env.CATEGORAIZE_SERVICE_URL}/healthz`, {
+    const response = await fetch(`${env.CATEGORAIZE_SERVICE_URL}/health`, {
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
       cache: "no-store",
     });
@@ -289,6 +306,32 @@ export async function summarizeEmail(request: {
     summarizeResponseSchema,
   );
   return result.sentences;
+}
+
+const discoverResponseSchema = z.object({
+  clusters: z.array(
+    z.object({
+      cluster_id: z.number().int(),
+      member_ids: z.array(z.string()),
+      centroid: vectorSchema,
+      cohesion: z.number(),
+    }),
+  ),
+  noise_ids: z.array(z.string()),
+});
+
+export type CategoraizeDiscovery = z.infer<typeof discoverResponseSchema>;
+
+/** Cluster email vectors into candidate categories. Only ids and vectors are sent, never text. */
+export async function discoverClusters(request: {
+  vectors: Array<{ id: string; vector: number[] }>;
+  minClusterSize: number;
+}) {
+  return callService(
+    "/api/v1/discover",
+    { vectors: request.vectors, min_cluster_size: request.minClusterSize },
+    discoverResponseSchema,
+  );
 }
 
 async function callService<T>(

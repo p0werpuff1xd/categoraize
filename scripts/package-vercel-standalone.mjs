@@ -100,7 +100,10 @@ for (const outputDir of outputDirs) {
   fs.mkdirSync(funcDir, { recursive: true });
 
   // Copy standalone files into function directory
-  fs.cpSync(standaloneDir, funcDir, { recursive: true });
+  // verbatimSymlinks keeps pnpm's relative node_modules links relative; without
+  // it Node rewrites them to absolute build-machine paths that do not exist at
+  // runtime ("Cannot find module next/dist/server/next-server").
+  fs.cpSync(standaloneDir, funcDir, { recursive: true, verbatimSymlinks: true });
 
   // Ensure .next/static and public exist inside function for internal SSR rendering
   const funcWebNextStatic = path.join(funcDir, "apps", "web", ".next", "static");

@@ -62,6 +62,10 @@ describe("consent gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.enabled = true;
+    // getActiveConsent reads inside an explicit transaction (set_config first).
+    prisma.$transaction.mockImplementation(((fn: (tx: typeof prisma) => unknown) =>
+      fn(prisma)) as never);
+    prisma.$executeRaw.mockResolvedValue(0 as never);
   });
 
   it("is open when CategorAIze is turned off", async () => {

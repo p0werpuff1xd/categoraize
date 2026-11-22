@@ -1,0 +1,38 @@
+﻿id,language,subject,body,gold_category,gold_priority,gold_register,sounds_natural (1-5),label_ok (y/n),suggested_fix,reviewer_initials,human_review
+test-mixed-001,mixed,Kafka consumer lag,"Hi Alex, pa-check naman nung consumer lag sa Kafka, bagsak na naman ang staging natin. Kailangan ko ng update bago ang standup bukas ng 9:30 AM. Salamat!",work_tasks,5,neutral,5,y,,KIM,TRUE
+test-mixed-005,mixed,Follow-up sa quotation,"Good day po! Follow-up lang po sa quotation na pinadala namin last week. Pakisabi po kung gusto ninyo ng revision. Salamat po! Rina, Printworks",work_tasks,2,formal,5,y,,KIM,TRUE
+test-mixed-013,mixed,Notes for Week 11,"Hi class, na-upload ko na sa portal ang notes para sa Week 11. Walang kailangang gawin unless may tanong kayo.",school,2,neutral,4,y,,KIM,TRUE
+test-mixed-014,mixed,Interview schedule,"Hi Alex! Gusto ka sana naming i-interview sa Wednesday, November 25, 2 PM. Paki-confirm ang availability mo bago mag-Monday. Thanks!",job_search,4,neutral,4,y,,KIM,TRUE
+test-mixed-016,mixed,Pre-employment requirements,Congratulations po! Paki-submit po ang NBI clearance at TIN bago mag-Friday para ma-process ang contract.,job_search,4,formal,3,y,,KIM,TRUE
+test-mixed-017,mixed,Overdue invoice,"Good day po. Overdue na po ang invoice #4821 (PHP 12,500). Pakibayaran po bago mag-November 20 para hindi ma-disconnect ang service. Salamat po.",finance_billing,4,formal,5,y,,KIM,TRUE
+test-mixed-024,mixed,Libreng webinar,"Sumali sa libreng webinar tungkol sa cloud security sa December 3, 1 PM. Limited slots lang!",promotions,1,neutral,4,y,,KIM,TRUE
+test-mixed-026,mixed,Out for delivery na ang order,Ang order mo #1182 ay out for delivery at darating ngayong araw.,alerts,3,neutral,4,y,,KIM,TRUE
+test-mixed-027,mixed,Mataas ang CPU ng server,Alert: 94% ang CPU ng prod-api-2 for 10 minutes. I-check at mag-scale kung kailangan.,alerts,5,neutral,5,y,,KIM,TRUE
+test-tl-005,tl,Inilipat ang pulong,"Mga kasama, inilipat ang pulong natin sa Huwebes, alas-dos ng hapon. Pakikumpirma ang inyong pagdalo.",meetings,4,neutral,5,y,,KIM,TRUE
+test-tl-007,tl,Iskedyul ng demo,"Magandang araw po. May bakante po kami sa Nobyembre 24, alas-diyes ng umaga. Pakisabi po kung puwede kayo. Maraming salamat po.",meetings,3,formal,5,y,,KIM,TRUE
+test-tl-009,tl,Panukala sa proyekto,"Mahal kong mga mag-aaral, ang deadline ng panukala sa proyekto ay sa Disyembre 1, 11:59 ng gabi. Isumite ito sa portal ng klase. Hindi tatanggapin ang huling pasa. Ginoong Reyes",school,4,formal,3,y,,KIM,TRUE
+test-tl-012,tl,Mga tala sa Linggo 11,"Kumusta, klase. Nai-upload ko na sa portal ang mga tala para sa Linggo 11. Walang kailangang gawin maliban kung may tanong kayo.",school,2,neutral,4,y,,KIM,TRUE
+test-tl-013,tl,Group study,Sama ka sa group study namin bukas ng alas-singko ng hapon? Sa library tayo.,school,3,casual,2,y,,KIM,TRUE
+test-tl-015,tl,Natanggap ang aplikasyon,Salamat po sa inyong aplikasyon. Sinusuri pa po ito ng aming koponan. Aabisuhan po namin kayo kung kayo ay mapili.,job_search,2,formal,5,y,,KIM,TRUE
+test-tl-016,tl,Lampas na sa takdang petsa,"Magandang araw po. Lampas na po sa takdang petsa ang invoice #4821 na nagkakahalaga ng PHP 12,500. Pakibayaran po bago mag-Nobyembre 20 upang hindi maputol ang serbisyo.",finance_billing,4,formal,4,y,,KIM,TRUE
+test-tl-019,tl,Tinanggihan ang ulat,"Alex, tinanggihan ang expense report mo dahil kulang ang mga resibo. Ipasa ulit kasama ang mga resibo bago ang cutoff ng sahod sa Nobyembre 30.",finance_billing,3,neutral,3,y,,KIM,TRUE
+test-tl-032,tl,Reunion natin,"Kumusta, batch! Ang reunion natin ay sa Disyembre 19. Mag-reply kayo para sa RSVP para makapag-order na kami ng pagkain.",personal,3,neutral,5,y,,KIM,TRUE
+test-tl-033,tl,Kumusta ka na?,Matagal na tayong hindi nagkita! Kumusta ka na? Libre ka ba ngayong weekend? Kape tayo â˜•,personal,2,casual,5,y,,KIM,TRUE
+dev-mixed-001,mixed,Contract review,"Alex, pa-review ng revised contract bago mag-noon bukas. Kailangan ma-sign ni legal.",work_tasks,5,neutral,3,y,,KIM,TRUE
+dev-mixed-003,mixed,Reminder sa exam,"Class, i-review niyo ang Chapters 5 to 8 para sa exam sa Monday, November 23. Good luck!",school,4,neutral,4,y,,KIM,TRUE
+dev-mixed-005,mixed,Bill reminder,Reminder: due na ang internet bill mo sa November 22. Bayaran na po para iwas disconnection.,finance_billing,4,formal,4,y,,KIM,TRUE
+dev-mixed-008,mixed,Pasalubong?,Uy kamusta trip? May pasalubong ba ako hahaha,personal,2,casual,4,y,,KIM,TRUE
+dev-mixed-009,mixed,Pa-help sa Excel,"Pre, pa-help naman sa pivot table, di ko ma-gets. Pwede mo ba ako tulungan later after lunch?",work_tasks,3,casual,4,y,,KIM,TRUE
+dev-tl-004,tl,Sahod na inaasahan,Magandang araw po. Pakipadala po ang inyong inaasahang sahod bago mag-katapusan ng araw ng Biyernes upang matapos ang alok.,job_search,4,formal,2,y,,KIM,TRUE
+dev-tl-006,tl,Mega sale bukas,Mega sale na bukas! Hanggang 60% diskwento sa mga elektroniko. Magtakda na ng paalala ðŸ””,promotions,1,casual,2,y,,KIM,TRUE
+dev-tl-007,tl,Maraming nabigong pag-login,"May 5 nabigong pagtatangkang mag-login sa iyong account. Kung hindi ikaw ito, palitan agad ang iyong password.",alerts,4,neutral,4,y,,KIM,TRUE
+train-mixed-017,mixed,Demo ng pricing tool namin,"Good day po, Alex! Gusto po sana naming mag-schedule ng call. Free po ba kayo sa Friday? Pakisuyo, dalhin ang printed copies po para ma-book namin. Salamat po, Paolo, Brightwave",meetings,3,formal,3,n,"Use""Puwede po ba kayo sa Friday? Pakidala po ang printed copies.""� Reason: Repeated ""po"" and ""pakisuyo""� feel templated. Category meetings is plausible because the requested action is scheduling a call; sales context may merit promotions on adjudication.",KIM,TRUE
+train-mixed-033,mixed,notes sa Statistics,Sinend ko dito yung notes ko sa Statistics kung na-miss mo yung lecture. Sana makatulong!,school,2,casual,2,y,,KIM,TRUE
+train-mixed-065,mixed,Early access para sa members,Mag-join na at makakuha ng 30% off sa first purchase mo ng laptops.,promotions,1,neutral,2,y,,KIM,TRUE
+train-mixed-073,mixed,Down ang prod-api-1,"Critical: unreachable ang prod-api-1 at 94% ang error rate. Pakisuyo, ayusin ang failing build at i-escalate kung tuloy-tuloy.",alerts,5,neutral,2,y,,KIM,TRUE
+train-mixed-081,mixed,Update sa delivery,Darating ang parcel mo mula sa Northpoint sa Monday. Walang kailangang gawin.,alerts,3,neutral,3,y,,KIM,TRUE
+train-mixed-089,mixed,Paalala para kay Ate,"Pakisuyo, i-reply ang RSVP mo bago ang bukas ng 9 AM. Umaasa si Ate sa'yo.",personal,4,neutral,2,y,,KIM,TRUE
+train-tl-013,tl,Pulong bukas,"Mga kasama, magkikita tayo bukas ng alas-nuwebe ng umaga para sa pagsusuri ng roadmap. Pakisuyong ipadala ang agenda.",meetings,4,neutral,3,y,,KIM,TRUE
+train-tl-061,tl,30% diskwento sa sapatos ngayong weekend,Bagsak-presyo ngayong weekend! 30% diskwento sa sapatos habang may stock. Mamili na.,promotions,1,casual,3,y,,KIM,TRUE
+train-tl-069,tl,Liham-balita: mga uso sa UX,"Ngayong buwan tungkol sa mga uso sa UX: tatlong artikulo, isang episode ng podcast at sagutan ng mga mambabasa.",promotions,2,neutral,4,y,,KIM,TRUE
+train-tl-077,tl,Kahina-hinalang aktibidad sa iyong account,Humarang kami ng kahina-hinalang pagtatangka sa iyong account. Pakisuyong i-update ang iyong paraan ng pagbabayad agad.,alerts,4,neutral,2,y,,KIM,TRUE

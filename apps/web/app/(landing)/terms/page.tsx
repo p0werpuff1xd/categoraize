@@ -84,7 +84,7 @@ export default function TermsPage() {
       </p>
 
       <h2>6. Contact</h2>
-      <p>[Project team name and contact email, to be filled in.]</p>
+      <p>Categoraize, support.categoraize@gmail.com</p>
     </LegalDraftPage>
   );
 }

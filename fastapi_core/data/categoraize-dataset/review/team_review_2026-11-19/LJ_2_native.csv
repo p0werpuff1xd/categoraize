@@ -1,0 +1,38 @@
+﻿id,language,subject,body,gold_category,gold_priority,gold_register,sounds_natural (1-5),label_ok (y/n),suggested_fix,reviewer_initials,human_review
+test-mixed-008,mixed,Demo schedule,"Hello po! May available slot po kami sa November 24, 10 AM. Paki-let us know po kung okay sa inyo. Thank you po!",meetings,3,formal,4,y,,LJ,TRUE
+test-mixed-009,mixed,lunch tayo,"uy, lunch tayo sa Friday noon? libre ko haha",meetings,2,casual,4,y,,LJ,TRUE
+test-mixed-012,mixed,Enrollment,"Dear students, magbubukas ang enrollment sa December 7. Bayaran po ang outstanding balance bago mag-enroll.",school,3,formal,5,y,,LJ,TRUE
+test-mixed-018,mixed,Ready na ang bill mo,"Ready na ang bill mo para sa October. Amount due: PHP 3,420.50, due date November 27.",finance_billing,3,neutral,5,y,,LJ,TRUE
+test-mixed-019,mixed,Payment received,Natanggap na namin ang payment mo na PHP 899. Salamat!,finance_billing,2,neutral,4,y,,LJ,TRUE
+test-mixed-020,mixed,Expense report,"Alex, na-reject ang expense report mo, kulang ang receipts. I-resubmit mo with receipts bago ang payroll cutoff sa November 30.",finance_billing,3,neutral,5,y,,LJ,TRUE
+test-mixed-023,mixed,Weekly roundup,"Ito ang weekly roundup natin: five UI trends, isang case study sa onboarding, at mga tools na gusto namin.",promotions,2,neutral,5,y,,LJ,TRUE
+test-mixed-029,mixed,Birthday ni Kuya,Uy! Magse-celebrate kami ng birthday ni Kuya sa Saturday 7 PM sa Casa. Sabihan mo ako kung makakapunta ka para ma-book ko ang table 🎉,personal,3,casual,4,y,,LJ,TRUE
+test-mixed-030,mixed,Checkup ni Mama,"Anak, samahan mo si Mama sa checkup niya sa Huwebes ng umaga ha. Salamat!",personal,4,neutral,5,y,,LJ,TRUE
+test-mixed-031,mixed,Mga pics sa Baguio,Na-upload ko na yung mga pics natin sa Baguio! Check mo ang link sa baba hehe 😄,personal,2,casual,5,y,,LJ,TRUE
+test-mixed-032,mixed,Batch reunion,Hi batch! Sa December 19 ang reunion natin. Paki-reply para sa RSVP para makapag-order na kami ng food.,personal,3,neutral,3,y,,LJ,TRUE
+test-tl-002,tl,Tapos na ang draft,"Boss, tapos ko na po ang draft ng proposal. Pakitingnan na lang po kapag may oras kayo. Hindi po nagmamadali, sa susunod na linggo po okay na.",work_tasks,2,formal,3,n,"Use""Pakitingnan na lang po sa susunod na linggo kapag may oras kayo.""Reason: Less awkward word order. Priority 2 may be low: recipient is asked to review a draft next week; consider priority 3.",LJ,TRUE
+test-tl-003,tl,Pirma sa kontrata,"Alex, kailangan ko ng pirma mo sa kontrata ngayong Biyernes. Huwag mong kalimutan.",work_tasks,4,neutral,5,y,,LJ,TRUE
+test-tl-006,tl,Pag-usapan natin,"Alex, puwede ba tayong mag-usap bukas ng alas-kuwatro ng hapon? Dalhin mo ang plano sa pagkuha ng bagong empleyado.",meetings,4,neutral,4,y,,LJ,TRUE
+test-tl-014,tl,Imbitasyon sa panayam,"Magandang araw po, Alex. Inaanyayahan po namin kayo sa panayam sa Nobyembre 25, alas-dos ng hapon. Pakikumpirma po ang inyong availability bago mag-Lunes. Salamat po.",job_search,4,formal,3,y,,LJ,TRUE
+test-tl-017,tl,Handa na ang inyong bayarin,"Handa na ang inyong bayarin sa kuryente para sa Oktubre. Halagang dapat bayaran: PHP 3,420.50. Takdang petsa: Nobyembre 27.",finance_billing,3,formal,5,y,,LJ,TRUE
+test-tl-020,tl,Naproseso ang refund,"Naproseso na ang inyong refund na PHP 1,200. Makikita ito sa inyong account sa loob ng tatlo hanggang limang araw ng trabaho.",finance_billing,2,formal,5,y,,LJ,TRUE
+test-tl-021,tl,Malaking sale ngayong araw,Malaking sale ngayong araw lang! 50% diskwento sa lahat ng produkto. Mamili na bago maubos 🛍️,promotions,1,casual,2,y,,LJ,TRUE
+test-tl-022,tl,Naiwan sa cart,May naiwan ka sa iyong cart. Kumpletuhin na ang order at libre ang padala.,promotions,1,casual,3,y,,LJ,TRUE
+test-tl-024,tl,Libreng webinar,"Sumali sa aming libreng webinar tungkol sa seguridad sa cloud sa Disyembre 3, alas-una ng hapon. Limitado ang upuan!",promotions,1,neutral,4,y,,LJ,TRUE
+test-tl-028,tl,Halos puno na ang storage,95% na ng iyong cloud storage ang nagamit. Magbakante ng espasyo o mag-upgrade ng plano upang magpatuloy ang pag-sync.,alerts,3,neutral,4,y,,LJ,TRUE
+test-tl-029,tl,Kaarawan ni Kuya,"Uy! Magse-celebrate kami ng kaarawan ni Kuya sa Sabado, alas-siyete ng gabi sa Casa. Sabihan mo ako kung makakasama ka para makapag-reserba ako ng mesa 🎉",personal,3,casual,3,y,,LJ,TRUE
+test-tl-031,tl,Mga larawan sa Baguio,Na-upload ko na ang mga larawan natin sa Baguio! Tingnan mo ang link sa ibaba hehe 😄,personal,2,casual,3,y,,LJ,TRUE
+dev-mixed-002,mixed,Standup moved,"Guys, i-move natin ang standup sa 10 AM bukas. Paki-confirm kung kaya.",meetings,3,neutral,4,y,,LJ,TRUE
+dev-mixed-004,mixed,Salary expectations,Hi Alex! Paki-send ang expected salary mo before end of day Friday para ma-finalize namin ang offer.,job_search,4,neutral,5,y,,LJ,TRUE
+dev-mixed-010,mixed,Site visit,Hello po! Confirm lang po ang site visit sa Wednesday 9 AM. Paki-reply po kung tuloy. Thank you po!,meetings,4,formal,4,y,,LJ,TRUE
+dev-tl-010,tl,Pagbisita sa site,"Magandang araw po. Kinukumpirma po namin ang pagbisita sa Miyerkules, alas-nuwebe ng umaga. Pakisagot po kung tuloy. Salamat po.",meetings,4,formal,4,y,,LJ,TRUE
+train-mixed-001,mixed,Kailangan ngayon,"Hi Alex, pakisuyo, ayusin ang failing build bago ang 4 PM ngayong hapon. Kailangan ito ni Marco sa meeting. Salamat!",work_tasks,5,neutral,2,y,,LJ,TRUE
+train-mixed-009,mixed,fyi lang,"Hi boss, update lang: maayos ang deployment ng queue-worker-4 at 91% uptime sa dashboard. Walang kailangan mula sa'yo.",work_tasks,2,casual,3,y,,LJ,TRUE
+train-mixed-025,mixed,Requirement sa Statistics,"Dear students, pakiusap po na i-upload ang assignment sa portal on or before December 5. May bawas po ang late submissions.",school,4,formal,3,y,,LJ,TRUE
+train-mixed-049,mixed,Past due na ang invoice 6027,"Good day po. Past due na po ang invoice 6027 na PHP 5,400. Pakisuyo, bayaran ang outstanding balance po bago mag-December 5 para iwas penalty.",finance_billing,4,formal,2,y,,LJ,TRUE
+train-mixed-097,mixed,Meeting bukas ng tanghali,"Hi team, may review tayo bukas ng tanghali. Pakisuyo, i-confirm ang attendance mo.",meetings,4,neutral,3,y,,LJ,TRUE
+train-tl-029,tl,Anunsyo sa klase,"Kumusta, klase. May pagsusulit tayo sa Estadistika sa Huwebes. Pakisuyong tapusin ang slides ng pangkatang ulat bago iyon.",school,3,neutral,4,y,,LJ,TRUE
+train-tl-045,tl,Mga bagong bakante para sa Backend Developer,Kumukuha ang Northpoint at 8 pang kompanya ng Backend Developer malapit sa iyo. Tingnan ang mga listahan ngayon.,job_search,1,neutral,2,y,,LJ,TRUE
+train-tl-053,tl,Handa na ang inyong pahayag,"Handa na ang buwanang pahayag ninyo. Halagang dapat bayaran: PHP 1,150. Takdang petsa: Disyembre 12.",finance_billing,3,formal,2,y,,LJ,TRUE
+train-tl-085,tl,Hapunan sa Casa,"Kumusta! May hapunan kami sa Casa sa Sabado, alas-sais ng gabi. Puwede mo bang sagutin ang imbitasyon? Sabihan mo ako!",personal,3,casual,3,y,,LJ,TRUE
+train-tl-093,tl,kumusta!,Matagal na tayong hindi nag-usap! Kumusta na kayo ni Kuya? Magkita tayo ulit sa sangay sa Ayala.,personal,2,casual,2,y,,LJ,TRUE

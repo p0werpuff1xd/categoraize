@@ -11,18 +11,24 @@ declare global {
 }
 
 // Create the Prisma client with extensions, but cast it back to PrismaClient for type compatibility
-const _prisma =
-  global.prisma ||
-  (new PrismaClient({
+function createClient() {
+  const raw = new PrismaClient({
     adapter: new PrismaPg({
       connectionString: env.DATABASE_URL,
     }),
-  })
-    .$extends(encryptedTokens)
-    .$extends(encryptedEmailFields)
-    .$extends(auditPrismaQueries)
-    // Last: wraps CategorAIze queries in a row-level-security tenant transaction.
-    .$extends(tenantContext) as unknown as PrismaClient);
+  });
+  return (
+    raw
+      .$extends(encryptedTokens)
+      .$extends(encryptedEmailFields)
+      .$extends(auditPrismaQueries)
+      // Last: wraps CategorAIze queries in a row-level-security tenant
+      // transaction on the RAW client, so the extensions above run only once.
+      .$extends(tenantContext(raw)) as unknown as PrismaClient
+  );
+}
+
+const _prisma = global.prisma || createClient();
 
 if (env.NODE_ENV === "development") global.prisma = _prisma;
 

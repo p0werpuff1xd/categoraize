@@ -3,6 +3,10 @@ import type { Prisma } from "@/generated/prisma/client";
 import { withEmailAccount } from "@/utils/middleware";
 import { getClassificationStats } from "@/utils/categoraize/classification-stats";
 import { loadTriageRows } from "@/utils/categoraize/triage-rows";
+import {
+  compareTriage,
+  countByPriority,
+} from "@/utils/categoraize/triage-order";
 
 export type CategoraizeClassificationsResponse = Awaited<
   ReturnType<typeof getData>
@@ -45,24 +49,12 @@ async function getData({
     getClassificationStats(emailAccountId),
   ]);
 
-  const counts = [1, 2, 3, 4, 5].map((level) => {
-    const atLevel = enriched.filter((row) => row.priority === level);
-    return {
-      level,
-      total: atLevel.length,
-      unread: atLevel.filter((row) => !row.read).length,
-    };
-  });
+  const counts = countByPriority(enriched);
 
   // Triage order: priority, then nearest validated deadline, then newest.
   const classifications = enriched
     .filter((row) => row.priority >= minPriority)
-    .sort(
-      (a, b) =>
-        b.priority - a.priority ||
-        compareDeadlines(a.deadlineAt, b.deadlineAt) ||
-        (b.receivedAt?.getTime() ?? 0) - (a.receivedAt?.getTime() ?? 0),
-    )
+    .sort(compareTriage)
     .slice(0, limit);
 
   return {
@@ -73,11 +65,4 @@ async function getData({
     truncated: stats.total > enriched.length,
     latestAnalyzedAt: stats.latestAnalyzedAt,
   };
-}
-
-function compareDeadlines(a: Date | null, b: Date | null) {
-  if (a && b) return a.getTime() - b.getTime();
-  if (a) return -1;
-  if (b) return 1;
-  return 0;
 }

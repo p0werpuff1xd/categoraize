@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="113" failures="0" errors="0" time="0.4208021">
+    <testsuite name="components/CategoraizePriority.test.tsx" timestamp="2026-11-19T16:23:49.106Z" hostname="LaurenJade" tests="10" failures="0" errors="0" skipped="0" time="0.0770995">
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-18 maps P5 to text and label" time="0.0417051">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-18 maps P4 to text and label" time="0.0023632">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-18 maps P3 to text and label" time="0.001925">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-18 maps P2 to text and label" time="0.0019117">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-18 maps P1 to text and label" time="0.0025287">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-19 marks a manual override and a VIP pin in text, not colour only" time="0.0026118">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-20 never renders blank: missing level and pending states have text" time="0.0024398">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-21 shows the learned weights, label offset and guardrail when present" time="0.0138757">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-23 deadline state: confirmed or clear deadline validates, ambiguous needs review" time="0.0007101">
+        </testcase>
+        <testcase classname="components/CategoraizePriority.test.tsx" name="C11 priority badge &gt; C11-22 rule-only breakdown keeps the original wording" time="0.0047687">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/audit.test.ts" timestamp="2026-11-19T16:23:49.109Z" hostname="LaurenJade" tests="7" failures="0" errors="0" skipped="0" time="0.0135676">
+        <testcase classname="utils/categoraize/audit.test.ts" name="sanitizeAuditMetadata &gt; drops keys that could carry secrets, IPs or email content" time="0.0035743">
+        </testcase>
+        <testcase classname="utils/categoraize/audit.test.ts" name="sanitizeAuditMetadata &gt; keeps ids, enums, counts and flags" time="0.0003123">
+        </testcase>
+        <testcase classname="utils/categoraize/audit.test.ts" name="sanitizeAuditMetadata &gt; drops long strings that may be free text" time="0.0002175">
+        </testcase>
+        <testcase classname="utils/categoraize/audit.test.ts" name="sanitizeAuditMetadata &gt; returns undefined for missing or fully-dropped metadata" time="0.0002181">
+        </testcase>
+        <testcase classname="utils/categoraize/audit.test.ts" name="recordAuditEvent &gt; writes the sanitized event" time="0.0030786">
+        </testcase>
+        <testcase classname="utils/categoraize/audit.test.ts" name="recordAuditEvent &gt; omits metadata when nothing survives sanitizing" time="0.0006501">
+        </testcase>
+        <testcase classname="utils/categoraize/audit.test.ts" name="recordAuditEvent &gt; swallows database errors so callers never break" time="0.0031528">
+            <system-err>
+[categoraize-audit]: Failed to record audit event {
+  &quot;eventType&quot;: &quot;login&quot;,
+  &quot;error&quot;: &quot;connection refused&quot;
+}
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/consent.test.ts" timestamp="2026-11-19T16:23:49.111Z" hostname="LaurenJade" tests="8" failures="0" errors="0" skipped="0" time="0.010336">
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; is open when CategorAIze is turned off" time="0.0040413">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; accepts a current, non-withdrawn row" time="0.0008321">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; rejects a user with no rows" time="0.000302">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; does not count a withdrawn row" time="0.000278">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; does not count rows for an older Terms or Privacy version" time="0.000247">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; does not count another user&apos;s consent" time="0.0002232">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; queries with the current versions and withdrawnAt null" time="0.0022486">
+        </testcase>
+        <testcase classname="utils/categoraize/consent.test.ts" name="consent gate &gt; limits email accounts to users with a current consent from the owner-run lookup" time="0.0004179">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/data-export.test.ts" timestamp="2026-11-19T16:23:49.113Z" hostname="LaurenJade" tests="6" failures="0" errors="0" skipped="0" time="0.022183">
+        <testcase classname="utils/categoraize/data-export.test.ts" name="buildExport &gt; only reads the user&apos;s own accounts" time="0.0106034">
+        </testcase>
+        <testcase classname="utils/categoraize/data-export.test.ts" name="buildExport &gt; leaves email bodies out of classifications" time="0.0018337">
+        </testcase>
+        <testcase classname="utils/categoraize/data-export.test.ts" name="buildExport &gt; never selects tokens from the account rows" time="0.0015825">
+        </testcase>
+        <testcase classname="utils/categoraize/data-export.test.ts" name="C12 data export &gt; C12-10 covers every CategorAIze table in the schema (complete)" time="0.001956">
+        </testcase>
+        <testcase classname="utils/categoraize/data-export.test.ts" name="C12 data export &gt; C12-11 is idempotent: two exports return the same data and write nothing" time="0.0018266">
+        </testcase>
+        <testcase classname="utils/categoraize/data-export.test.ts" name="C12 data export &gt; C12-12 leaves vectors and email excerpts out of the learning and deadline rows" time="0.0018935">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/features.test.ts" timestamp="2026-11-19T16:23:49.114Z" hostname="LaurenJade" tests="9" failures="0" errors="0" skipped="0" time="0.0123945">
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; uses the service when the feature switch is on" time="0.0025696">
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; restores the original LLM path when the switch is off" time="0.001312">
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; restores the original LLM path when CategorAIze is disabled" time="0.0002217">
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; falls back to the LLM on a service failure only with consent" time="0.0014384">
+            <system-err>
+[features-test]: CategorAIze service failed; using the LLM fallback {
+  &quot;feature&quot;: &quot;ruleMatching&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; does not send mail to the external LLM without consent" time="0.0014225">
+            <system-err>
+[features-test]: CategorAIze service failed; no LLM fallback without consent {
+  &quot;feature&quot;: &quot;ruleMatching&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; cascade: a confident local answer never reaches the LLM" time="0.0003608">
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; cascade: an unsure answer goes to the LLM only with consent" time="0.0024064">
+            <system-out>
+[features-test]: CategorAIze unsure; external AI is off, using local answer {
+  &quot;feature&quot;: &quot;ruleMatching&quot;
+}
+
+[features-test]: CategorAIze unsure; asking the external AI {
+  &quot;feature&quot;: &quot;ruleMatching&quot;
+}
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; cascade: keeps the local answer when the LLM fails" time="0.0004622">
+            <system-out>
+[features-test]: CategorAIze unsure; asking the external AI {
+  &quot;feature&quot;: &quot;ruleMatching&quot;
+}
+
+            </system-out>
+            <system-err>
+[features-test]: External AI failed; using the local answer {
+  &quot;feature&quot;: &quot;ruleMatching&quot;,
+  &quot;error&quot;: &quot;provider down&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/categoraize/features.test.ts" name="runCategoraizeOrLlm &gt; does not hide bugs: non-service errors are rethrown" time="0.0003669">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/field-encryption.test.ts" timestamp="2026-11-19T16:23:49.117Z" hostname="LaurenJade" tests="10" failures="0" errors="0" skipped="0" time="0.1275731">
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; stores ciphertext, not the text" time="0.005976">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; uses a fresh IV: the same text encrypts differently" time="0.0012207">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; detects tampering with the ciphertext" time="0.0006835">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; rejects a value moved to another row or column" time="0.0005712">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; fails with the wrong key" time="0.0005496">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; fails closed without a key and on plaintext" time="0.0012737">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; rotates: old values still decrypt with the previous key, new ones use the new id" time="0.0007726">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; rejects short keys" time="0.0003188">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; makes cuid-shaped row ids" time="0.0005266">
+        </testcase>
+        <testcase classname="utils/categoraize/field-encryption.test.ts" name="field encryption (IAS Phase 11 I) &gt; stays well under 15 ms per record (5 fields, 5 KB body)" time="0.1132143">
+            <system-out>
+field encryption: 0.558 ms per record (encrypt + decrypt, 5 fields)
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/pii.test.ts" timestamp="2026-11-19T16:23:49.120Z" hostname="LaurenJade" tests="28" failures="0" errors="0" skipped="0" time="0.0117828">
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; has vectors" time="0.0025389">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; mobile with dashes" time="0.0016345">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; mobile plain" time="0.0002368">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; mobile with spaces and dots" time="0.0001902">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; mobile with +63" time="0.000183">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; mobile with +63 and spaces" time="0.0001871">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; mobile with 63 prefix" time="0.0001752">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; Visa test card with spaces" time="0.0003149">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; Mastercard test card with dashes" time="0.0002908">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; card digits run together" time="0.0001823">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; Amex test card 4-6-5" time="0.0002004">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; SSS number" time="0.0001907">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; PhilHealth number" time="0.0001468">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; TIN" time="0.0001503">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; TIN with branch code" time="0.0001395">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; Taglish request keeps the task and the deadline" time="0.0001255">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; several kinds at once" time="0.0001285">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: ISO date" time="0.0001608">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: two dates in a row" time="0.0001336">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: amount with separators" time="0.0001335">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: order and tracking numbers" time="0.0001076">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: 16 digits that fail the Luhn check" time="0.0001173">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: landline-length and short numbers" time="0.0001113">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; NOT masked: digits inside a longer number" time="0.0001019">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPii (shared vectors) &gt; already masked text is unchanged" time="0.0000946">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="luhnValid &gt; accepts test cards and rejects near misses" time="0.0001721">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPiiDeep &gt; masks strings inside LLM messages and counts them" time="0.00052">
+        </testcase>
+        <testcase classname="utils/categoraize/pii.test.ts" name="maskPiiDeep &gt; returns the same object when nothing was masked" time="0.0001381">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/rating-state.test.ts" timestamp="2026-11-19T16:23:49.126Z" hostname="LaurenJade" tests="8" failures="0" errors="0" skipped="0" time="0.0071557">
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-10 starts idle with the buttons shown" time="0.0032158">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-11 idle -&gt; saving shows the rating optimistically and hides the buttons" time="0.0003914">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-12 saving -&gt; saved on success" time="0.0001794">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-13 saving -&gt; error on failure brings the buttons back" time="0.0002186">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-14 offline: nothing is sent and the buttons stay usable" time="0.0002151">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-15 retry after error or offline goes back to saving" time="0.0001796">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-16 double clicks while saving or after saving are ignored" time="0.0001963">
+        </testcase>
+        <testcase classname="utils/categoraize/rating-state.test.ts" name="C11 feedback buttons state machine &gt; C11-17 stray success or error outside saving changes nothing" time="0.0001949">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/revoke-tokens.test.ts" timestamp="2026-11-19T16:23:49.128Z" hostname="LaurenJade" tests="5" failures="0" errors="0" skipped="0" time="0.0510903">
+        <testcase classname="utils/categoraize/revoke-tokens.test.ts" name="revokeProviderTokens &gt; revokes every Google grant with its refresh token and skips Microsoft" time="0.042699">
+            <system-out>
+[revoke-tokens-test]: Provider token revocation {
+  &quot;googleRevoked&quot;: 3,
+  &quot;googleFailed&quot;: 0,
+  &quot;microsoftNotRevocable&quot;: 1
+}
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/categoraize/revoke-tokens.test.ts" name="revokeProviderTokens &gt; counts an already-revoked token (HTTP 400) as revoked" time="0.0017629">
+            <system-out>
+[revoke-tokens-test]: Provider token revocation {
+  &quot;googleRevoked&quot;: 1,
+  &quot;googleFailed&quot;: 0,
+  &quot;microsoftNotRevocable&quot;: 0
+}
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/categoraize/revoke-tokens.test.ts" name="revokeProviderTokens &gt; never throws: network errors and 5xx are counted as failures" time="0.0013793">
+            <system-out>
+[revoke-tokens-test]: Provider token revocation {
+  &quot;googleRevoked&quot;: 0,
+  &quot;googleFailed&quot;: 2,
+  &quot;microsoftNotRevocable&quot;: 0
+}
+
+            </system-out>
+            <system-err>
+[revoke-tokens-test]: Google token revocation failed {
+  &quot;error&quot;: &quot;offline&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/categoraize/revoke-tokens.test.ts" name="revokeProviderTokens &gt; never throws when the token lookup fails, so deletion goes ahead" time="0.0016176">
+            <system-err>
+[revoke-tokens-test]: Token revocation lookup failed {
+  &quot;error&quot;: &quot;db down&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/categoraize/revoke-tokens.test.ts" name="revokeProviderTokens &gt; skips grants with no token" time="0.0012961">
+            <system-out>
+[revoke-tokens-test]: Provider token revocation {
+  &quot;googleRevoked&quot;: 0,
+  &quot;googleFailed&quot;: 0,
+  &quot;microsoftNotRevocable&quot;: 0
+}
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/categoraize/triage-order.test.ts" timestamp="2026-11-19T16:23:49.130Z" hostname="LaurenJade" tests="13" failures="0" errors="0" skipped="0" time="0.0092803">
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-01 sorts by priority, then nearest deadline, then newest" time="0.0033838">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-02 puts emails without a deadline after those with one at the same level" time="0.0003201">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-03 accepts Date objects (API) and ISO strings (client) alike" time="0.0003087">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-04 &apos;all&apos; keeps every email in order" time="0.0003152">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-05 &apos;P4+&apos; keeps P4 and P5 only" time="0.0002271">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-06 a single level filter (P1) keeps that level only" time="0.0004129">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-06 a single level filter (P2) keeps that level only" time="0.0001655">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-06 a single level filter (P3) keeps that level only" time="0.0001602">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-06 a single level filter (P4) keeps that level only" time="0.000185">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-06 a single level filter (P5) keeps that level only" time="0.0001546">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-07 chronological mode sorts newest first without mutating the input" time="0.0003136">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-08 counts total and unread per level" time="0.0003814">
+        </testcase>
+        <testcase classname="utils/categoraize/triage-order.test.ts" name="C11 priority filter and sort &gt; C11-09 an empty inbox filters and counts to nothing" time="0.0002406">
+        </testcase>
+    </testsuite>
+    <testsuite name="utils/user/delete.test.ts" timestamp="2026-11-19T16:23:49.133Z" hostname="LaurenJade" tests="9" failures="0" errors="0" skipped="0" time="0.0783393">
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; does not delete a user when their email accounts own an organization with remaining members" time="0.0047885">
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; keeps Tinybird data when deleting the user fails" time="0.0054742">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+            </system-out>
+            <system-err>
+[test]: Error during user resources deletion process {
+  &quot;error&quot;: &quot;database unavailable&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; deletes solo organizations and memberships before deleting the user, then notifies shared conversations" time="0.0051861">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+[test]: User resources deleted 
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; removes the marketing contact by email address" time="0.0009848">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+[test]: User resources deleted 
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; releases every mailbox&apos;s recordings before deleting the user" time="0.0529741">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+[test]: User resources deleted 
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; keeps the user when a meeting bot cannot be released" time="0.00215">
+            <system-out>
+[test]: Deleting user resources 
+
+            </system-out>
+            <system-err>
+[test]: Error during user resources deletion process {
+  &quot;error&quot;: &quot;provider unavailable&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; deletes ownerless solo organizations before deleting the user" time="0.0014707">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+[test]: User resources deleted 
+
+            </system-out>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; surfaces the ownership transfer message when the database rejects a raced user deletion" time="0.001492">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+            </system-out>
+            <system-err>
+[test]: Error during user resources deletion process {
+  &quot;error&quot;: &quot;Transfer organization ownership before deleting your account.&quot;
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="utils/user/delete.test.ts" name="deleteUser &gt; surfaces the ownership transfer message when membership blocks raced user deletion" time="0.0017276">
+            <system-out>
+[test]: Deleting user resources 
+
+[test]: Deleting ExecutedRules in batches 
+
+[test]: Completed deletion of ExecutedRules {
+  &quot;total&quot;: 0
+}
+
+[test]: Deleting user 
+
+            </system-out>
+            <system-err>
+[test]: Error during user resources deletion process {
+  &quot;error&quot;: &quot;Transfer organization ownership before deleting your account.&quot;
+}
+
+            </system-err>
+        </testcase>
+    </testsuite>
+</testsuites>

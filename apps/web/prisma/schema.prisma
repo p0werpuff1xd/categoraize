@@ -3086,7 +3086,8 @@ model CategorizeClassification {
   suggestedLabel   Json? // Curated template suggestion when nothing matched; never auto-created
   computedPriority Int       @default(3) // P1-P5 from the deterministic rules
   manualPriority   Int? // User override; never feeds Rocchio
-  priorityFactors  Json? // {category_base, deadline, sender_role, calendar, vip_pin}
+  priorityFactors  Json? // {category_base, deadline, sender_role, calendar, vip_pin, learned?}
+  senderRegister   String? // formal | neutral | casual (sender tone from the NLP service)
   deadlineAt       DateTime? // Nearest validated deadline used by the priority rules
   serviceVersion   String?
 

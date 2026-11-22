@@ -15,6 +15,21 @@ export type CategoraizePriorityFactors = {
   sender_role: number;
   calendar: number;
   vip_pin: number;
+  /** Present when the NLP service scored the email with its learned model. */
+  learned?: {
+    level: number;
+    model_level: number;
+    category_offset: number;
+    rule_level: number;
+    why: Array<{ factor: string; contribution: number }>;
+    guardrails: string[];
+  };
+};
+
+const GUARDRAIL_TEXT: Record<string, string> = {
+  vip_floor: "VIP sender with a task: raised to at least P4",
+  promotion_cap: "Promotional label: capped at P2",
+  manual_override: "Set by hand",
 };
 
 const PENDING_STATES = {
@@ -97,8 +112,56 @@ export function PriorityFactorBreakdown({
     { name: "VIP sender (raised to at least P4)", value: factors.vip_pin },
   ];
 
+  const learned = factors.learned;
+
   return (
     <div className="space-y-1 text-sm">
+      {learned && (
+        <div className="space-y-1 pb-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Learned weights
+          </p>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Model estimate</span>
+            <span className="font-mono">P{learned.model_level}</span>
+          </div>
+          {learned.category_offset !== 0 && (
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">
+                Your label's base priority
+              </span>
+              <span className="font-mono font-semibold">
+                {learned.category_offset > 0 ? "+" : ""}
+                {learned.category_offset}
+              </span>
+            </div>
+          )}
+          {learned.guardrails.map((rule) => (
+            <div key={rule} className="text-muted-foreground">
+              {GUARDRAIL_TEXT[rule] ?? rule}
+            </div>
+          ))}
+          {learned.why.length > 0 && (
+            <ul className="space-y-0.5 pl-4 text-xs text-muted-foreground">
+              {learned.why.map((reason) => (
+                <li key={reason.factor} className="list-disc">
+                  {reason.factor}{" "}
+                  {reason.contribution >= 0
+                    ? `supported P${learned.model_level}`
+                    : `argued against P${learned.model_level}`}
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex justify-between gap-4 border-t pt-1 font-medium">
+            <span>Learned priority</span>
+            <span className="font-mono">P{learned.level}</span>
+          </div>
+          <p className="pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Rule check (P{learned.rule_level})
+          </p>
+        </div>
+      )}
       {rows.map((row) => (
         <div key={row.name} className="flex justify-between gap-4">
           <span className="text-muted-foreground">{row.name}</span>
@@ -113,8 +176,14 @@ export function PriorityFactorBreakdown({
         </div>
       ))}
       <div className="flex justify-between gap-4 border-t pt-1 font-medium">
-        <span>Computed priority (clamped to 1-5)</span>
-        <span className="font-mono">P{computedLevel ?? level}</span>
+        <span>
+          {learned
+            ? "Rule-based priority (clamped to 1-5)"
+            : "Computed priority (clamped to 1-5)"}
+        </span>
+        <span className="font-mono">
+          P{learned ? learned.rule_level : (computedLevel ?? level)}
+        </span>
       </div>
       {computedLevel !== undefined && computedLevel !== level && (
         <div className="flex justify-between gap-4 font-medium">

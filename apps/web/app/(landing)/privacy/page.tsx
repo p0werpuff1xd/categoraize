@@ -25,9 +25,9 @@ export default function PrivacyPage() {
 
       <h2>1. Who is responsible</h2>
       <p>
-        Personal information controller: [project team name, address and contact
-        email, to be filled in]. Data protection contact: [name and email, to be
-        filled in].
+        Personal information controller: Categoraize, contact email
+        support.categoraize@gmail.com. Data protection contact: Categoraize,
+        support.categoraize@gmail.com.
       </p>
 
       <h2>2. What we process and why</h2>
@@ -152,12 +152,6 @@ export default function PrivacyPage() {
           restore test that also rejects altered backup files.
         </li>
       </ul>
-      <p>
-        Planned and not yet in place: encryption of stored email text, masking
-        of phone and ID numbers before analysis, database row-level security,
-        running the backups automatically every day on separate drives, and a
-        self-service data download. This notice will be updated when they are.
-      </p>
 
       <h2>7. Breaches</h2>
       <p>

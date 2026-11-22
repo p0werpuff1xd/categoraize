@@ -4,7 +4,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/index";
 import { ArrowDownIcon } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";

@@ -12,16 +12,7 @@ export default async function ColdEmailBlockerPage() {
 
   return (
     <PageWrapper>
-      <PageHeader
-        title={t(i18n)`Cold Email Blocker`}
-        video={{
-          title: t(i18n)`Getting started with Cold Email Blocker`,
-          description: t(
-            i18n,
-          )`Learn how to review blocked cold emails, rescue a sender, and choose what happens to cold emails.`,
-          muxPlaybackId: "E29tx0001FmSQqASvIM7r87P9Pro3cq0202AiZ8rOKzsyJM",
-        }}
-      />
+      <PageHeader title={t(i18n)`Cold Email Blocker`} />
       <EmailLabelsProvider>
         <Suspense>
           <PermissionsCheck />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Trans } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   Bold,
   Italic,

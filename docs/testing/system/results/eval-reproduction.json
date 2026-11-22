@@ -1,0 +1,9 @@
+{
+  "frozen_file": "eval/results/B4_test.json",
+  "metrics_compared": 292,
+  "differences": [],
+  "n_differences": 0,
+  "test_split_sha256": "b26928da73b9bd4a6abd2d56beeda4c8cd9ffdc113b5c9603eca1a65aa4ede5d",
+  "only_in_frozen": [],
+  "only_in_fresh": []
+}

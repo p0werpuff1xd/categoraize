@@ -29,7 +29,7 @@ export function ExpandableText({
         <motion.div
           initial={{ height: "4rem" }}
           animate={{ height: isExpanded ? "auto" : "4rem" }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className={isExpanded ? "" : "overflow-hidden"}
         >
           {text}
@@ -41,15 +41,13 @@ export function ExpandableText({
         )}
       </div>
 
-      <motion.button
+      <button
         type="button"
         onClick={(e: MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
-        className="mt-1 flex items-center text-xs text-muted-foreground hover:text-primary"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        className="mt-1 flex items-center text-xs text-muted-foreground transition-[color,transform] duration-150 hover:scale-105 hover:text-primary active:scale-95 motion-reduce:transform-none"
       >
         {isExpanded ? (
           <>
@@ -62,7 +60,7 @@ export function ExpandableText({
             More
           </>
         )}
-      </motion.button>
+      </button>
     </TextWrapper>
   );
 }

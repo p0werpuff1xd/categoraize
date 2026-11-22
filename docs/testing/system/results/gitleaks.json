@@ -1,0 +1,23 @@
+[
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 15,
+  "EndLine": 15,
+  "StartColumn": 2,
+  "EndColumn": 35,
+  "Match": "SECRET_MARKER = \"REDACTED ",
+  "Secret": "REDACTED",
+  "File": "fastapi_core/tests/component/test_c10_api.py",
+  "SymlinkFile": "",
+  "Commit": "4a8271cc1673c8f1b36f32ec7cc17b32198a0321",
+  "Link": "https://github.com/p0werpuff1xd/categoraize/blob/4a8271cc1673c8f1b36f32ec7cc17b32198a0321/fastapi_core/tests/component/test_c10_api.py#L15",
+  "Entropy": 3.75,
+  "Author": "laurenjXD",
+  "Email": "jade.quidit@gmail.com",
+  "Date": "2026-11-19T16:27:58Z",
+  "Message": "test: component (unit) test campaign with generated report (Prompt A)\n\n- fastapi_core/tests/component: C1-C10 (language, classifier, dates, tagger,\n  priority, register, calendar, Rocchio, discovery, API), each case recording\n  input/expected/actual in the JUnit XML; known defects are strict xfails.\n- Web (Vitest): triage filter/sort, rating state machine, priority badge,\n  export completeness and idempotence; existing consent, PII, encryption,\n  audit, erasure and token tests mapped into the report.\n- scripts/db/test-erasure.sql: erasure is complete and idempotent (rolled back).\n- scripts/testing: one runner and a generator that writes\n  docs/testing/component_tests.md and traceability.csv from the runs.\n- Coverage: NLP app 95.0% lines, new web logic 93.2% lines.\n\nBugs fixed:\n- D-04: rating buttons had no offline state (rating-state.ts, TriageDetail).\n- D-05: \"Download my data\" left out 5 of 14 CategorAIze tables (data-export.ts).\nRefactor without behaviour change: triage-order.ts extracted from the\nclassifications route and PriorityInbox so it can be unit-tested.\n\nCo-Authored-By: Claude Opus 5.5 \u003cnoreply@anthropic.com\u003e",
+  "Tags": [],
+  "Fingerprint": "4a8271cc1673c8f1b36f32ec7cc17b32198a0321:fastapi_core/tests/component/test_c10_api.py:generic-api-key:15"
+ }
+]

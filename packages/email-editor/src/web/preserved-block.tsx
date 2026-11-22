@@ -55,7 +55,7 @@ export function QuotePreview({ previewHtml }: { previewHtml: string }) {
     <iframe
       className={styles.quotePreview}
       sandbox=""
-      srcDoc={`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${PREVIEW_CONTENT_POLICY}"><meta name="color-scheme" content="light"><style>html,body{margin:0;padding:0;background:#fff;color:#242424;font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{padding:8px}img{max-width:100%;height:auto}table{max-width:100%}a{color:#2563eb}</style></head><body>${previewHtml}</body></html>`}
+      srcDoc={`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="${PREVIEW_CONTENT_POLICY}"><meta name="color-scheme" content="light"><style>html,body{margin:0;padding:0;background:#fff;color:#242424;font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{padding:8px}img{max-width:100%;height:auto}table{max-width:100%}a{color:#4f46e5}</style></head><body>${previewHtml}</body></html>`}
       tabIndex={-1}
       title="Quoted message preview"
     />

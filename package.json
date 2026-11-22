@@ -11,6 +11,7 @@
     "test": "turbo run test --filter=./apps/web -- --run",
     "test-db": "pnpm --filter inbox-zero-ai test-db",
     "test-integration": "pnpm --filter inbox-zero-ai test-integration",
+    "test:e2e": "pnpm --filter inbox-zero-ai test:e2e",
     "test:packages": "pnpm -r --filter '!inbox-zero-ai' --if-present test",
     "typecheck:packages": "pnpm -r --filter '!inbox-zero-ai' --if-present typecheck",
     "lint": "turbo lint",
