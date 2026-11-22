@@ -6,7 +6,10 @@ import {
   isEncryptedValue,
   newRowId,
 } from "@/utils/categoraize/field-encryption";
-import { getTenantTransaction } from "@/utils/categoraize/tenant";
+import {
+  getTenantTransaction,
+  withTenantSql,
+} from "@/utils/categoraize/tenant";
 
 /**
  * Prisma Client extension that encrypts CategorAIze email text at rest
@@ -72,11 +75,30 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
 
   async function resolveId(model: ModelName, where: Data) {
     if (typeof where.id === "string") return where.id;
-    // Inside a row-level-security tenant transaction, look the row up there:
-    // outside it the policies would hide the row (IAS Phase 11 K).
-    const db = (getTenantTransaction() ?? base) as typeof base;
-    const row = await db[model].findUnique({ where, select: { id: true } });
+    // Row-level security hides rows from a lookup without a tenant (IAS
+    // Phase 11 K). This hook runs before the tenant wrapper opens its
+    // transaction, so open one here: a hidden row meant a null id and the
+    // update was written in plaintext ("value that is not ciphertext").
+    const tx = getTenantTransaction();
+    const row = tx
+      ? await (tx as unknown as typeof base)[model].findUnique({
+          where,
+          select: { id: true },
+        })
+      : await withTenantSql(base, (db) =>
+          (db as unknown as typeof base)[model].findUnique({
+            where,
+            select: { id: true },
+          }),
+        );
     return row?.id ?? null;
+  }
+
+  /** Never let an encrypted column reach the database in plaintext. */
+  function dropEncrypted(model: ModelName, data: Data) {
+    for (const column of ENCRYPTED_EMAIL_FIELDS[model].fields) {
+      delete data[column];
+    }
   }
 
   const query: Record<string, Record<string, unknown>> = {};
@@ -114,7 +136,12 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
       }) {
         if (touchesEncrypted(model, args.data)) {
           const id = await resolveId(model, args.where);
-          if (id) encryptData(model, args.data, id);
+          if (!id) {
+            throw new FieldEncryptionError(
+              `${table} row not found: refusing to write encrypted fields in plaintext`,
+            );
+          }
+          encryptData(model, args.data, id);
         }
         return query(args);
       },
@@ -129,7 +156,9 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
         encryptData(model, args.create, args.create.id as string);
         if (touchesEncrypted(model, args.update)) {
           const id = await resolveId(model, args.where);
+          // No visible row: the create branch runs (already encrypted).
           if (id) encryptData(model, args.update, id);
+          else dropEncrypted(model, args.update);
         }
         return query(args);
       },
