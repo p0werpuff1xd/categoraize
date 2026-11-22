@@ -37,6 +37,10 @@ import {
   StateError,
 } from "@/components/CategoraizeStates";
 import { priorityLabel } from "@/components/CategoraizePriority";
+import {
+  allowedBasePriorities,
+  clampBasePriority,
+} from "@/utils/categoraize/category-priority";
 import { toastError, toastSuccess } from "@/components/Toast";
 import { useCategoraizeCategories } from "@/hooks/useCategoraize";
 import { useAccount } from "@/providers/EmailAccountProvider";
@@ -216,7 +220,9 @@ function CategoryCard({
         <div className="flex items-center gap-2">
           <span>Base priority</span>
           <Select
-            value={String(category.basePriority)}
+            value={String(
+              clampBasePriority(category.name, category.basePriority),
+            )}
             disabled={update.isExecuting}
             onValueChange={(value) =>
               update.execute({
@@ -232,7 +238,7 @@ function CategoryCard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[5, 4, 3, 2, 1].map((level) => (
+              {allowedBasePriorities(category.name).map((level) => (
                 <SelectItem key={level} value={String(level)}>
                   P{level} · {priorityLabel(level)}
                 </SelectItem>
@@ -337,14 +343,14 @@ function CategoryForm({
       <div className="flex items-center gap-2">
         <Label>Base priority</Label>
         <Select
-          value={String(basePriority)}
+          value={String(clampBasePriority(name, basePriority))}
           onValueChange={(value) => setBasePriority(Number(value))}
         >
           <SelectTrigger className="h-8 w-[150px]" aria-label="Base priority">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[5, 4, 3, 2, 1].map((level) => (
+            {allowedBasePriorities(name).map((level) => (
               <SelectItem key={level} value={String(level)}>
                 P{level} · {priorityLabel(level)}
               </SelectItem>

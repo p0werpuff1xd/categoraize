@@ -5,6 +5,7 @@ import { CategorizeContactRole } from "@/generated/prisma/enums";
 import { createScopedLogger, type Logger } from "@/utils/logger";
 import prisma from "@/utils/prisma";
 import { getCalendarBusyForPriority } from "@/utils/categoraize/calendar-busy";
+import { categorySlugFor } from "@/utils/categoraize/category-priority";
 import { resolveMailboxTimezone } from "@/utils/categoraize/mailbox-timezone";
 import {
   type CategoraizeClassifyRequest,
@@ -359,6 +360,7 @@ async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
       description: category.description ?? "",
       base_priority: category.basePriority,
       centroid: category.centroid,
+      slug: categorySlugFor(category.name),
     })),
     threshold: categories.length
       ? Math.min(...categories.map((category) => category.threshold))
