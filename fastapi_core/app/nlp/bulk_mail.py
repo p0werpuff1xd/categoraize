@@ -8,8 +8,8 @@ re-scoring a stored email gives the same answer:
 
 - promotional: a marketing footer (unsubscribe, email preferences, view in
   browser, "you're receiving this"), a marketing sender address, or at least
-  two offer phrases. Treated like the Promotions category: capped at P2 and
-  deadlines from the text ignored.
+  two offer phrases (one is enough from a no-reply sender). Treated like the
+  Promotions category: capped at P2 and deadlines from the text ignored.
 - automated: a no-reply or notification sender. Its dates are template text
   (export times, alert timestamps), so extracted deadlines are ignored; the
   level is not capped, since security and account notices can matter.
@@ -65,6 +65,13 @@ def detect_bulk(subject: str, body: str, sender_email: str) -> BulkSignals:
     text = f"{subject}\n{body}"
     footer = bool(_FOOTER.search(text))
     offers = len({match.group(0).lower() for match in _OFFER.finditer(text)})
-    promotional = footer or offers >= 2 or bool(local and _MARKETING_SENDER.search(local))
     automated = bool(local and _AUTOMATED_SENDER.search(local))
+    # A no-reply sender with even one offer phrase ("job alerts", "win a") is
+    # a mailing, not a notice about the user's own account.
+    promotional = (
+        footer
+        or offers >= 2
+        or (automated and offers >= 1)
+        or bool(local and _MARKETING_SENDER.search(local))
+    )
     return BulkSignals(promotional=promotional, automated=automated)

@@ -30,6 +30,15 @@ def test_job_alert_is_promotional():
     assert signals.automated
 
 
+def test_noreply_job_alert_with_one_offer_phrase_is_promotional():
+    signals = detect_bulk(
+        "Be first to hear about new openings",
+        "Set up Job Alerts for companies and roles of interest. Apply early to stand out.",
+        "jobs-noreply@careers.example.com",
+    )
+    assert signals.promotional
+
+
 def test_noreply_notification_is_automated_not_promotional():
     signals = detect_bulk(
         "Finished exporting day 2 .mp4",
