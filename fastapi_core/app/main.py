@@ -21,7 +21,9 @@ from .algorithms.label_library import LABEL_TEMPLATES
 from .algorithms.rule_matcher import RuleInput, choose_rule, load_rule_params, params_dict, prototype_language
 from .algorithms.thread_status import ThreadMessage, asks_question, determine_status
 from .ml import priority_model
+from .ml.priority_model import PROMOTION_SLUG
 from .ml.priority_rules import compute_category_priority, compute_priority
+from .nlp.bulk_mail import detect_bulk
 from .nlp.date_codes import has_conflict, resolve_phrase, resolved_datetime
 from .nlp.extractor import resolve_date
 from .nlp.register import detect_register
@@ -187,11 +189,19 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
 
     base_priority = request.uncategorized_base_priority
     category_slug = None
+    ignore_extracted_deadlines = False
     if chosen:
         chosen_category = next(category for category in request.categories if category.id == chosen.id)
         base_priority = chosen_category.base_priority
         category_slug = chosen_category.slug
-    extracted_deadlines = [
+    else:
+        # No user label claimed it: marketing mail is treated as Promotions and
+        # dates in automated mail are template text, not deadlines.
+        bulk = detect_bulk(request.subject, request.body, request.sender.email)
+        if bulk.promotional:
+            category_slug = PROMOTION_SLUG
+        ignore_extracted_deadlines = bulk.automated
+    extracted_deadlines = [] if ignore_extracted_deadlines else [
         span.resolved for span in spans if span.is_deadline and not span.ambiguous and span.resolved
     ]
     priority = compute_category_priority(
@@ -208,7 +218,9 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
     )
     register = detect_register(request.subject, request.body, embedding=email_vector,
                                model=learned_models.get("register"))
-    learned = _learned_priority(request, email_vector, spans, base_priority, register.register)
+    learned = _learned_priority(request, email_vector, spans, base_priority, register.register,
+                                is_promotion=category_slug == PROMOTION_SLUG,
+                                ignore_dates=ignore_extracted_deadlines or category_slug == PROMOTION_SLUG)
     timings["total"] = _elapsed_ms(started)
 
     return ClassifyResponse(
@@ -236,14 +248,17 @@ IGNORABLE_BASE_PRIORITY = 1
 
 
 def _learned_priority(request: ClassifyRequest, email_vector: list[float], spans: list[Span],
-                      base_priority: int, register: str) -> LearnedPriority | None:
+                      base_priority: int, register: str, *, is_promotion: bool = False,
+                      ignore_dates: bool = False) -> LearnedPriority | None:
     model = learned_models.get("priority")
     if model is None:
         return None
     received = request.received_at.astimezone(ZoneInfo(request.timezone))
     has_task = any(span.label == "TASK" for span in spans)
-    dates = [span.resolved.isoformat() for span in spans
-             if span.label == "DATE" and span.resolved is not None and not span.ambiguous]
+    dates = [] if ignore_dates else [
+        span.resolved.isoformat() for span in spans
+        if span.label == "DATE" and span.resolved is not None and not span.ambiguous
+    ]
     promo_vector = model.meta.get("promo_vector") or [0.0] * len(email_vector)
     result = priority_model.predict(
         model,
@@ -258,7 +273,9 @@ def _learned_priority(request: ClassifyRequest, email_vector: list[float], spans
         ),
         is_vip=request.sender.is_vip,
         has_task=has_task,
-        category=priority_model.PROMOTION_SLUG if base_priority == IGNORABLE_BASE_PRIORITY else None,
+        category=priority_model.PROMOTION_SLUG
+        if is_promotion or base_priority == IGNORABLE_BASE_PRIORITY
+        else None,
         offset=base_priority - DEFAULT_BASE_PRIORITY,
     )
     return LearnedPriority(
