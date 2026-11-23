@@ -243,5 +243,29 @@ describe.skipIf(!process.env.RUN_DB_TESTS)(
       );
       expect(rows.map((r) => r.text)).toEqual(["probe-double"]);
     });
+
+    // Re-scoring read the stored body with a select that left out the id, got
+    // ciphertext back, and stored a slice of it as the snippet, which then
+    // failed authentication and broke the Priority Inbox.
+    it("decrypts a select without the id, so a re-score keeps the text", async () => {
+      const t = await target();
+      const id = `enc-noid-${Date.now()}`;
+      await insertRaw(
+        id,
+        encryptField({
+          table: TABLE,
+          column: "text",
+          rowId: id,
+          plaintext: "probe-noid",
+        }),
+      );
+      const row = await withUserContext(t.userId, () =>
+        prisma.categorizeExtractedSpan.findFirst({
+          where: { id },
+          select: { text: true },
+        }),
+      );
+      expect(row?.text).toBe("probe-noid");
+    });
   },
 );

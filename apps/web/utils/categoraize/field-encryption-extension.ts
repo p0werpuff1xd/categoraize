@@ -101,13 +101,42 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
     }
   }
 
+  // Decryption is bound to the row id. A select without it came back as raw
+  // ciphertext, and re-scoring stored that ciphertext back as email text.
+  function selectRowId(model: ModelName, args: { select?: Data } | undefined) {
+    const select = args?.select;
+    if (
+      select &&
+      !select.id &&
+      ENCRYPTED_EMAIL_FIELDS[model].fields.some((column) => select[column])
+    ) {
+      select.id = true;
+    }
+  }
+
   const query: Record<string, Record<string, unknown>> = {};
   const result: Record<string, Record<string, unknown>> = {};
 
   for (const model of Object.keys(ENCRYPTED_EMAIL_FIELDS) as ModelName[]) {
     const { table, fields } = ENCRYPTED_EMAIL_FIELDS[model];
 
+    const readWithRowId = ({
+      args,
+      query,
+    }: {
+      args: { select?: Data };
+      query: Next;
+    }) => {
+      selectRowId(model, args);
+      return query(args);
+    };
+
     query[model] = {
+      findUnique: readWithRowId,
+      findUniqueOrThrow: readWithRowId,
+      findFirst: readWithRowId,
+      findFirstOrThrow: readWithRowId,
+      findMany: readWithRowId,
       async create({ args, query }: { args: { data: Data }; query: Next }) {
         args.data.id ??= newRowId();
         encryptData(model, args.data, args.data.id as string);
