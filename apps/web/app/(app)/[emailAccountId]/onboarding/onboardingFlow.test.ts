@@ -12,7 +12,6 @@ describe("getVisibleOnboardingStepKeys", () => {
   it("asks the survey and intent first, then the AI flow before an intent is chosen", () => {
     expect(
       getVisibleOnboardingStepKeys({
-        canInviteTeam: true,
         autoDraftDisabled: false,
         signupIntent: null,
       }),
@@ -28,7 +27,6 @@ describe("getVisibleOnboardingStepKeys", () => {
       STEP_KEYS.LABELS,
       STEP_KEYS.DRAFT,
       STEP_KEYS.CUSTOM_RULES,
-      STEP_KEYS.INVITE_TEAM,
       STEP_KEYS.INBOX_PROCESSED,
     ]);
   });
@@ -38,7 +36,6 @@ describe("getVisibleOnboardingStepKeys", () => {
     "BOTH",
   ] as const)("continues into the AI flow for %s", (signupIntent) => {
     const stepKeys = getVisibleOnboardingStepKeys({
-      canInviteTeam: true,
       autoDraftDisabled: false,
       signupIntent,
     });
@@ -51,7 +48,6 @@ describe("getVisibleOnboardingStepKeys", () => {
   it("sends email-app users to the mail app step instead of AI setup", () => {
     expect(
       getVisibleOnboardingStepKeys({
-        canInviteTeam: true,
         autoDraftDisabled: false,
         signupIntent: "MAIL_CLIENT",
       }),
@@ -67,7 +63,6 @@ describe("getVisibleOnboardingStepKeys", () => {
   it("filters steps that are not available in the current context", () => {
     expect(
       getVisibleOnboardingStepKeys({
-        canInviteTeam: false,
         autoDraftDisabled: true,
         signupIntent: "AI_ASSISTANT",
       }),
@@ -88,7 +83,6 @@ describe("getVisibleOnboardingStepKeys", () => {
   it("starts self-hosted deployments at the intent step", () => {
     expect(
       getVisibleOnboardingStepKeys({
-        canInviteTeam: true,
         autoDraftDisabled: false,
         isSelfHosted: true,
         signupIntent: null,
@@ -99,7 +93,6 @@ describe("getVisibleOnboardingStepKeys", () => {
 
 describe("getOnboardingStepIndex", () => {
   const stepKeys = getVisibleOnboardingStepKeys({
-    canInviteTeam: false,
     autoDraftDisabled: false,
     signupIntent: null,
   });

@@ -42,7 +42,6 @@ const aiAssistantStepOrder: readonly StepKey[] = [
   STEP_KEYS.LABELS,
   STEP_KEYS.DRAFT,
   STEP_KEYS.CUSTOM_RULES,
-  STEP_KEYS.INVITE_TEAM,
   STEP_KEYS.INBOX_PROCESSED,
 ];
 
@@ -66,12 +65,10 @@ const legacyNumericOnboardingStepOrder: readonly (StepKey | "welcome")[] = [
 ];
 
 export function getVisibleOnboardingStepKeys({
-  canInviteTeam,
   autoDraftDisabled,
   isSelfHosted,
   signupIntent,
 }: {
-  canInviteTeam: boolean;
   autoDraftDisabled: boolean;
   isSelfHosted?: boolean;
   signupIntent: SignupIntent | null;
@@ -91,10 +88,6 @@ export function getVisibleOnboardingStepKeys({
       autoDraftDisabled &&
       (stepKey === STEP_KEYS.DRAFT_REPLIES || stepKey === STEP_KEYS.DRAFT)
     ) {
-      return false;
-    }
-
-    if (!canInviteTeam && stepKey === STEP_KEYS.INVITE_TEAM) {
       return false;
     }
 
@@ -158,8 +151,8 @@ export function getOnboardingStepIndex(
   return stepIndex === -1 ? 0 : stepIndex;
 }
 
-export function isOptionalOnboardingStep(stepKey: StepKey) {
-  return stepKey === STEP_KEYS.INVITE_TEAM;
+export function isOptionalOnboardingStep(_stepKey: StepKey) {
+  return false;
 }
 
 function clampStepIndex(stepIndex: number, totalSteps: number) {
