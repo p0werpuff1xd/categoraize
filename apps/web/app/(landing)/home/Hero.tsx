@@ -34,13 +34,10 @@ export function Hero() {
 
         <HeroReveal
           delay={0.15}
-          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
+          className="mt-8 flex items-center justify-center"
         >
           <Button size="xl" asChild>
-            <Link href="/login">Get started free</Link>
-          </Button>
-          <Button size="xl" variant="secondary" asChild>
-            <Link href="/login">Sign in</Link>
+            <Link href="/login">Get started</Link>
           </Button>
         </HeroReveal>
       </div>
