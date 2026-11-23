@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { after } from "next/server";
 import { mapWithConcurrency } from "@/utils/async";
 import type { z } from "zod";
 import type { ScheduledEmail } from "@/generated/prisma/client";
@@ -123,17 +124,38 @@ export async function holdEmailForUndo({
     return duplicate;
   }
   if (row.status === "CANCELLED") return row;
+  let scheduled = false;
   try {
-    await publishToQstashAt({
+    scheduled = await publishToQstashAt({
       path: HELD_EMAIL_EXECUTE_PATH,
       body: { scheduledEmailId: row.id },
       notBefore: row.sendAt,
       deduplicationId: `held-email-${row.id}`,
     });
   } catch (error) {
-    logger.error("Could not schedule held email delivery; cron will send it", {
+    logger.error("Could not schedule held email delivery", {
       error,
       scheduledEmailId: row.id,
+    });
+  }
+  if (!scheduled) {
+    // QStash unavailable: release via an in-process callback so the email goes
+    // out even if the browser closes before the undo window expires.
+    const holdUntil = row.sendAt.getTime();
+    const rowId = row.id;
+    after(async () => {
+      const delay = holdUntil - Date.now();
+      if (delay > 0) await new Promise<void>((r) => setTimeout(r, delay));
+      const latestRow = await prisma.scheduledEmail.findUnique({
+        where: { id: rowId },
+      });
+      if (!latestRow) return;
+      await releaseHeldEmail(latestRow, logger).catch((err) =>
+        logger.error("In-process held email fallback failed", {
+          scheduledEmailId: rowId,
+          error: err,
+        }),
+      );
     });
   }
   return row;

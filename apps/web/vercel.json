@@ -5,6 +5,12 @@
   "installCommand": "cd ../.. && node scripts/install-private-build.mjs && unset PRIVATE_BUILD_TOKEN && bash clone-marketing.sh && corepack pnpm install --filter '!@inboxzero/desktop' --no-frozen-lockfile",
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "outputDirectory": ".vercel/output",
+  "crons": [
+    {
+      "path": "/api/cron/scheduled-actions",
+      "schedule": "* * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/tools",
