@@ -42,10 +42,7 @@ export function Nav() {
         </nav>
 
         {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-2">
-          <Button variant="secondary" size="md" asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
+        <div className="hidden md:flex items-center">
           <Button size="md" asChild>
             <Link href="/login">Get started</Link>
           </Button>
@@ -91,10 +88,7 @@ export function Nav() {
           <Link href="/terms" className="hover:text-gray-900">
             Terms
           </Link>
-          <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-            <Button variant="secondary" size="md" auto asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
+          <div className="pt-2 border-t border-gray-100">
             <Button size="md" auto asChild>
               <Link href="/login">Get started</Link>
             </Button>
