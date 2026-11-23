@@ -28,7 +28,6 @@ import {
   PersonStandingIcon,
   RatioIcon,
   SendIcon,
-  SmartphoneIcon,
   ListOrderedIcon,
   SparklesIcon,
   TagsIcon,
@@ -256,16 +255,6 @@ export const useNavigation = () => {
   };
 };
 
-const getTheAppLinks: NavItem[] = [
-  {
-    name: "Get the app",
-    label: msg`Get the app`,
-    icon: SmartphoneIcon,
-    href: "/download",
-    target: "_blank",
-  },
-];
-
 const topMailLinks: NavItem[] = [
   {
     name: "Inbox",
@@ -429,8 +418,6 @@ export function SideNav({
       <SidebarFooter className="pb-4">
         <DesktopUpdateMenuItem />
         <SideNavMenu items={visibleBottomLinks} activeHref={path} />
-
-        <SideNavMenu items={getTheAppLinks} activeHref={path} />
 
         {feedbackEnabled && (
           <SidebarMenu>
