@@ -268,18 +268,25 @@ export const reclassifyStoredCategoraizeEmailsAction = actionClient
       select: { id: true },
     });
 
+    // One slow or failed email (an NLP timeout while the service scales) used
+    // to abort the whole run; retry it once, then skip it and carry on.
     let reclassified = 0;
+    let failed = 0;
     for (const { id } of stored) {
-      await reclassifyStoredEmail({
-        emailAccountId,
-        classificationId: id,
-        logger,
-      });
-      reclassified++;
+      const ok = await retryOnce(() =>
+        reclassifyStoredEmail({ emailAccountId, classificationId: id, logger }),
+      );
+      if (ok) reclassified++;
+      else {
+        failed++;
+        logger.warn("Re-score skipped an email after a retry", {
+          classificationId: id,
+        });
+      }
     }
 
     revalidateCategoraize(emailAccountId);
-    return { reclassified };
+    return { reclassified, failed };
   });
 
 /** Rules studio sandbox: classify pasted text without storing it. */
@@ -290,6 +297,18 @@ export const previewCategoraizeClassificationAction = actionClient
     requireEnabled();
     return previewCategoraizeEmail({ emailAccountId, ...parsedInput });
   });
+
+async function retryOnce(run: () => Promise<unknown>): Promise<boolean> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await run();
+      return true;
+    } catch {
+      // fall through to the retry, then report the email as failed
+    }
+  }
+  return false;
+}
 
 function requireEnabled() {
   if (!isCategoraizeEnabled()) {
