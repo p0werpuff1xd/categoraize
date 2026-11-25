@@ -30,10 +30,12 @@ def resolve_date(phrase: str, *, received_at: datetime, timezone: str) -> Resolv
     base = received_at.astimezone(zone)
     text = gloss_time_expression(phrase)
     text, part_of_day = _split_part_of_day(text)
-    explicit_time = _explicit_time(text)
-    date_text = _TIME_RE.sub("", text).strip()
+    explicit_time = _explicit_time(text) or _alas_time(text, part_of_day)
+    date_text = _ALAS_RE.sub("", _TIME_RE.sub("", text)).strip()
 
-    special = _resolve_special(date_text, base)
+    special = _resolve_special(
+        date_text, base, has_time=explicit_time is not None or part_of_day is not None
+    )
     if special is not None:
         day, ambiguous = special
     else:
@@ -96,15 +98,39 @@ def _explicit_time(text: str) -> time | None:
     return time(hour, minute)
 
 
-def _resolve_special(text: str, base: datetime) -> tuple[datetime, bool] | None:
+# Filipino clock times without am/pm: "alas-3", "alas 10:30".
+_ALAS_RE = re.compile(r"\balas[\s-]+(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?(?![\d:])", re.IGNORECASE)
+
+
+def _alas_time(text: str, part_of_day: time | None) -> time | None:
+    match = _ALAS_RE.search(text)
+    if not match:
+        return None
+    hour, minute = int(match.group("hour")), int(match.group("minute") or 0)
+    if not 1 <= hour <= 12 or minute > 59:
+        return None
+    if part_of_day is not None:
+        # "alas-3 ng hapon" is 3 PM; "alas-8 ng umaga" is 8 AM.
+        pm = part_of_day >= time(12, 0)
+    else:
+        # Without a part of day, office hours: 1-6 is afternoon, 7-11 morning.
+        pm = hour <= 6
+    if pm and hour != 12:
+        hour += 12
+    return time(hour, minute)
+
+
+def _resolve_special(text: str, base: datetime, *, has_time: bool = False) -> tuple[datetime, bool] | None:
     """Expressions dateparser handles poorly or that need an ambiguity flag."""
     text = re.sub(r"^(?:by|on|before|until|the)\s+", "", text.strip(" .,"))
+    text = re.sub(r"['’]s$", "", text)  # "this week's" -> "this week"
     today = base.replace(hour=0, minute=0, second=0, microsecond=0)
 
     if text in {"today", ""}:
         return today, False
     if text == "later today":
-        return today, True
+        # Vague on its own ("mamaya"); exact with a clock time ("mamayang 3pm").
+        return today, not has_time
     if text in {"tomorrow", "the next day"}:
         return today + timedelta(days=1), False
     if text in {"the day after tomorrow", "day after tomorrow"}:

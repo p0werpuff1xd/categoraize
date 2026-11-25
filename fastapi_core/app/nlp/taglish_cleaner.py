@@ -56,6 +56,8 @@ def gloss_time_expression(text: str) -> str:
     result = text.casefold()
     result = re.sub(r"\bsa\s+(?=\w)", "", result)
     result = re.sub(r"\bng\s+(?=(umaga|tanghali|hapon|gabi)\b)", "", result)
+    # Linkers between a day and a clock time: "bukas ng 5pm", "Biyernes nang alas-3".
+    result = re.sub(r"\b(?:ng|nang)\s+(?=(?:alas\b|\d))", "", result)
     for section in ("time_words", "weekdays", "months"):
         result = _replace_phrases(result, lexicon[section])
     return re.sub(r"\s+", " ", result).strip()

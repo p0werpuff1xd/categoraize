@@ -6,9 +6,32 @@
     "maki": "please"
   },
   "particles": [
-    "po", "opo", "naman", "nga", "lang", "na", "pa", "ba", "daw", "raw",
-    "kasi", "talaga", "sana", "muna", "din", "rin", "ho", "eh", "yung", "yong",
-    "ah", "oh", "pala", "kaya", "nalang", "na lang"
+    "po",
+    "opo",
+    "naman",
+    "nga",
+    "lang",
+    "na",
+    "pa",
+    "ba",
+    "daw",
+    "raw",
+    "kasi",
+    "talaga",
+    "sana",
+    "muna",
+    "din",
+    "rin",
+    "ho",
+    "eh",
+    "yung",
+    "yong",
+    "ah",
+    "oh",
+    "pala",
+    "kaya",
+    "nalang",
+    "na lang"
   ],
   "time_words": {
     "bukas": "tomorrow",
@@ -37,7 +60,9 @@
     "hatinggabi": "midnight",
     "agad": "immediately",
     "agad-agad": "immediately",
-    "kaagad": "immediately"
+    "kaagad": "immediately",
+    "mamayang": "later today",
+    "bukas ng umaga": "tomorrow morning"
   },
   "weekdays": {
     "lunes": "monday",

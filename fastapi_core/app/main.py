@@ -24,6 +24,7 @@ from .ml import priority_model
 from .ml.priority_model import PROMOTION_SLUG
 from .ml.priority_rules import compute_category_priority, compute_priority
 from .nlp.bulk_mail import detect_bulk
+from .nlp.span_filter import filter_spans
 from .nlp.date_codes import has_conflict, resolve_phrase, resolved_datetime
 from .nlp.extractor import resolve_date
 from .nlp.register import detect_register
@@ -201,6 +202,7 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         if bulk.promotional:
             category_slug = PROMOTION_SLUG
         ignore_extracted_deadlines = bulk.automated
+    spans = filter_spans(spans, promotional=category_slug == PROMOTION_SLUG)
     extracted_deadlines = [] if ignore_extracted_deadlines else [
         span.resolved for span in spans if span.is_deadline and not span.ambiguous and span.resolved
     ]
