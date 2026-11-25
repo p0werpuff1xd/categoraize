@@ -60,6 +60,17 @@ const nextConfig: NextConfig = {
           swcPlugins: linguiSwcPlugins,
           serverActions: {
             bodySizeLimit: "26mb",
+            // The custom domains reach Cloud Run through a Cloudflare Worker
+            // that rewrites Host to the run.app address, so the browser's
+            // Origin no longer matches Host and Next rejects every Server
+            // Action ("Invalid Server Actions request") unless listed here.
+            allowedOrigins: [
+              "categoraize.xyz",
+              "www.categoraize.xyz",
+              ...(process.env.SERVER_ACTIONS_ALLOWED_ORIGINS?.split(",")
+                .map((origin) => origin.trim())
+                .filter(Boolean) ?? []),
+            ],
           },
           ...(isDevelopment
             ? {
