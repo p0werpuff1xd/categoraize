@@ -176,6 +176,28 @@ export class CategoraizeServiceError extends Error {
   }
 }
 
+/**
+ * What to tell the user when a CategorAIze request fails, instead of the
+ * generic "An unknown error occurred." Never includes the service's response
+ * body (it can echo request text).
+ */
+export function categoraizeUserMessage(error: CategoraizeServiceError): string {
+  if (error.message.includes("not enabled")) {
+    return "Smart sorting is turned off for this workspace.";
+  }
+  if (error.status === undefined) {
+    // Network failure or our 20-second timeout: usually the service scaling up.
+    return "The sorting service took too long to respond. Please try again in a minute.";
+  }
+  if (error.status === 429) {
+    return "The sorting service is busy. Please wait a moment and try again.";
+  }
+  if (error.status >= 500) {
+    return "The sorting service had a problem. Please try again shortly.";
+  }
+  return "The sorting service could not process this request.";
+}
+
 export function isCategoraizeEnabled(): boolean {
   return Boolean(
     env.CATEGORAIZE_ENABLED &&

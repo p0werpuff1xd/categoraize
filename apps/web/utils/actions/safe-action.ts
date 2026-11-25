@@ -18,6 +18,10 @@ import {
   UNEXPECTED_ACTION_ERROR_MESSAGE,
 } from "@/utils/error";
 import { env } from "@/env";
+import {
+  CategoraizeServiceError,
+  categoraizeUserMessage,
+} from "@/utils/categoraize/client";
 import { runWithAuditContext, setAuditContext } from "@/utils/audit/context";
 import { isEmailProviderRateLimitError } from "@/utils/email/is-provider-rate-limit-error";
 import { isGoogleProvider } from "@/utils/email/provider-types";
@@ -55,12 +59,15 @@ const baseClient = createSafeActionClient({
       isGoogleProvider(context?.provider) &&
       isGmailServiceUnavailableError(error);
 
+    const isCategoraizeFailure = error instanceof CategoraizeServiceError;
+
     // Expected user-facing rejections are shown to the client and never sent
     // to Sentry.
     if (
       error instanceof SafeError ||
       isProviderRateLimit ||
-      isGmailUnavailable
+      isGmailUnavailable ||
+      isCategoraizeFailure
     ) {
       logger.warn("Server action error:", {
         metadata,
@@ -89,6 +96,8 @@ const baseClient = createSafeActionClient({
     if (isProviderRateLimit) return EMAIL_PROVIDER_RATE_LIMIT_MESSAGE;
     if (isGmailUnavailable) return GMAIL_SERVICE_UNAVAILABLE_MESSAGE;
     if (error instanceof SafeError) return error.message;
+    // The sorting service timed out or failed: say so instead of "unknown".
+    if (isCategoraizeFailure) return categoraizeUserMessage(error);
 
     captureException(error, {
       userId: context?.userId,
