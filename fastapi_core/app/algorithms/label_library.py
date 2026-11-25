@@ -28,4 +28,6 @@ LABEL_TEMPLATES: tuple[LabelTemplate, ...] = (
     LabelTemplate("events", "Events", "Event invitations, webinars, seminars, registrations, tickets and reminders for upcoming events."),
     LabelTemplate("support", "Support", "Customer support tickets, help desk replies, service requests and issue status updates."),
     LabelTemplate("government", "Government", "Government agencies, permits, IDs, taxes, benefits and official notices."),
+    LabelTemplate("developer", "Dev & IT", "Software development notifications: GitHub pull requests and issues, CI build and test failures, deployments, code reviews and cloud hosting alerts."),
+    LabelTemplate("social", "Social", "Social network notifications: LinkedIn, Facebook and community updates, connection requests, mentions, comments and people you may know."),
 )

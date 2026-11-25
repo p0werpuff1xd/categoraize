@@ -23,6 +23,9 @@ DEFAULT_DUE_TIME = time(17, 0)
 class ResolvedDate:
     value: datetime | None
     ambiguous: bool
+    # True when the phrase gave a clock time (5pm, 15:10, alas-3), so the
+    # value is a moment, not a day with the default due time.
+    has_time: bool = False
 
 
 def resolve_date(phrase: str, *, received_at: datetime, timezone: str) -> ResolvedDate:
@@ -30,8 +33,12 @@ def resolve_date(phrase: str, *, received_at: datetime, timezone: str) -> Resolv
     base = received_at.astimezone(zone)
     text = gloss_time_expression(phrase)
     text, part_of_day = _split_part_of_day(text)
-    explicit_time = _explicit_time(text) or _alas_time(text, part_of_day)
-    date_text = _ALAS_RE.sub("", _TIME_RE.sub("", text)).strip()
+    explicit_time = (
+        _explicit_time(text) or _alas_time(text, part_of_day) or _clock_24h(text) or _trailing_hour(text)
+    )
+    date_text = _CLOCK_24H_RE.sub("", _ALAS_RE.sub("", _TIME_RE.sub("", text)))
+    date_text = _TRAILING_HOUR_RE.sub("", date_text)
+    date_text = re.sub(r"\s+(?:at|@)\s*$", "", date_text.strip()).strip()
 
     special = _resolve_special(
         date_text, base, has_time=explicit_time is not None or part_of_day is not None
@@ -44,10 +51,48 @@ def resolve_date(phrase: str, *, received_at: datetime, timezone: str) -> Resolv
             return ResolvedDate(None, True)
         day = parsed.astimezone(zone)
         ambiguous = _is_numeric_day_month_ambiguous(date_text)
+        day = _keep_recent_year(day, base, date_text)
 
     due_time = explicit_time or part_of_day or DEFAULT_DUE_TIME
     resolved = datetime.combine(day.date(), due_time, tzinfo=zone)
-    return ResolvedDate(resolved, ambiguous)
+    return ResolvedDate(resolved, ambiguous, has_time=explicit_time is not None)
+
+
+# 24-hour clock times in receipts and alerts: "22:08", "15:10:58".
+_CLOCK_24H_RE = re.compile(r"(?<![\d:])(?P<hour>[01]?\d|2[0-3]):(?P<minute>[0-5]\d)(?::[0-5]\d)?(?![\d:])")
+
+
+def _clock_24h(text: str) -> time | None:
+    match = _CLOCK_24H_RE.search(text)
+    return time(int(match.group("hour")), int(match.group("minute"))) if match else None
+
+
+# "24 November at 21": an hour with no minutes or am/pm at the end.
+_TRAILING_HOUR_RE = re.compile(r"\s+(?:at|@)\s*(?P<hour>[01]?\d|2[0-3])\s*$", re.IGNORECASE)
+
+
+def _trailing_hour(text: str) -> time | None:
+    match = _TRAILING_HOUR_RE.search(text)
+    return time(int(match.group("hour")), 0) if match else None
+
+
+def _keep_recent_year(day: datetime, base: datetime, text: str) -> datetime:
+    """"Nov 24" in mail received on Nov 24 is that day, not next year.
+
+    dateparser's future preference moves a month-day without a year to next
+    year as soon as it is earlier than the receipt time. Keep this year when
+    that date is no more than six months back (a recent or same-day mention).
+    """
+    if re.search(r"\b\d{4}\b", text) or day.year <= base.year:
+        return day
+    try:
+        this_year = day.replace(year=base.year)
+    except ValueError:  # Feb 29
+        return day
+    if (base.date() - this_year.date()).days <= 183:
+        return this_year
+    # Without a written year, at most next year ("24 November at 21" is not 2121).
+    return this_year.replace(year=base.year + 1) if day.year > base.year + 1 else day
 
 
 _PART_OF_DAY_TIMES = {

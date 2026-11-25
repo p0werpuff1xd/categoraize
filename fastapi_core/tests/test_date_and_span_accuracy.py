@@ -79,3 +79,73 @@ def test_filter_drops_unresolved_dates_and_statements():
 def test_promotional_mail_keeps_no_tasks_or_dates():
     spans = [_S("TASK", "Shop now"), _S("DATE", "today", resolved="2026-11-18")]
     assert filter_spans(spans, promotional=True) == []
+
+
+# Second inbox-review pass (synthetic examples of each pattern).
+from app.nlp.bulk_mail import detect_bulk, is_urgent_notice  # noqa: E402
+from app.nlp.span_filter import is_date_phrase  # noqa: E402
+
+RECEIVED_24 = datetime(2026, 11, 24, 14, 36, tzinfo=ZoneInfo(MANILA))
+
+
+@pytest.mark.parametrize(
+    ("phrase", "expected"),
+    [
+        ("Nov 24", "2026-11-24 17:00"),  # same day stays this year
+        ("24 November at 21", "2026-11-24 21:00"),  # not the year 2121
+        ("22 Nov 2026 22:08", "2026-11-22 22:08"),  # 24-hour receipt time
+        ("2026-11-22 15:10:58", "2026-11-22 15:10"),
+        ("Jan 10", "2027-01-10 17:00"),  # a later month still rolls forward
+    ],
+)
+def test_year_and_clock_resolution(phrase, expected):
+    result = resolve_date(phrase, received_at=RECEIVED_24, timezone=MANILA)
+    assert result.value.strftime("%Y-%m-%d %H:%M") == expected
+
+
+@pytest.mark.parametrize("text", ["1", "5th", "16th and 17th", "2020", "₱ 7.28", "now", "an afternoon", "now · 2"])
+def test_numbers_amounts_and_vague_words_are_not_dates(text):
+    assert not is_date_phrase(text)
+
+
+@pytest.mark.parametrize("text", ["bukas", "Nov 24", "next week", "in 3 days", "5pm", "alas-3", "22:08", "11/30"])
+def test_real_date_phrases_are_dates(text):
+    assert is_date_phrase(text)
+
+
+def test_essay_keeps_only_explicit_requests():
+    spans = [_S("TASK", f"sentence number {n} about life") for n in range(8)] + [_S("TASK", "please reply by Friday")]
+    assert [s.text for s in filter_spans(spans, promotional=False)] == ["please reply by Friday"]
+
+
+def test_automated_notice_keeps_only_requests_without_negation():
+    spans = [_S("TASK", "Paste this link"), _S("TASK", "you don't need to do anything"), _S("TASK", "please contact support")]
+    assert [s.text for s in filter_spans(spans, promotional=False, automated=True)] == ["please contact support"]
+
+
+@pytest.mark.parametrize(
+    ("sender", "promotional", "newsletter", "automated"),
+    [
+        ("writer@substack.com", True, True, False),
+        ("contact@info.shop.example.com", True, False, False),
+        ("no-reply-x@mail.service.example.com", False, False, True),
+    ],
+)
+def test_sender_domains(sender, promotional, newsletter, automated):
+    signals = detect_bulk("Hello", "Some text.", sender)
+    assert (signals.promotional, signals.newsletter, signals.automated) == (promotional, newsletter, automated)
+
+
+def test_notification_footer_on_a_noreply_notice_is_not_promotional():
+    signals = detect_bulk(
+        "Run failed: Build Check",
+        "You are receiving this because you are subscribed to this thread. Manage your notifications.",
+        "notifications@code.example.com",
+    )
+    assert signals.automated and not signals.promotional
+
+
+def test_urgent_notices_are_never_promotional():
+    assert is_urgent_notice("Security alert")
+    signals = detect_bulk("Security alert", "Unsubscribe from these alerts.", "no-reply@accounts.example.com")
+    assert not signals.promotional

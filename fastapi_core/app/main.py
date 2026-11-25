@@ -9,7 +9,8 @@ import secrets
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime
+from dataclasses import replace
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
@@ -23,8 +24,8 @@ from .algorithms.thread_status import ThreadMessage, asks_question, determine_st
 from .ml import priority_model
 from .ml.priority_model import PROMOTION_SLUG
 from .ml.priority_rules import compute_category_priority, compute_priority
-from .nlp.bulk_mail import detect_bulk
-from .nlp.span_filter import filter_spans
+from .nlp.bulk_mail import AUTOMATED_CAP, detect_bulk, is_urgent_notice
+from .nlp.span_filter import MAX_PLAIN_TASKS, filter_spans, has_request_cue, is_statement
 from .nlp.date_codes import has_conflict, resolve_phrase, resolved_datetime
 from .nlp.extractor import resolve_date
 from .nlp.register import detect_register
@@ -201,8 +202,15 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
         bulk = detect_bulk(request.subject, request.body, request.sender.email)
         if bulk.promotional:
             category_slug = PROMOTION_SLUG
+            # Marketing copy about "security" or "support" pulled the template
+            # match the wrong way; the bulk signal is more reliable.
+            suggestion = _template_suggestion("newsletters" if bulk.newsletter else "promotions", request) or suggestion
         ignore_extracted_deadlines = bulk.automated
-    spans = filter_spans(spans, promotional=category_slug == PROMOTION_SLUG)
+    spans = filter_spans(spans, promotional=category_slug == PROMOTION_SLUG, automated=ignore_extracted_deadlines)
+    automated_notice = ignore_extracted_deadlines and not is_urgent_notice(request.subject)
+    if ignore_extracted_deadlines:
+        for span in spans:
+            span.is_deadline = False  # shown as a date, never as a deadline
     extracted_deadlines = [] if ignore_extracted_deadlines else [
         span.resolved for span in spans if span.is_deadline and not span.ambiguous and span.resolved
     ]
@@ -223,6 +231,13 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
     learned = _learned_priority(request, email_vector, spans, base_priority, register.register,
                                 is_promotion=category_slug == PROMOTION_SLUG,
                                 ignore_dates=ignore_extracted_deadlines or category_slug == PROMOTION_SLUG)
+    if automated_notice:
+        # Receipts, export notices and account notices: informational, at most
+        # Normal. Security alerts and verification codes keep their level.
+        priority = replace(priority, level=min(priority.level, AUTOMATED_CAP))
+        if learned is not None and learned.level > AUTOMATED_CAP:
+            learned = learned.model_copy(update={"level": AUTOMATED_CAP,
+                                                 "guardrails": [*learned.guardrails, "automated_cap"]})
     timings["total"] = _elapsed_ms(started)
 
     return ClassifyResponse(
@@ -246,6 +261,10 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
 # after the learned model (master plan amendment 2026-11-17); a base of P1 marks a
 # promotional/ignorable category and caps the level at P2.
 DEFAULT_BASE_PRIORITY = 3
+# A timed date this close to receipt is the email's own timestamp, not a deadline.
+RECEIPT_TIMESTAMP_SLACK = timedelta(minutes=10)
+# A suggested label must beat the next template by this much cosine similarity.
+SUGGESTION_MARGIN = 0.03
 IGNORABLE_BASE_PRIORITY = 1
 
 
@@ -633,19 +652,36 @@ def _category_text(category: CategoryInput) -> str:
     return f"{category.name}: {category.description}" if category.description else category.name
 
 
+def _template_suggestion(key: str, request: ClassifyRequest) -> SuggestedLabel | None:
+    """A library label by key, unless the user already has one with that name."""
+    template = next((item for item in LABEL_TEMPLATES if item.key == key), None)
+    existing = {category.name.casefold() for category in request.categories}
+    if template is None or template.name.casefold() in existing:
+        return None
+    return SuggestedLabel(key=template.key, name=template.name, description=template.description, similarity=1.0)
+
+
 def _suggest_label(email_vector: list[float], request: ClassifyRequest) -> SuggestedLabel | None:
     existing = {category.name.casefold() for category in request.categories}
     template_vectors = model_manager.template_vectors()
-    best: SuggestedLabel | None = None
-    for template in LABEL_TEMPLATES:
-        if template.name.casefold() in existing or template.key not in template_vectors:
-            continue
-        similarity = cosine(email_vector, template_vectors[template.key])
-        if similarity >= request.threshold and (best is None or similarity > best.similarity):
-            best = SuggestedLabel(
-                key=template.key, name=template.name, description=template.description, similarity=similarity
-            )
-    return best
+    scored = sorted(
+        (
+            (cosine(email_vector, template_vectors[template.key]), template)
+            for template in LABEL_TEMPLATES
+            if template.name.casefold() not in existing and template.key in template_vectors
+        ),
+        key=lambda item: item[0],
+        reverse=True,
+    )
+    if not scored:
+        return None
+    similarity, template = scored[0]
+    runner_up = scored[1][0] if len(scored) > 1 else -1.0
+    # Only a clear winner: near-ties ("Support" vs "Security" for a CI failure)
+    # suggested the wrong label for most mail.
+    if similarity < request.threshold or similarity - runner_up < SUGGESTION_MARGIN:
+        return None
+    return SuggestedLabel(key=template.key, name=template.name, description=template.description, similarity=similarity)
 
 
 def _extract_spans(request: ClassifyRequest) -> list[Span]:
@@ -654,13 +690,30 @@ def _extract_spans(request: ClassifyRequest) -> list[Span]:
     tagger_name, tag, _version = tagger_manager.active()
     for source, text in (("subject", request.subject), ("body", request.body)):
         raw_spans = tag(text)
-        has_task = any(span.label == "TASK" for span in raw_spans)
+        # Same rule as filter_spans: statements are not tasks, and an essay
+        # full of tagged sentences counts only its explicit requests.
+        task_texts = [span.text for span in raw_spans if span.label == "TASK" and not is_statement(span.text)]
+        has_task = (
+            any(has_request_cue(task) for task in task_texts)
+            if len(task_texts) > MAX_PLAIN_TASKS
+            else bool(task_texts)
+        )
         for raw in raw_spans:
             span = Span(
                 label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end, tagger=tagger_name
             )
             if raw.label == "DATE":
                 resolved = resolve_date(raw.text, received_at=request.received_at, timezone=request.timezone)
+                # Dates before the email are references (order times, alert
+                # timestamps, last year's event), never deadlines: drop them. A
+                # timed value within minutes of receipt is the message's own
+                # timestamp ("22 Nov 2026 22:08" on a payment alert).
+                if resolved.value is not None and (
+                    resolved.value <= request.received_at + RECEIPT_TIMESTAMP_SLACK
+                    if resolved.has_time
+                    else resolved.value.date() < received_day
+                ):
+                    continue
                 span.resolved = resolved.value
                 span.ambiguous = resolved.ambiguous
                 # A date only counts as a deadline when it is attached to a request and not in the past.
