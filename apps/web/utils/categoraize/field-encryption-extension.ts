@@ -35,25 +35,63 @@ export const ENCRYPTED_EMAIL_FIELDS = {
 type ModelName = keyof typeof ENCRYPTED_EMAIL_FIELDS;
 type Data = Record<string, unknown>;
 
+/** Most layers a stored value can carry (rows re-scored while reads unwrapped too few). */
+const MAX_LAYERS = 8;
+
+function tryDecrypt(table: string, column: string, rowId: string, value: string) {
+  try {
+    return decryptField({ table, column, rowId, value });
+  } catch (error) {
+    if (error instanceof FieldEncryptionError) return null;
+    throw error;
+  }
+}
+
+/**
+ * Peel extra encryption layers after the first. Rows written through the old
+ * tenant wrapper were encrypted twice, and re-scoring such a row (when reads
+ * unwrapped only some layers) encrypted the leftover ciphertext again, so
+ * some values carry 3-4 layers. A plaintext that only looks like ciphertext
+ * (a snippet cut from an encrypted body: "e1:p1:...") does not authenticate
+ * and is returned as text instead of failing the whole read.
+ */
+function unwrapLayers(table: string, column: string, rowId: string, plain: string) {
+  let value = plain;
+  for (let layer = 1; layer < MAX_LAYERS && isEncryptedValue(value); layer++) {
+    const inner = tryDecrypt(table, column, rowId, value);
+    if (inner === null) return value;
+    value = inner;
+  }
+  return value;
+}
+
+/** Encrypt once: a value that already is this row's ciphertext is stored as is. */
+function encryptOnce(table: string, column: string, rowId: string, value: string) {
+  if (isEncryptedValue(value) && tryDecrypt(table, column, rowId, value) !== null) {
+    return value;
+  }
+  return encryptField({ table, column, rowId, plaintext: value });
+}
+
 function encryptData(model: ModelName, data: Data | undefined, rowId: string) {
   if (!data) return;
   const { table, fields } = ENCRYPTED_EMAIL_FIELDS[model];
   for (const column of fields) {
     const value = data[column];
     if (typeof value === "string") {
-      data[column] = encryptField({ table, column, rowId, plaintext: value });
+      data[column] = encryptOnce(table, column, rowId, value);
     } else if (
       value &&
       typeof value === "object" &&
       "set" in value &&
       typeof (value as { set: unknown }).set === "string"
     ) {
-      (value as { set: string }).set = encryptField({
+      (value as { set: string }).set = encryptOnce(
         table,
         column,
         rowId,
-        plaintext: (value as { set: string }).set,
-      });
+        (value as { set: string }).set,
+      );
     }
   }
 }
@@ -208,23 +246,13 @@ export const encryptedEmailFields = Prisma.defineExtension((client) => {
         compute(row: Record<string, string | null>) {
           const value = row[column];
           if (value === null || value === undefined) return value;
-          const plain = decryptField({
+          // The outer layer must authenticate: tampering is caught as before.
+          return unwrapLayers(
             table,
             column,
-            rowId: row.id as string,
-            value,
-          });
-          // Rows written through the tenant wrapper before 2026-11-20 were
-          // encrypted twice (see tenantContext); unwrap the second layer. It
-          // must still authenticate, so tampering is caught as before.
-          return isEncryptedValue(plain)
-            ? decryptField({
-                table,
-                column,
-                rowId: row.id as string,
-                value: plain,
-              })
-            : plain;
+            row.id as string,
+            decryptField({ table, column, rowId: row.id as string, value }),
+          );
         },
       };
     }

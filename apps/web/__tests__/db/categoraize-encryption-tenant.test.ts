@@ -267,5 +267,56 @@ describe.skipIf(!process.env.RUN_DB_TESTS)(
       );
       expect(row?.text).toBe("probe-noid");
     });
+
+    const layered = (id: string, plaintext: string, layers: number) => {
+      let value = plaintext;
+      for (let layer = 0; layer < layers; layer++) {
+        value = encryptField({ table: TABLE, column: "text", rowId: id, plaintext: value });
+      }
+      return value;
+    };
+
+    it("reads a value encrypted three or four times", async () => {
+      const t = await target();
+      for (const layers of [3, 4]) {
+        const id = `enc-layers${layers}-${Date.now()}`;
+        await insertRaw(id, layered(id, `probe-${layers}`, layers));
+        const row = await withUserContext(t.userId, () =>
+          prisma.categorizeExtractedSpan.findUnique({ where: { id } }),
+        );
+        expect(row?.text).toBe(`probe-${layers}`);
+      }
+    });
+
+    // A snippet cut from an encrypted body starts with "e1:" but is not a
+    // valid ciphertext: return it as text instead of failing the whole list.
+    it("returns a plaintext that only looks like ciphertext", async () => {
+      const t = await target();
+      const id = `enc-fake-${Date.now()}`;
+      const fake = layered("other-row", "x".repeat(200), 1).slice(0, 60);
+      await insertRaw(id, layered(id, fake, 1));
+      const rows = await withUserContext(t.userId, () =>
+        prisma.categorizeExtractedSpan.findMany({ where: { id } }),
+      );
+      expect(rows.map((r) => r.text)).toEqual([fake]);
+    });
+
+    it("does not encrypt a value that already is this row's ciphertext", async () => {
+      const t = await target();
+      const id = `enc-once-${Date.now()}`;
+      await insertRaw(id, layered(id, "old", 1));
+      await withUserContext(t.userId, () =>
+        prisma.categorizeExtractedSpan.update({
+          where: { id },
+          data: { text: layered(id, "probe-once", 1) },
+        }),
+      );
+      const stored = await rawText(id);
+      expect(stored.length).toBeLessThan(layered(id, "probe-once", 2).length);
+      const row = await withUserContext(t.userId, () =>
+        prisma.categorizeExtractedSpan.findUnique({ where: { id } }),
+      );
+      expect(row?.text).toBe("probe-once");
+    });
   },
 );
