@@ -7,12 +7,8 @@ import { SafeError } from "@/utils/error";
 import { prefixPath } from "@/utils/path";
 import { isDuplicateError } from "@/utils/prisma-helpers";
 import { createEmailProvider } from "@/utils/email/provider";
-import {
-  applyCategoryFeedback,
-  embedTexts,
-  isCategoraizeEnabled,
-} from "@/utils/categoraize/client";
-import { categoryEmbeddingText } from "@/utils/categoraize/categories";
+import { isCategoraizeEnabled } from "@/utils/categoraize/client";
+import { applyLearnedLabels } from "@/utils/categoraize/label-examples";
 import { categoraizeInputFromMessage } from "@/utils/categoraize/message-input";
 import {
   classifyAndStoreEmail,
@@ -20,24 +16,23 @@ import {
   reclassifyStoredEmail,
 } from "@/utils/categoraize/process-email";
 import {
-  getCategoryVectors,
-  getClassificationEmbedding,
-  setCategoryCentroid,
-} from "@/utils/categoraize/vectors";
-import {
   acceptCategoraizeCategory,
   classifyRecentCategoraizeEmails,
   correctCategoraizeCategory,
   previewCategoraizeClassification,
   rateCategoraizePriority,
   reclassifyStoredCategoraizeEmails,
+  removeCategoraizeLabelExample,
   setCategoraizeManualPriority,
+  teachCategoraizeLabel,
 } from "./categoraize-classification.validation";
 
 /**
- * Scenario 5: a category correction moves the Rocchio centroids
- * (correct +alpha*e, previous -beta*e). Each (email, target category) pair
- * is learned once; the unique FeedbackEvent key blocks duplicates.
+ * Scenario 5: a category correction teaches the labels. The corrected email
+ * becomes an example of its new label (and stops being one of the old), each
+ * label's centroid is rebuilt from its description and examples (this account
+ * only), and unreviewed emails are re-sorted. Each (email, target label) pair
+ * is recorded once in FeedbackEvent.
  */
 export const correctCategoraizeCategoryAction = actionClient
   .metadata({ name: "correctCategoraizeCategory" })
@@ -54,72 +49,18 @@ export const correctCategoraizeCategoryAction = actionClient
     if (classification.categoryId === categoryId) {
       throw new SafeError("The email is already in this category");
     }
-
-    const alreadyLearned = await prisma.categorizeFeedbackEvent.findUnique({
-      where: {
-        classificationId_toCategoryId: {
-          classificationId,
-          toCategoryId: categoryId,
-        },
-      },
-      select: { id: true },
+    const correct = await prisma.categorizeCategory.findFirst({
+      where: { id: categoryId, emailAccountId, isActive: true },
+      select: { id: true, name: true },
     });
-
-    const categories = await getCategoryVectors(emailAccountId);
-    const correct = categories.find(({ id }) => id === categoryId);
     if (!correct) throw new SafeError("Category not found");
-    const previous = categories.find(
-      ({ id }) => id === classification.categoryId,
-    );
 
-    if (!alreadyLearned) {
-      const embedding = await getClassificationEmbedding(
-        classificationId,
-        emailAccountId,
-      );
-      if (!embedding) throw new SafeError("This email has no embedding yet");
-
-      const correctCentroid =
-        correct.centroid ??
-        (await embedTexts([categoryEmbeddingText(correct)]))[0];
-      const feedback = await applyCategoryFeedback({
-        embedding,
-        correct: { id: correct.id, centroid: correctCentroid },
-        incorrect: previous?.centroid
-          ? { id: previous.id, centroid: previous.centroid }
-          : null,
-      });
-
-      try {
-        await prisma.categorizeFeedbackEvent.create({
-          data: {
-            emailAccountId,
-            classificationId,
-            fromCategoryId: previous?.id ?? null,
-            toCategoryId: correct.id,
-          },
-        });
-      } catch (error) {
-        // A concurrent correction already learned this pair; do not apply it twice.
-        if (isDuplicateError(error)) {
-          throw new SafeError("This correction was already applied");
-        }
-        throw error;
-      }
-
-      await setCategoryCentroid({
-        categoryId: feedback.correct.id,
-        emailAccountId,
-        centroid: feedback.correct.centroid,
-      });
-      if (feedback.incorrect) {
-        await setCategoryCentroid({
-          categoryId: feedback.incorrect.id,
-          emailAccountId,
-          centroid: feedback.incorrect.centroid,
-        });
-      }
-    }
+    const learned = await recordLabelExample({
+      emailAccountId,
+      classificationId,
+      fromCategoryId: classification.categoryId,
+      toCategoryId: correct.id,
+    });
 
     await prisma.categorizeClassification.update({
       where: { id: classificationId },
@@ -131,16 +72,130 @@ export const correctCategoraizeCategoryAction = actionClient
     });
     // Re-score so the priority uses the corrected category's base priority.
     await reclassifyStoredEmail({ emailAccountId, classificationId, logger });
+    const { moved } = await applyLearnedLabels({
+      emailAccountId,
+      logger,
+      maxRescore: RESCORE_AFTER_CORRECTION,
+    });
 
     revalidateCategoraize(emailAccountId);
-    return { learned: !alreadyLearned };
+    return { learned, moved };
   });
 
-/** Accepting a prediction only marks it reviewed; Rocchio learns from corrections, not confirmations. */
+/**
+ * Teach a label by example: the chosen emails go into the label as reviewed
+ * examples, the label centroids are rebuilt, and the rest of the inbox is
+ * re-sorted. Examples never leave this account.
+ */
+export const teachCategoraizeLabelAction = actionClient
+  .metadata({ name: "teachCategoraizeLabel" })
+  .inputSchema(teachCategoraizeLabel)
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
+    requireEnabled();
+    const label = await prisma.categorizeCategory.findFirst({
+      where: { id: parsedInput.categoryId, emailAccountId, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (!label) throw new SafeError("Label not found");
+
+    const emails = await prisma.categorizeClassification.findMany({
+      where: { id: { in: parsedInput.classificationIds }, emailAccountId },
+      select: { id: true, categoryId: true },
+    });
+    if (!emails.length) throw new SafeError("Pick at least one email");
+
+    for (const email of emails) {
+      await recordLabelExample({
+        emailAccountId,
+        classificationId: email.id,
+        fromCategoryId: email.categoryId,
+        toCategoryId: label.id,
+      });
+      await prisma.categorizeClassification.update({
+        where: { id: email.id },
+        data: {
+          categoryId: label.id,
+          categoryName: label.name,
+          isReviewedByUser: true,
+        },
+      });
+    }
+    for (const email of emails) {
+      await reclassifyStoredEmail({
+        emailAccountId,
+        classificationId: email.id,
+        logger,
+      }).catch((error) =>
+        logger.warn("Re-score of a taught example failed", {
+          classificationId: email.id,
+          error,
+        }),
+      );
+    }
+    const result = await applyLearnedLabels({
+      emailAccountId,
+      logger,
+      maxRescore: RESCORE_AFTER_TEACH,
+    });
+
+    revalidateCategoraize(emailAccountId);
+    return { examples: emails.length, ...result };
+  });
+
+/** Stop using an email as an example: it returns to automatic sorting. */
+export const removeCategoraizeLabelExampleAction = actionClient
+  .metadata({ name: "removeCategoraizeLabelExample" })
+  .inputSchema(removeCategoraizeLabelExample)
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
+    requireEnabled();
+    const result = await prisma.categorizeClassification.updateMany({
+      where: {
+        id: parsedInput.classificationId,
+        emailAccountId,
+        isReviewedByUser: true,
+      },
+      data: { isReviewedByUser: false },
+    });
+    if (result.count === 0) throw new SafeError("That email is not an example");
+    await applyLearnedLabels({
+      emailAccountId,
+      logger,
+      maxRescore: RESCORE_AFTER_CORRECTION,
+    });
+    revalidateCategoraize(emailAccountId);
+  });
+
+const RESCORE_AFTER_CORRECTION = 10;
+const RESCORE_AFTER_TEACH = 40;
+
+/** One FeedbackEvent per (email, label); returns false if it was already recorded. */
+async function recordLabelExample({
+  emailAccountId,
+  classificationId,
+  fromCategoryId,
+  toCategoryId,
+}: {
+  emailAccountId: string;
+  classificationId: string;
+  fromCategoryId: string | null;
+  toCategoryId: string;
+}) {
+  try {
+    await prisma.categorizeFeedbackEvent.create({
+      data: { emailAccountId, classificationId, fromCategoryId, toCategoryId },
+    });
+    return true;
+  } catch (error) {
+    if (isDuplicateError(error)) return false;
+    throw error;
+  }
+}
+
+/** Accepting a prediction marks it reviewed, which makes it an example of its label. */
 export const acceptCategoraizeCategoryAction = actionClient
   .metadata({ name: "acceptCategoraizeCategory" })
   .inputSchema(acceptCategoraizeCategory)
-  .action(async ({ ctx: { emailAccountId }, parsedInput }) => {
+  .action(async ({ ctx: { emailAccountId, logger }, parsedInput }) => {
     const result = await prisma.categorizeClassification.updateMany({
       where: {
         id: parsedInput.classificationId,
@@ -150,6 +205,11 @@ export const acceptCategoraizeCategoryAction = actionClient
       data: { isReviewedByUser: true },
     });
     if (result.count === 0) throw new SafeError("Nothing to accept");
+    await applyLearnedLabels({
+      emailAccountId,
+      logger,
+      maxRescore: RESCORE_AFTER_CORRECTION,
+    });
     revalidateCategoraize(emailAccountId);
   });
 

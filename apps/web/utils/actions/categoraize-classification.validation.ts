@@ -33,3 +33,15 @@ export const previewCategoraizeClassification = z.object({
 export const acceptCategoraizeCategory = z.object({
   classificationId: z.string().min(1),
 });
+
+export const teachCategoraizeLabel = z.object({
+  categoryId: z.string().min(1),
+  classificationIds: z
+    .array(z.string().min(1))
+    .min(1, "Pick at least one email")
+    .max(50, "Pick at most 50 emails at a time"),
+});
+
+export const removeCategoraizeLabelExample = z.object({
+  classificationId: z.string().min(1),
+});

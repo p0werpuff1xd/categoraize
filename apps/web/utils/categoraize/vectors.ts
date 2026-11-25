@@ -120,6 +120,87 @@ export async function setCategoryCentroid({
   );
 }
 
+/**
+ * The mean embedding of a label's examples: the emails in this account the
+ * user put in the label themselves (taught, corrected or confirmed). Stays
+ * inside the account; nothing is shared across users.
+ */
+export async function getLabelExampleMean({
+  categoryId,
+  emailAccountId,
+}: {
+  categoryId: string;
+  emailAccountId: string;
+}) {
+  const rows = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<Array<{ mean: string | null; count: bigint }>>`
+    SELECT avg("embedding")::text AS "mean", count(*) AS "count"
+    FROM "CategorizeClassification"
+    WHERE "emailAccountId" = ${emailAccountId}
+      AND "categoryId" = ${categoryId}
+      AND "isReviewedByUser" = true
+      AND "embedding" IS NOT NULL
+  `,
+  );
+  return {
+    mean: parseVector(rows[0]?.mean ?? null),
+    count: Number(rows[0]?.count ?? 0),
+  };
+}
+
+/**
+ * Re-sort the emails the user has not reviewed against the current label
+ * centroids, in the database (cosine similarity, the service's own rule:
+ * best label if it reaches that label's threshold, else Uncategorized).
+ * Returns the ids whose label changed, so only those need a full re-score.
+ */
+export async function resortUnreviewedEmails(emailAccountId: string) {
+  const rows = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<
+      Array<{ id: string; categoryId: string | null; categoryName: string | null }>
+    >`
+    WITH best AS (
+      SELECT DISTINCT ON (c."id")
+             c."id",
+             k."id" AS "bestId",
+             k."name" AS "bestName",
+             1 - (c."embedding" <=> k."centroidEmbedding") AS "similarity",
+             k."classificationThreshold" AS "threshold",
+             c."categoryId" AS "currentId"
+      FROM "CategorizeClassification" c
+      JOIN "CategorizeCategory" k
+        ON k."emailAccountId" = c."emailAccountId"
+       AND k."isActive" = true
+       AND k."centroidEmbedding" IS NOT NULL
+      WHERE c."emailAccountId" = ${emailAccountId}
+        AND c."isReviewedByUser" = false
+        AND c."embedding" IS NOT NULL
+      ORDER BY c."id", c."embedding" <=> k."centroidEmbedding"
+    ),
+    target AS (
+      SELECT "id",
+             CASE WHEN "similarity" >= "threshold" THEN "bestId" END AS "categoryId",
+             CASE WHEN "similarity" >= "threshold" THEN "bestName" END AS "categoryName",
+             "currentId"
+      FROM best
+    )
+    UPDATE "CategorizeClassification" c
+    SET "categoryId" = t."categoryId",
+        "categoryName" = t."categoryName",
+        "updatedAt" = CURRENT_TIMESTAMP
+    FROM target t
+    WHERE c."id" = t."id"
+      AND t."categoryId" IS DISTINCT FROM t."currentId"
+    RETURNING c."id", c."categoryId", c."categoryName"
+  `,
+  );
+  return rows;
+}
+
 export function toVectorLiteral(vector: number[]) {
   if (!vector.every(Number.isFinite)) {
     throw new Error("Vector contains non-finite values");

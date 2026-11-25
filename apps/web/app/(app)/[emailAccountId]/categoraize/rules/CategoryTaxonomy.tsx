@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useAction } from "next-safe-action/hooks";
-import { PencilIcon, PlusIcon, TagsIcon, Trash2Icon } from "lucide-react";
+import {
+  GraduationCapIcon,
+  PencilIcon,
+  PlusIcon,
+  TagsIcon,
+  Trash2Icon,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +57,7 @@ import {
 } from "@/utils/actions/categoraize";
 import { getActionErrorMessage } from "@/utils/error";
 import type { CategoraizeCategoriesResponse } from "@/app/api/categorai/categories/route";
+import { TeachLabelDialog } from "./TeachLabelDialog";
 
 type Category = CategoraizeCategoriesResponse["categories"][number];
 
@@ -129,6 +136,7 @@ function CategoryCard({
   const { emailAccountId } = useAccount();
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [teaching, setTeaching] = useState(false);
 
   const update = useAction(
     updateCategoraizeCategoryAction.bind(null, emailAccountId),
@@ -172,6 +180,16 @@ function CategoryCard({
           </p>
         </div>
         <div className="flex shrink-0 gap-1">
+          <Button size="sm" variant="outline" onClick={() => setTeaching(true)}>
+            <GraduationCapIcon className="mr-1 size-4" />
+            Teach by example
+          </Button>
+          <TeachLabelDialog
+            category={category}
+            open={teaching}
+            onOpenChange={setTeaching}
+            onTaught={onChange}
+          />
           <Button
             size="icon"
             variant="ghost"
@@ -200,7 +218,7 @@ function CategoryCard({
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   Its {category._count.classifications} emails become
-                  Uncategorized, and what it learned from your corrections is
+                  Uncategorized, and what it learned from your examples is
                   lost. This can't be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -248,9 +266,9 @@ function CategoryCard({
         </div>
         <span>
           {category._count.classifications} emails ·{" "}
-          {category.centroidVersion === 0
-            ? "not tuned yet"
-            : `tuned by ${category.centroidVersion} correction${category.centroidVersion === 1 ? "" : "s"}`}
+          {category.exampleCount === 0
+            ? "no examples yet: teach it with a few emails"
+            : `learned from ${category.exampleCount} example${category.exampleCount === 1 ? "" : "s"}`}
         </span>
       </div>
     </div>

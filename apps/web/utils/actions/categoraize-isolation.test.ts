@@ -44,7 +44,9 @@ import {
   previewCategoraizeClassificationAction,
   rateCategoraizePriorityAction,
   reclassifyStoredCategoraizeEmailsAction,
+  removeCategoraizeLabelExampleAction,
   setCategoraizeManualPriorityAction,
+  teachCategoraizeLabelAction,
 } from "@/utils/actions/categoraize-classification";
 import {
   acceptCategoraizeConsentAction,
@@ -179,6 +181,16 @@ const EMAIL_ACCOUNT_ACTIONS = [
     { classificationId: "cls-b" },
   ],
   [
+    "teachCategoraizeLabel",
+    teachCategoraizeLabelAction,
+    { categoryId: "cat-b", classificationIds: ["cls-b"] },
+  ],
+  [
+    "removeCategoraizeLabelExample",
+    removeCategoraizeLabelExampleAction,
+    { classificationId: "cls-b" },
+  ],
+  [
     "setCategoraizeManualPriority",
     setCategoraizeManualPriorityAction,
     { classificationId: "cls-b", priority: 5 },
@@ -227,6 +239,8 @@ const ROW_ID_ACTIONS = new Set([
   "createCategoryFromSuggestion",
   "correctCategoraizeCategory",
   "acceptCategoraizeCategory",
+  "teachCategoraizeLabel",
+  "removeCategoraizeLabelExample",
   "setCategoraizeManualPriority",
   "rateCategoraizePriority",
   "confirmCategoraizeDeadline",
