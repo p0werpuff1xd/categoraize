@@ -31,7 +31,10 @@ class ResolvedDate:
 def resolve_date(phrase: str, *, received_at: datetime, timezone: str) -> ResolvedDate:
     zone = ZoneInfo(timezone)
     base = received_at.astimezone(zone)
-    text = gloss_time_expression(phrase)
+    text = _spanish_hours(gloss_time_expression(phrase))
+    # "after lunch" is early afternoon, but vague: review before it counts.
+    vague_lunch = bool(re.search(r"\bafter lunch\b", text))
+    text = re.sub(r"\s*\bafter lunch\b", " 1pm", text).strip()
     text, part_of_day = _split_part_of_day(text)
     explicit_time = (
         _explicit_time(text) or _alas_time(text, part_of_day) or _clock_24h(text) or _trailing_hour(text)
@@ -55,7 +58,27 @@ def resolve_date(phrase: str, *, received_at: datetime, timezone: str) -> Resolv
 
     due_time = explicit_time or part_of_day or DEFAULT_DUE_TIME
     resolved = datetime.combine(day.date(), due_time, tzinfo=zone)
-    return ResolvedDate(resolved, ambiguous, has_time=explicit_time is not None)
+    return ResolvedDate(resolved, ambiguous or vague_lunch, has_time=explicit_time is not None)
+
+
+# Spanish-derived clock hours in Filipino: "alas-singko", "alas tres".
+_SPANISH_HOURS = {
+    "una": 1, "uno": 1, "dos": 2, "tres": 3, "kuwatro": 4, "kwatro": 4, "kwarto": 4, "singko": 5, "sinko": 5,
+    "sais": 6, "siyete": 7, "syete": 7, "otso": 8, "nuwebe": 9, "nwebe": 9, "diyes": 10, "dyes": 10,
+    "onse": 11, "dose": 12,
+}
+_SPANISH_HOUR_RE = re.compile(
+    rf"\b(alas[\s-]+)({'|'.join(sorted(_SPANISH_HOURS, key=len, reverse=True))})(\s+y\s+medya)?\b",
+    re.IGNORECASE,
+)
+
+
+def _spanish_hours(text: str) -> str:
+    def digits(match: re.Match[str]) -> str:
+        hour = _SPANISH_HOURS[match.group(2).casefold()]
+        return f"{match.group(1)}{hour}{':30' if match.group(3) else ''}"
+
+    return _SPANISH_HOUR_RE.sub(digits, text)
 
 
 # 24-hour clock times in receipts and alerts: "22:08", "15:10:58".
@@ -169,6 +192,14 @@ def _resolve_special(text: str, base: datetime, *, has_time: bool = False) -> tu
     """Expressions dateparser handles poorly or that need an ambiguity flag."""
     text = re.sub(r"^(?:by|on|before|until|the)\s+", "", text.strip(" .,"))
     text = re.sub(r"['’]s$", "", text)  # "this week's" -> "this week"
+    text = re.sub(r"\s*,\s*", " ", text)  # "wednesday, " -> "wednesday"
+    text = re.sub(r"\b(?:ng|nang)\s+", "", text).strip()  # "end of day ng friday"
+    # "end of day Friday" / "katapusan ng araw ng Biyernes": that day, end of business.
+    end_of_day = re.fullmatch(r"(?:end of (?:the )?day|eod)\s+(?:on\s+)?(?P<day>.+)", text)
+    if end_of_day:
+        return _resolve_special(end_of_day.group("day"), base, has_time=has_time)
+    if text in {"later", "today later", "later on"}:
+        text = "later today"
     today = base.replace(hour=0, minute=0, second=0, microsecond=0)
 
     if text in {"today", ""}:

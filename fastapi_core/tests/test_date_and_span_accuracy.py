@@ -149,3 +149,34 @@ def test_urgent_notices_are_never_promotional():
     assert is_urgent_notice("Security alert")
     signals = detect_bulk("Security alert", "Unsubscribe from these alerts.", "no-reply@accounts.example.com")
     assert not signals.promotional
+
+
+# Third pass, from the labelled dev set: Spanish hours, end-of-day weekdays,
+# day parts and "after lunch".
+RECEIVED_17 = datetime(2026, 11, 17, 9, 0, tzinfo=ZoneInfo(MANILA))  # a Tuesday
+
+
+@pytest.mark.parametrize(
+    ("phrase", "expected", "ambiguous"),
+    [
+        ("alas-singko ng hapon ngayon", "2026-11-17 17:00", False),
+        ("mamayang alas-tres", "2026-11-17 15:00", False),
+        ("Miyerkules, alas-nuwebe ng umaga", "2026-11-18 09:00", False),
+        ("katapusan ng araw ng Biyernes", "2026-11-20 17:00", False),
+        ("end of day Friday", "2026-11-20 17:00", False),
+        ("this afternoon", "2026-11-17 15:00", False),
+        ("alas-dos y medya", "2026-11-17 14:30", False),
+        ("mamaya pagkatapos ng tanghalian", "2026-11-17 13:00", True),
+        ("later after lunch", "2026-11-17 13:00", True),
+    ],
+)
+def test_third_pass_phrases(phrase, expected, ambiguous):
+    result = resolve_date(phrase, received_at=RECEIVED_17, timezone=MANILA)
+    assert result.value is not None
+    assert result.value.strftime("%Y-%m-%d %H:%M") == expected
+    assert result.ambiguous is ambiguous
+
+
+def test_unresolved_date_with_a_date_word_is_kept_for_review():
+    spans = [_S("DATE", "sometime next week"), _S("DATE", "TESTS"), _S("DATE", "day 2")]
+    assert [s.text for s in filter_spans(spans, promotional=False)] == ["sometime next week"]

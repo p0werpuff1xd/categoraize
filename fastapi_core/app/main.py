@@ -5,6 +5,7 @@ this service keeps no per-user state.
 """
 
 import os
+import re
 import secrets
 import time
 from collections.abc import AsyncIterator
@@ -699,11 +700,17 @@ def _extract_spans(request: ClassifyRequest) -> list[Span]:
             else bool(task_texts)
         )
         for raw in raw_spans:
+            span_text, span_start = raw.text, raw.start
+            if raw.label == "DATE":
+                # "sa Lunes", "sa 10 AM bukas": the preposition is not part of the date.
+                lead = re.match(r"(?:sa|nang|ng)\s+(?=\S)", span_text, re.IGNORECASE)
+                if lead:
+                    span_text, span_start = span_text[lead.end():], span_start + lead.end()
             span = Span(
-                label=raw.label, text=raw.text, source=source, start=raw.start, end=raw.end, tagger=tagger_name
+                label=raw.label, text=span_text, source=source, start=span_start, end=raw.end, tagger=tagger_name
             )
             if raw.label == "DATE":
-                resolved = resolve_date(raw.text, received_at=request.received_at, timezone=request.timezone)
+                resolved = resolve_date(span_text, received_at=request.received_at, timezone=request.timezone)
                 # Dates before the email are references (order times, alert
                 # timestamps, last year's event), never deadlines: drop them. A
                 # timed value within minutes of receipt is the message's own

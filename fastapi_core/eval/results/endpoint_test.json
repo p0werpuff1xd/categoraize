@@ -1,0 +1,386 @@
+{
+ "overall": {
+  "n": 100,
+  "metrics": {
+   "category_accuracy": {
+    "value": 0.19,
+    "low": 0.12,
+    "high": 0.27
+   },
+   "category_macro_f1": {
+    "value": 0.2841,
+    "low": 0.1797,
+    "high": 0.3665
+   },
+   "priority_exact": {
+    "value": 0.43,
+    "low": 0.34,
+    "high": 0.53
+   },
+   "priority_within1": {
+    "value": 0.82,
+    "low": 0.74,
+    "high": 0.9
+   },
+   "priority_qwk": {
+    "value": 0.3843,
+    "low": 0.218,
+    "high": 0.5456
+   },
+   "priority_mae": {
+    "value": 0.8,
+    "low": 0.64,
+    "high": 0.97
+   },
+   "register_accuracy": {
+    "value": 0.85,
+    "low": 0.78,
+    "high": 0.91
+   },
+   "register_macro_f1": {
+    "value": 0.8461,
+    "low": 0.7665,
+    "high": 0.9105
+   },
+   "conflict_accuracy": {
+    "value": 1.0,
+    "low": 1.0,
+    "high": 1.0
+   },
+   "task_precision": {
+    "value": 0.299,
+    "low": 0.2187,
+    "high": 0.3864
+   },
+   "task_recall": {
+    "value": 0.4754,
+    "low": 0.3559,
+    "high": 0.6
+   },
+   "task_f1": {
+    "value": 0.3671,
+    "low": 0.2727,
+    "high": 0.4645
+   },
+   "date_precision": {
+    "value": 0.6962,
+    "low": 0.5844,
+    "high": 0.8095
+   },
+   "date_recall": {
+    "value": 0.7857,
+    "low": 0.6825,
+    "high": 0.8767
+   },
+   "date_f1": {
+    "value": 0.7383,
+    "low": 0.6294,
+    "high": 0.8382
+   },
+   "span_micro_f1": {
+    "value": 0.5472,
+    "low": 0.4731,
+    "high": 0.6164
+   },
+   "date_resolution_accuracy": {
+    "value": 0.7286,
+    "low": 0.625,
+    "high": 0.8209
+   },
+   "date_resolution_on_gold_spans": {
+    "value": null,
+    "low": null,
+    "high": null
+   }
+  }
+ },
+ "en": {
+  "n": 34,
+  "metrics": {
+   "category_accuracy": {
+    "value": 0.3529,
+    "low": 0.2059,
+    "high": 0.5
+   },
+   "category_macro_f1": {
+    "value": 0.4563,
+    "low": 0.2385,
+    "high": 0.5777
+   },
+   "priority_exact": {
+    "value": 0.5,
+    "low": 0.3235,
+    "high": 0.6765
+   },
+   "priority_within1": {
+    "value": 0.8529,
+    "low": 0.7353,
+    "high": 0.9706
+   },
+   "priority_qwk": {
+    "value": 0.4239,
+    "low": 0.1034,
+    "high": 0.7274
+   },
+   "priority_mae": {
+    "value": 0.7353,
+    "low": 0.4412,
+    "high": 1.0588
+   },
+   "register_accuracy": {
+    "value": 0.8235,
+    "low": 0.7059,
+    "high": 0.9412
+   },
+   "register_macro_f1": {
+    "value": 0.8177,
+    "low": 0.6503,
+    "high": 0.9383
+   },
+   "conflict_accuracy": {
+    "value": 1.0,
+    "low": 1.0,
+    "high": 1.0
+   },
+   "task_precision": {
+    "value": 0.32,
+    "low": 0.1429,
+    "high": 0.5
+   },
+   "task_recall": {
+    "value": 0.381,
+    "low": 0.1765,
+    "high": 0.5882
+   },
+   "task_f1": {
+    "value": 0.3478,
+    "low": 0.1579,
+    "high": 0.5294
+   },
+   "date_precision": {
+    "value": 0.6923,
+    "low": 0.52,
+    "high": 0.875
+   },
+   "date_recall": {
+    "value": 0.72,
+    "low": 0.5417,
+    "high": 0.8889
+   },
+   "date_f1": {
+    "value": 0.7059,
+    "low": 0.5294,
+    "high": 0.8728
+   },
+   "span_micro_f1": {
+    "value": 0.5361,
+    "low": 0.3951,
+    "high": 0.655
+   },
+   "date_resolution_accuracy": {
+    "value": 0.68,
+    "low": 0.5,
+    "high": 0.84
+   },
+   "date_resolution_on_gold_spans": {
+    "value": null,
+    "low": null,
+    "high": null
+   }
+  }
+ },
+ "mixed": {
+  "n": 33,
+  "metrics": {
+   "category_accuracy": {
+    "value": 0.1515,
+    "low": 0.0606,
+    "high": 0.2727
+   },
+   "category_macro_f1": {
+    "value": 0.2083,
+    "low": 0.0714,
+    "high": 0.2917
+   },
+   "priority_exact": {
+    "value": 0.3939,
+    "low": 0.2424,
+    "high": 0.5758
+   },
+   "priority_within1": {
+    "value": 0.8788,
+    "low": 0.7576,
+    "high": 0.9697
+   },
+   "priority_qwk": {
+    "value": 0.459,
+    "low": 0.1767,
+    "high": 0.6872
+   },
+   "priority_mae": {
+    "value": 0.7576,
+    "low": 0.5152,
+    "high": 1.0303
+   },
+   "register_accuracy": {
+    "value": 0.9091,
+    "low": 0.8182,
+    "high": 1.0
+   },
+   "register_macro_f1": {
+    "value": 0.8993,
+    "low": 0.7734,
+    "high": 1.0
+   },
+   "conflict_accuracy": {
+    "value": 1.0,
+    "low": 1.0,
+    "high": 1.0
+   },
+   "task_precision": {
+    "value": 0.3636,
+    "low": 0.2143,
+    "high": 0.5152
+   },
+   "task_recall": {
+    "value": 0.5714,
+    "low": 0.357,
+    "high": 0.7647
+   },
+   "task_f1": {
+    "value": 0.4444,
+    "low": 0.2745,
+    "high": 0.6032
+   },
+   "date_precision": {
+    "value": 0.8,
+    "low": 0.625,
+    "high": 0.9664
+   },
+   "date_recall": {
+    "value": 0.8696,
+    "low": 0.7273,
+    "high": 1.0
+   },
+   "date_f1": {
+    "value": 0.8333,
+    "low": 0.6792,
+    "high": 0.9809
+   },
+   "span_micro_f1": {
+    "value": 0.6275,
+    "low": 0.5111,
+    "high": 0.7391
+   },
+   "date_resolution_accuracy": {
+    "value": 0.8261,
+    "low": 0.68,
+    "high": 0.9625
+   },
+   "date_resolution_on_gold_spans": {
+    "value": null,
+    "low": null,
+    "high": null
+   }
+  }
+ },
+ "tl": {
+  "n": 33,
+  "metrics": {
+   "category_accuracy": {
+    "value": 0.0606,
+    "low": 0.0,
+    "high": 0.1515
+   },
+   "category_macro_f1": {
+    "value": 0.0833,
+    "low": 0.0,
+    "high": 0.1667
+   },
+   "priority_exact": {
+    "value": 0.3939,
+    "low": 0.2424,
+    "high": 0.5758
+   },
+   "priority_within1": {
+    "value": 0.7273,
+    "low": 0.5758,
+    "high": 0.8485
+   },
+   "priority_qwk": {
+    "value": 0.2766,
+    "low": 0.0357,
+    "high": 0.4967
+   },
+   "priority_mae": {
+    "value": 0.9091,
+    "low": 0.6364,
+    "high": 1.1818
+   },
+   "register_accuracy": {
+    "value": 0.8182,
+    "low": 0.6667,
+    "high": 0.9394
+   },
+   "register_macro_f1": {
+    "value": 0.8195,
+    "low": 0.6502,
+    "high": 0.9362
+   },
+   "conflict_accuracy": {
+    "value": 1.0,
+    "low": 1.0,
+    "high": 1.0
+   },
+   "task_precision": {
+    "value": 0.2308,
+    "low": 0.1162,
+    "high": 0.3514
+   },
+   "task_recall": {
+    "value": 0.4737,
+    "low": 0.2497,
+    "high": 0.7061
+   },
+   "task_f1": {
+    "value": 0.3103,
+    "low": 0.1633,
+    "high": 0.4615
+   },
+   "date_precision": {
+    "value": 0.6071,
+    "low": 0.4062,
+    "high": 0.8149
+   },
+   "date_recall": {
+    "value": 0.7727,
+    "low": 0.5833,
+    "high": 0.9413
+   },
+   "date_f1": {
+    "value": 0.68,
+    "low": 0.4898,
+    "high": 0.8573
+   },
+   "span_micro_f1": {
+    "value": 0.4815,
+    "low": 0.3453,
+    "high": 0.6106
+   },
+   "date_resolution_accuracy": {
+    "value": 0.6818,
+    "low": 0.4783,
+    "high": 0.8637
+   },
+   "date_resolution_on_gold_spans": {
+    "value": null,
+    "low": null,
+    "high": null
+   }
+  }
+ },
+ "determinism": {
+  "runs": 2,
+  "emails_with_different_output": 0
+ }
+}

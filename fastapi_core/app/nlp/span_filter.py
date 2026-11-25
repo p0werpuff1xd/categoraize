@@ -52,7 +52,9 @@ _RELATIVE = (
     r"bukas|mamaya(?:ng)?|ngayon(?:g\s+araw)?|makalawa|samakalawa|kinabukasan|"
     r"(?:this|next|coming|end of(?: the)?)\s+(?:week|month|year|quarter|semester|term)|"
     r"end of (?:the )?day|in \d+ (?:days?|weeks?|months?|hours?)|within \d+ (?:days?|weeks?|hours?)|"
-    r"\d+ (?:days?|weeks?) (?:from now|after|before)|susunod na (?:linggo|buwan)"
+    r"\d+ (?:days?|weeks?) (?:from now|after|before)|susunod na (?:linggo|buwan)|"
+    r"(?:this|tomorrow|today|in the)\s+(?:morning|afternoon|evening|night)|after lunch|later today|"
+    r"umaga|tanghali|tanghalian|hapon|gabi|katapusan|sometime|soon"
 )
 _DATE_ANCHOR = re.compile(
     rf"\b(?:{_MONTHS}|{_WEEKDAYS}|{_RELATIVE})\b"
@@ -109,7 +111,9 @@ def filter_spans(spans: Sequence[S], *, promotional: bool, automated: bool = Fal
         return [span for span in spans if span.label not in {"TASK", "DATE"}]
     kept: list[S] = []
     for span in spans:
-        if span.label == "DATE" and (span.resolved is None or not is_date_phrase(span.text)):
+        # An unresolved date with a real date word stays (shown for review);
+        # "TESTS", "day 2" or "1" without one is dropped.
+        if span.label == "DATE" and not is_date_phrase(span.text):
             continue
         if span.label == "TASK" and (is_statement(span.text) or _NO_ACTION.search(span.text)):
             continue

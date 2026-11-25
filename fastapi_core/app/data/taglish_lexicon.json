@@ -62,7 +62,13 @@
     "agad-agad": "immediately",
     "kaagad": "immediately",
     "mamayang": "later today",
-    "bukas ng umaga": "tomorrow morning"
+    "bukas ng umaga": "tomorrow morning",
+    "katapusan ng araw": "end of day",
+    "pagkatapos ng tanghalian": "after lunch",
+    "tanghalian": "lunch",
+    "ngayong hapon": "this afternoon",
+    "ngayong umaga": "this morning",
+    "ngayong gabi": "tonight"
   },
   "weekdays": {
     "lunes": "monday",
