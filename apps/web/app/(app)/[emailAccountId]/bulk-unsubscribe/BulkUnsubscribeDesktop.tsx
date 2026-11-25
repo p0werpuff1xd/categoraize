@@ -129,7 +129,7 @@ export function BulkUnsubscribeRowDesktop({
       className={cn(
         "cursor-pointer hover:bg-muted/50 dark:hover:bg-muted/50",
         checked &&
-          "bg-blue-500/[.08] hover:bg-blue-500/[.08] dark:hover:bg-blue-500/[.08]",
+          "bg-indigo-500/[.08] hover:bg-indigo-500/[.08] dark:hover:bg-indigo-500/[.08]",
       )}
       aria-selected={selected || undefined}
       data-selected={selected || undefined}

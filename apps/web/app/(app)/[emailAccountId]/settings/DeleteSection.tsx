@@ -145,7 +145,7 @@ export function DeleteSection() {
                             Subscription" above or going to the{" "}
                             <Link
                               href="/premium"
-                              className="text-blue-600 underline hover:text-blue-800"
+                              className="text-indigo-600 underline hover:text-indigo-800"
                               onClick={() => setIsDialogOpen(false)}
                             >
                               premium page

@@ -118,7 +118,7 @@ const TextLink = forwardRef<HTMLAnchorElement, LinkProps>(
     <Link
       ref={ref}
       className={cn(
-        "font-semibold text-blue-600 hover:underline dark:text-primary",
+        "font-semibold text-indigo-600 hover:underline dark:text-primary",
         className,
       )}
       {...props}

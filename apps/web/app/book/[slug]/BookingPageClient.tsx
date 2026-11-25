@@ -325,7 +325,7 @@ function BookingSuccessCard({
             {success.rescheduleUrl ? (
               <a
                 href={success.rescheduleUrl}
-                className="font-medium text-blue-600 underline"
+                className="font-medium text-indigo-600 underline"
               >
                 Reschedule
               </a>
@@ -334,7 +334,7 @@ function BookingSuccessCard({
             {success.cancelUrl ? (
               <a
                 href={success.cancelUrl}
-                className="font-medium text-blue-600 underline"
+                className="font-medium text-indigo-600 underline"
               >
                 cancel booking
               </a>

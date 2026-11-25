@@ -76,7 +76,7 @@ function ActivityLogRow({
       {isCompleted ? (
         <CheckCircle2Icon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-green-600" />
       ) : showSpinner ? (
-        <LoaderIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 animate-spin text-blue-600" />
+        <LoaderIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 animate-spin text-indigo-600" />
       ) : (
         <div className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
       )}

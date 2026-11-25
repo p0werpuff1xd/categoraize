@@ -101,14 +101,14 @@ function SharedThreadIllustration() {
       />
       <path
         d="M112 60h68a6 6 0 0 1 6 6v30a6 6 0 0 1-6 6h-48l-10 10v-10h-10a6 6 0 0 1-6-6V66a6 6 0 0 1 6-6Z"
-        className="fill-background stroke-blue-500 dark:stroke-blue-400"
+        className="fill-background stroke-indigo-500 dark:stroke-indigo-400"
         strokeWidth="1.5"
       />
       <circle
         cx="125"
         cy="75"
         r="5"
-        className="fill-blue-500 dark:fill-blue-400"
+        className="fill-indigo-500 dark:fill-indigo-400"
       />
       <rect
         x="135"
@@ -116,7 +116,7 @@ function SharedThreadIllustration() {
         width="36"
         height="8"
         rx="4"
-        className="fill-blue-100 dark:fill-blue-500/30"
+        className="fill-indigo-100 dark:fill-indigo-500/30"
       />
       <rect
         x="120"

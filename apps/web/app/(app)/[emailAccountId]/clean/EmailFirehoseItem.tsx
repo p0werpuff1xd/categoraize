@@ -49,7 +49,7 @@ export function EmailItem({
     <div
       className={cn(
         "flex items-center rounded-md border p-2 text-sm transition-all duration-300",
-        pending && "border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20",
+        pending && "border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/20",
         archive && "border-green-500/30",
         label && "border-yellow-500/30",
       )}
@@ -94,7 +94,7 @@ function StatusCircle({ status }: { status: Status }) {
       className={cn(
         "mr-2 size-2 rounded-full",
         (status === "markedDone" || status === "markingDone") && "bg-green-500",
-        status === "keep" && "bg-blue-500",
+        status === "keep" && "bg-indigo-500",
         status === "labelled" && "bg-yellow-500",
       )}
     />

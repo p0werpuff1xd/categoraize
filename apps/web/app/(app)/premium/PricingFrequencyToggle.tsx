@@ -94,7 +94,7 @@ export function PricingFrequencyToggle({
 
 export function DiscountBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full bg-blue-600/10 px-2.5 py-1 text-xs font-semibold leading-5 text-blue-600">
+    <span className="rounded-full bg-indigo-600/10 px-2.5 py-1 text-xs font-semibold leading-5 text-indigo-600">
       {children}
     </span>
   );

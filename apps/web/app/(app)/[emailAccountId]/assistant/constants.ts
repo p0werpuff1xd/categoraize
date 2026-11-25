@@ -17,7 +17,7 @@ import {
 import { ActionType } from "@/generated/prisma/enums";
 
 export const ACTION_TYPE_TEXT_COLORS = {
-  [ActionType.LABEL]: "text-blue-500",
+  [ActionType.LABEL]: "text-indigo-500",
   [ActionType.DRAFT_EMAIL]: "text-green-500",
   [ActionType.DRAFT_MESSAGING_CHANNEL]: "text-green-500",
   [ActionType.REPLY]: "text-green-500",

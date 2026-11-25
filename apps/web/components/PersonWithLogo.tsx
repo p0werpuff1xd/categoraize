@@ -15,7 +15,7 @@ export function PersonWithLogo({
         <Image
           src={src}
           alt={name}
-          className="h-12 w-12 rounded-full object-cover ring-2 ring-blue-200"
+          className="h-12 w-12 rounded-full object-cover ring-2 ring-indigo-200"
           width={48}
           height={48}
         />

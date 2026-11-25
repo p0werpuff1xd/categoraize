@@ -102,7 +102,7 @@ export default function GuestBookingRescheduledEmail({
                 Join meeting:{" "}
                 <Link
                   href={meetingLink}
-                  className="font-mono text-[12px] text-blue-600 underline"
+                  className="font-mono text-[12px] text-indigo-600 underline"
                 >
                   {meetingLink}
                 </Link>

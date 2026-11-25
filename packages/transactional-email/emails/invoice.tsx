@@ -36,13 +36,13 @@ export default function InvoiceEmail({
               </Text>
               <Button
                 href={invoiceUrl}
-                className="box-border rounded-lg bg-blue-600 px-5 py-3 text-[15px] font-semibold text-white no-underline"
+                className="box-border rounded-lg bg-indigo-600 px-5 py-3 text-[15px] font-semibold text-white no-underline"
               >
                 Download invoice
               </Button>
               <Text className="mb-0 mt-8 text-[13px] leading-5 text-gray-500">
                 You can turn off automatic invoice emails in your{" "}
-                <Link href={`${baseUrl}/settings`} className="text-blue-600">
+                <Link href={`${baseUrl}/settings`} className="text-indigo-600">
                   billing settings
                 </Link>
                 .

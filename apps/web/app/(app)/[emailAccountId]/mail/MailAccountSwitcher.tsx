@@ -395,7 +395,7 @@ function AllAccountsIcon({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="size-2 rounded-full bg-blue-600" />
+      <span className="size-2 rounded-full bg-indigo-600" />
       <span className="size-2 rounded-full bg-violet-500" />
       <span className="size-2 rounded-full bg-emerald-500" />
     </span>

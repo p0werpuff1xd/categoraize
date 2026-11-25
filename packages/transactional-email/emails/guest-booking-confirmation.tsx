@@ -99,7 +99,7 @@ export default function GuestBookingConfirmationEmail({
                 Join meeting:{" "}
                 <Link
                   href={meetingLink}
-                  className="font-mono text-[12px] text-blue-600 underline"
+                  className="font-mono text-[12px] text-indigo-600 underline"
                 >
                   {meetingLink}
                 </Link>
@@ -115,7 +115,7 @@ export default function GuestBookingConfirmationEmail({
       </Section>
 
       {guestNote ? (
-        <Section className="mb-6 rounded-r-lg border-l-[3px] border-blue-600 bg-[#FAFBFD] px-4 py-3">
+        <Section className="mb-6 rounded-r-lg border-l-[3px] border-indigo-600 bg-[#FAFBFD] px-4 py-3">
           <Text className="m-0 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
             Your note
           </Text>

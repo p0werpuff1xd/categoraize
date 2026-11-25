@@ -147,7 +147,7 @@ function TestRulesContentRow({
   return (
     <TableRow
       className={
-        testing ? "animate-pulse bg-blue-50 dark:bg-blue-950/20" : undefined
+        testing ? "animate-pulse bg-indigo-50 dark:bg-indigo-950/20" : undefined
       }
     >
       <TableCell>

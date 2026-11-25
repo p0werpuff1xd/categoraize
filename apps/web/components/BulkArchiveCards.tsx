@@ -716,7 +716,7 @@ function ArchiveSenderStatus({
       );
     case "processing":
       return (
-        <span className="text-sm text-blue-600">
+        <span className="text-sm text-indigo-600">
           {status.threadsTotal ? (
             `${status.threadsTotal - status.threadIds.length} / ${status.threadsTotal}`
           ) : (
@@ -771,7 +771,7 @@ function MarkReadSenderStatus({
       );
     case "processing":
       return (
-        <span className="text-sm text-blue-600">
+        <span className="text-sm text-indigo-600">
           {status.threadsTotal - status.threadIds.length} /{" "}
           {status.threadsTotal}
         </span>
@@ -815,7 +815,7 @@ function DeleteSenderStatus({
       );
     case "processing":
       return (
-        <span className="text-sm text-blue-600">
+        <span className="text-sm text-indigo-600">
           {status.threadsTotal - status.threadIds.length} /{" "}
           {status.threadsTotal}
         </span>

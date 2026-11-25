@@ -85,7 +85,7 @@ export default function DebugDraftsPage() {
                             emailAccountId,
                           )}
                           target="_blank"
-                          className="text-blue-500 hover:text-blue-600"
+                          className="text-indigo-500 hover:text-indigo-600"
                         >
                           Sent Email
                         </Link>
@@ -96,7 +96,7 @@ export default function DebugDraftsPage() {
                             emailAccountId,
                           )}
                           target="_blank"
-                          className="text-blue-500 hover:text-blue-600"
+                          className="text-indigo-500 hover:text-indigo-600"
                         >
                           Draft
                         </Link>

@@ -92,7 +92,7 @@ export default function EmailReportPage() {
                         <h4 className="font-semibold text-gray-900">
                           Professional Persona
                         </h4>
-                        <p className="text-2xl font-bold text-blue-600">
+                        <p className="text-2xl font-bold text-indigo-600">
                           {report.executiveSummary?.userProfile.persona}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -203,7 +203,7 @@ export default function EmailReportPage() {
                       <h4 className="font-semibold text-gray-900 mb-3">
                         Professional Identity
                       </h4>
-                      <p className="text-lg font-medium text-blue-600 mb-2">
+                      <p className="text-lg font-medium text-indigo-600 mb-2">
                         {report.userPersona?.professionalIdentity.persona}
                       </p>
                       <div className="space-y-2">
@@ -415,7 +415,7 @@ export default function EmailReportPage() {
                               <p className="font-medium text-gray-900 text-sm mb-1">
                                 {label.name}
                               </p>
-                              <p className="text-lg font-bold text-blue-600">
+                              <p className="text-lg font-bold text-indigo-600">
                                 {label.emailCount}
                               </p>
                               <p className="text-xs text-gray-500">
@@ -615,7 +615,7 @@ const getDifficultyColor = (difficulty: "easy" | "medium" | "hard") => {
 const getImpactColor = (impact: "high" | "medium" | "low") => {
   switch (impact) {
     case "high":
-      return "bg-blue-100 text-blue-800";
+      return "bg-indigo-100 text-indigo-800";
     case "medium":
       return "bg-purple-100 text-purple-800";
     case "low":

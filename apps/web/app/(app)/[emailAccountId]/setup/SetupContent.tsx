@@ -204,7 +204,7 @@ const StepItem = ({
                 <button
                   type="button"
                   onClick={onActionClick}
-                  className="rounded-md bg-blue-100 px-3 py-1 text-sm text-blue-600 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/75"
+                  className="rounded-md bg-indigo-100 px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-400 dark:hover:bg-indigo-900/75"
                 >
                   {actionText}
                 </button>
@@ -212,7 +212,7 @@ const StepItem = ({
                 <Link
                   href={href}
                   {...linkProps}
-                  className="rounded-md bg-blue-100 px-3 py-1 text-sm text-blue-600 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/75"
+                  className="rounded-md bg-indigo-100 px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-400 dark:hover:bg-indigo-900/75"
                 >
                   {actionText}
                 </Link>

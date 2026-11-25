@@ -88,7 +88,7 @@ export function CancelBookingClient({
                   {rescheduleHref ? (
                     <a
                       href={rescheduleHref}
-                      className="text-sm font-medium text-blue-600 underline"
+                      className="text-sm font-medium text-indigo-600 underline"
                     >
                       Reschedule instead
                     </a>

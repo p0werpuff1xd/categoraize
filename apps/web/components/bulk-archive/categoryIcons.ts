@@ -48,9 +48,9 @@ export function getCategoryStyle(categoryName: string) {
   if (name.includes("notification")) {
     return {
       icon: BellIcon,
-      iconColor: "text-new-blue-600",
-      borderColor: "from-new-blue-150 to-new-blue-200",
-      gradient: "from-new-blue-50 to-new-blue-100",
+      iconColor: "text-indigo-600",
+      borderColor: "from-indigo-100 to-indigo-200",
+      gradient: "from-indigo-50 to-indigo-100",
     };
   }
   if (name === "uncategorized") {

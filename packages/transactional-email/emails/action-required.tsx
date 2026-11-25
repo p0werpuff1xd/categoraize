@@ -91,7 +91,7 @@ const ActionRequiredEmail: ActionRequiredEmailComponent = ({
               <Section className="text-center mb-8">
                 <Button
                   href={fullActionUrl}
-                  className="bg-blue-600 text-white px-8 py-4 rounded-[8px] text-[16px] font-semibold no-underline box-border inline-block"
+                  className="bg-indigo-600 text-white px-8 py-4 rounded-[8px] text-[16px] font-semibold no-underline box-border inline-block"
                 >
                   {actionLabel}
                 </Button>

@@ -427,7 +427,7 @@ function ProcessRulesRow({
   return (
     <TableRow
       className={
-        isRunning ? "animate-pulse bg-blue-50 dark:bg-blue-950/20" : undefined
+        isRunning ? "animate-pulse bg-indigo-50 dark:bg-indigo-950/20" : undefined
       }
     >
       <TableCell>

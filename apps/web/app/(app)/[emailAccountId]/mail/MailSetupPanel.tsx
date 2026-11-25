@@ -197,17 +197,17 @@ export function MailSetupPanel({
   return (
     <section
       aria-label={t`Mail setup`}
-      className="fixed right-4 bottom-4 left-4 z-40 flex max-h-[min(32rem,calc(100vh-2rem))] flex-col overflow-hidden rounded-xl border border-blue-200 bg-popover dark:border-blue-900 text-popover-foreground text-sm shadow-xl sm:left-auto sm:w-96"
+      className="fixed right-4 bottom-4 left-4 z-40 flex max-h-[min(32rem,calc(100vh-2rem))] flex-col overflow-hidden rounded-xl border border-indigo-200 bg-popover dark:border-indigo-900 text-popover-foreground text-sm shadow-xl sm:left-auto sm:w-96"
     >
-      <div className="h-1 bg-blue-100 dark:bg-blue-950" aria-hidden>
+      <div className="h-1 bg-indigo-100 dark:bg-indigo-950" aria-hidden>
         <div
           className="h-full rounded-r-full [background-image:var(--button-gradient)] transition-[width] duration-300"
           style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
         />
       </div>
-      <header className="bg-gradient-to-b from-blue-50 to-transparent px-4 pt-3 pb-2 dark:from-blue-950/40">
+      <header className="bg-gradient-to-b from-indigo-50 to-transparent px-4 pt-3 pb-2 dark:from-indigo-950/40">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-blue-600 dark:text-blue-400">
+          <span className="font-medium text-indigo-600 dark:text-indigo-400">
             <Trans>
               Step {stepIndex + 1} of {steps.length}
             </Trans>
@@ -244,7 +244,7 @@ export function MailSetupPanel({
                 className={cn(
                   "flex flex-col gap-2 rounded-lg border p-2 text-left transition-colors hover:bg-muted/50",
                   layout === mode &&
-                    "border-blue-500 bg-blue-50/50 ring-1 ring-blue-500 dark:bg-blue-950/30",
+                    "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500 dark:bg-indigo-950/30",
                 )}
               >
                 <LayoutSketch mode={mode} />
@@ -432,15 +432,15 @@ function BundleSketch({ bundled }: { bundled: boolean }) {
     >
       {row(0)}
       {bundled ? (
-        <div className="flex items-center gap-2 rounded-md bg-blue-100 px-1.5 py-1 dark:bg-blue-950">
-          <LayersIcon className="size-3 text-blue-600 dark:text-blue-400" />
-          <span className="h-1 w-16 rounded-full bg-blue-400/60" />
-          <span className="ml-auto rounded-full bg-blue-600 px-1.5 font-medium text-[10px] text-white leading-4">
+        <div className="flex items-center gap-2 rounded-md bg-indigo-100 px-1.5 py-1 dark:bg-indigo-950">
+          <LayersIcon className="size-3 text-indigo-600 dark:text-indigo-400" />
+          <span className="h-1 w-16 rounded-full bg-indigo-400/60" />
+          <span className="ml-auto rounded-full bg-indigo-600 px-1.5 font-medium text-[10px] text-white leading-4">
             3
           </span>
         </div>
       ) : (
-        [1, 2, 3].map((key) => row(key, "[&>span:first-child]:bg-blue-500"))
+        [1, 2, 3].map((key) => row(key, "[&>span:first-child]:bg-indigo-500"))
       )}
       {row(4)}
     </div>

@@ -13,7 +13,7 @@ export function ChatIllustration() {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4, ease: EASE }}
-        className="self-end max-w-[80%] rounded-2xl rounded-br-sm bg-blue-600 px-3 py-2 text-left text-[11px] leading-snug text-white shadow-sm"
+        className="self-end max-w-[80%] rounded-2xl rounded-br-sm bg-indigo-600 px-3 py-2 text-left text-[11px] leading-snug text-white shadow-sm"
       >
         <Trans>Archive all newsletters from last week</Trans>
       </motion.div>

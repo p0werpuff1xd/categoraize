@@ -38,7 +38,7 @@ export const textVariants = cva("font-semibold", {
       lg: "text-base",
     },
     color: {
-      blue: "text-blue-600",
+      blue: "text-indigo-600",
       purple: "text-purple-600",
       green: "text-green-600",
       yellow: "text-yellow-600",
@@ -57,7 +57,7 @@ export type IconCircleColor = VariantProps<typeof textVariants>["color"];
 const backgroundVariants = cva("absolute inset-0 rounded-full shadow-sm", {
   variants: {
     color: {
-      blue: "bg-gradient-to-b from-blue-600/40 to-blue-600/5",
+      blue: "bg-gradient-to-b from-indigo-600/40 to-indigo-600/5",
       purple: "bg-gradient-to-b from-purple-600/40 to-purple-600/5",
       green: "bg-gradient-to-b from-green-600/40 to-green-600/5",
       yellow: "bg-gradient-to-b from-yellow-600/40 to-yellow-600/5",

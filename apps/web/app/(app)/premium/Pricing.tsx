@@ -87,7 +87,7 @@ export default function Pricing(props: PricingProps) {
   const header = props.header || (
     <div className="mb-12">
       <div className="mx-auto max-w-2xl text-center lg:max-w-4xl">
-        <h2 className="font-title text-base leading-7 text-blue-600">
+        <h2 className="font-title text-base leading-7 text-indigo-600">
           <Trans>Pricing</Trans>
         </h2>
         <p className="mt-2 font-title text-4xl text-gray-900 sm:text-5xl">
@@ -315,7 +315,7 @@ function PriceTier({
           <h3
             id={tier.name}
             className={cn(
-              tier.mostPopular ? "text-blue-600" : "text-gray-900",
+              tier.mostPopular ? "text-indigo-600" : "text-gray-900",
               "font-title text-lg leading-8",
             )}
           >
@@ -374,7 +374,7 @@ function PriceTier({
             return (
               <li key={feature.text} className="flex gap-x-3">
                 <CheckIcon
-                  className="h-6 w-5 flex-none text-blue-600"
+                  className="h-6 w-5 flex-none text-indigo-600"
                   aria-hidden="true"
                 />
                 <span className="flex items-center gap-2">

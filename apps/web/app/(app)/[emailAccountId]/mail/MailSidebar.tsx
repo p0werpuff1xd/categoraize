@@ -352,7 +352,7 @@ export function MailSidebar({
             aria-label={t`Compose`}
             className="mb-2 size-8 shrink-0 self-center rounded-lg"
           >
-            <PenLineIcon className="size-4 text-blue-600 dark:text-blue-400" />
+            <PenLineIcon className="size-4 text-indigo-600 dark:text-indigo-400" />
           </Button>
         </ShortcutTooltip>
       ) : (
@@ -364,7 +364,7 @@ export function MailSidebar({
           // The 9px inset plus the border lines the icon up with the rows below.
           className="mb-3 w-full shrink-0 justify-start gap-2.5 rounded-xl px-[9px]"
         >
-          <PenLineIcon className="size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <PenLineIcon className="size-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
           <span className="flex-1 text-left">
             <Trans>Compose</Trans>
           </span>

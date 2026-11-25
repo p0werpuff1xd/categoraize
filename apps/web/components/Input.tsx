@@ -218,7 +218,7 @@ export function LabelWithRightButton(
       <Label {...props} />
       <button
         type="button"
-        className="cursor-pointer bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-sm text-transparent hover:from-sky-600 hover:to-blue-700"
+        className="cursor-pointer bg-gradient-to-r from-sky-500 to-indigo-600 bg-clip-text text-sm text-transparent hover:from-sky-600 hover:to-indigo-700"
         onClick={props.rightButton.onClick}
       >
         {props.rightButton.text}

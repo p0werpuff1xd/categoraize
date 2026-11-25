@@ -20,7 +20,7 @@ export function FallbackIcon({ seed, size = 20 }: FallbackIconProps) {
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
   const gradients = [
-    "from-blue-300 to-blue-700",
+    "from-indigo-300 to-indigo-700",
     "from-purple-300 to-purple-700",
     "from-green-300 to-green-700",
     "from-emerald-300 to-emerald-700",

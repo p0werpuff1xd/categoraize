@@ -23,7 +23,7 @@ const emails = [
     snippet: msg`- Hi! Just wanted to check in on...`,
     time: msg`9:15 AM`,
     label: msg`To Reply`,
-    labelColor: "bg-blue-600",
+    labelColor: "bg-indigo-600",
   },
   {
     id: 3,

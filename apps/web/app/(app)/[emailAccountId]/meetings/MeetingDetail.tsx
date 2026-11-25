@@ -269,7 +269,7 @@ export function MeetingDetail({
             <CardBlue>
               <CardContent className="space-y-3 p-4">
                 <div className="flex items-center gap-2">
-                  <MailPlusIcon className="size-4 text-blue-600 dark:text-blue-400" />
+                  <MailPlusIcon className="size-4 text-indigo-600 dark:text-indigo-400" />
                   <span className="text-sm font-medium">
                     <Trans>Follow-up draft is ready</Trans>
                   </span>

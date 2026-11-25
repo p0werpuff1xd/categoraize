@@ -73,7 +73,7 @@ export function StepIntent({
             key={option.intent}
             type="button"
             disabled={isExecuting}
-            className="flex items-center gap-4 rounded-xl border bg-card p-4 text-left text-card-foreground shadow-sm transition-all hover:border-blue-600 hover:ring-2 hover:ring-blue-100 disabled:opacity-60 data-[selected=true]:border-blue-600 data-[selected=true]:ring-2 data-[selected=true]:ring-blue-100"
+            className="flex items-center gap-4 rounded-xl border bg-card p-4 text-left text-card-foreground shadow-sm transition-all hover:border-indigo-600 hover:ring-2 hover:ring-indigo-100 disabled:opacity-60 data-[selected=true]:border-indigo-600 data-[selected=true]:ring-2 data-[selected=true]:ring-indigo-100"
             data-selected={selected === option.intent}
             onClick={() => {
               setSelected(option.intent);

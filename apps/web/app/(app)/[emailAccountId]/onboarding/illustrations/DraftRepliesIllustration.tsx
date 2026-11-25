@@ -112,7 +112,7 @@ export function DraftRepliesIllustration() {
           aria-hidden="true"
         >
           <div className="flex items-center gap-1">
-            <span className="rounded bg-blue-600 px-2.5 py-0.5 text-[9px] font-medium text-white">
+            <span className="rounded bg-indigo-600 px-2.5 py-0.5 text-[9px] font-medium text-white">
               <Trans>Send</Trans>
             </span>
             <div className="ml-1 flex items-center">

@@ -27,31 +27,31 @@ function SunriseScene() {
         <linearGradient id="iz-sky" x1="0" x2="0" y1="0" y2="1">
           <stop
             offset="55%"
-            className="[stop-color:#eff6ff] dark:[stop-color:#262c38]"
+            className="[stop-color:#eef2ff] dark:[stop-color:#262c38]"
           />
           <stop
             offset="100%"
-            className="[stop-color:#dbeafe] dark:[stop-color:#2c3a52]"
+            className="[stop-color:#e0e7ff] dark:[stop-color:#2c3a52]"
           />
         </linearGradient>
         <linearGradient id="iz-sun" x1="0" x2="0" y1="0" y2="1">
           <stop
             offset="0%"
-            className="[stop-color:#bfdbfe] dark:[stop-color:#5b7aa8]"
+            className="[stop-color:#c7d2fe] dark:[stop-color:#5b7aa8]"
           />
           <stop
             offset="100%"
-            className="[stop-color:#93c5fd] dark:[stop-color:#4a6894]"
+            className="[stop-color:#a5b4fc] dark:[stop-color:#4a6894]"
           />
         </linearGradient>
         <linearGradient id="iz-water" x1="0" x2="0" y1="0" y2="1">
           <stop
             offset="0%"
-            className="[stop-color:#dbeafe] dark:[stop-color:#2c3a52]"
+            className="[stop-color:#e0e7ff] dark:[stop-color:#2c3a52]"
           />
           <stop
             offset="100%"
-            className="[stop-color:#eff6ff] dark:[stop-color:#262c38]"
+            className="[stop-color:#eef2ff] dark:[stop-color:#262c38]"
           />
         </linearGradient>
         <radialGradient id="iz-fade" cx="0.5" cy="0.5" r="0.5">
@@ -74,11 +74,11 @@ function SunriseScene() {
 
           <path
             d="M0 118 C40 96 78 92 116 108 C150 122 176 104 214 98 C258 90 300 104 360 96 L360 140 L0 140 Z"
-            className="fill-blue-100 dark:fill-[#2f3d57]"
+            className="fill-indigo-100 dark:fill-[#2f3d57]"
           />
           <path
             d="M0 128 C52 112 92 118 132 126 C176 134 214 116 262 116 C304 116 332 126 360 122 L360 140 L0 140 Z"
-            className="fill-blue-200 dark:fill-[#364869]"
+            className="fill-indigo-200 dark:fill-[#364869]"
           />
         </g>
 
@@ -86,7 +86,7 @@ function SunriseScene() {
         {REFLECTIONS.map((line) => (
           <rect
             key={line.y}
-            className="fill-blue-300 dark:fill-[#4a6894]"
+            className="fill-indigo-300 dark:fill-[#4a6894]"
             height="2.5"
             opacity="0.7"
             rx="1.25"
@@ -101,7 +101,7 @@ function SunriseScene() {
             key={bird.x}
             d={`M${bird.x} ${bird.y} q4 -4 8 0 q4 -4 8 0`}
             fill="none"
-            className="stroke-blue-400 dark:stroke-[#8ea6cc]"
+            className="stroke-indigo-400 dark:stroke-[#8ea6cc]"
             strokeLinecap="round"
             strokeOpacity="0.55"
             strokeWidth="1.5"

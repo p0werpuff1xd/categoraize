@@ -67,10 +67,10 @@ const confidenceConfig = {
     label: msg`Review Recommended`,
     description: msg`Senders that may need a closer look`,
     icon: MailOpenIcon,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50 dark:bg-blue-950/30",
-    hoverBgColor: "hover:bg-blue-100 dark:hover:bg-blue-950/50",
-    borderColor: "border-blue-200 dark:border-blue-900",
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+    hoverBgColor: "hover:bg-indigo-100 dark:hover:bg-indigo-950/50",
+    borderColor: "border-indigo-200 dark:border-indigo-900",
     badgeVariant: "outline" as const,
   },
 };
@@ -303,7 +303,7 @@ export function BulkArchiveTab() {
                 )}
                 {groupedByConfidence.low.length > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <div className="size-2 rounded-full bg-blue-500" />
+                    <div className="size-2 rounded-full bg-indigo-500" />
                     <span>
                       <Plural
                         value={groupedByConfidence.low.length}
@@ -565,7 +565,7 @@ function ArchiveStatus({
       );
     case "processing":
       return (
-        <span className="text-sm text-blue-600">
+        <span className="text-sm text-indigo-600">
           {status.threadsTotal
             ? `${status.threadsTotal - status.threadIds.length} / ${status.threadsTotal}`
             : t`Archiving...`}

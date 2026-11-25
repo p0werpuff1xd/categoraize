@@ -140,7 +140,7 @@ function BookingCalendar({
       }}
       modifiersClassNames={{
         available:
-          "bg-blue-50 font-semibold text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300",
+          "bg-indigo-50 font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300",
       }}
       className="mx-auto w-fit max-w-full"
       classNames={{
@@ -156,7 +156,7 @@ function BookingCalendar({
         ),
         day_selected:
           "bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white",
-        day_today: "ring-1 ring-blue-200",
+        day_today: "ring-1 ring-indigo-200",
         day_disabled:
           "pointer-events-none cursor-not-allowed text-muted-foreground opacity-40 hover:bg-transparent hover:text-muted-foreground",
       }}

@@ -112,7 +112,7 @@ function getIconColorClass(color: Color): string {
     case "yellow":
       return "text-yellow-600 dark:text-yellow-400";
     case "blue":
-      return "text-blue-600 dark:text-blue-400";
+      return "text-indigo-600 dark:text-indigo-400";
     case "red":
       return "text-red-600 dark:text-red-400";
     case "purple":

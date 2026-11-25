@@ -27,17 +27,17 @@ import { JOIN_RULE_OPTIONS } from "@/app/(app)/[emailAccountId]/meetings/join-ru
 
 const features = [
   {
-    icon: <MicIcon className="size-4 text-blue-500" />,
+    icon: <MicIcon className="size-4 text-indigo-500" />,
     title: msg`Notes and transcript`,
     description: msg`A summary of every call`,
   },
   {
-    icon: <ListChecksIcon className="size-4 text-blue-500" />,
+    icon: <ListChecksIcon className="size-4 text-indigo-500" />,
     title: msg`Action items with owners`,
     description: msg`What was decided, and who owns what`,
   },
   {
-    icon: <MailPlusIcon className="size-4 text-blue-500" />,
+    icon: <MailPlusIcon className="size-4 text-indigo-500" />,
     title: msg`Follow-up drafted for you`,
     description: msg`Waiting in your drafts, never sent`,
   },

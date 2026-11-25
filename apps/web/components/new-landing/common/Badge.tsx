@@ -32,7 +32,7 @@ export function Badge({
     {
       variants: {
         variant: {
-          blue: "text-new-blue-600 from-new-blue-150 to-new-blue-200 shadow-[0px_2px_3.4px_0px_#CFD9F938,0px_1px_1px_0px_#CFD9F994]",
+          blue: "text-indigo-600 from-indigo-100 to-indigo-200 shadow-[0px_2px_3.4px_0px_#CFD9F938,0px_1px_1px_0px_#CFD9F994]",
           purple:
             "text-new-purple-600 from-new-purple-200 to-new-purple-300 shadow-[0px_2px_3.4px_0px_#CFD9F938,0px_1px_1px_0px_#CFD9F994]",
           "dark-blue":
@@ -62,7 +62,7 @@ export function Badge({
     {
       variants: {
         variant: {
-          blue: "from-new-blue-50 to-new-blue-100",
+          blue: "from-indigo-50 to-indigo-100",
           purple: "from-new-purple-50 to-new-purple-100",
           "dark-blue": "from-new-indigo-50 to-new-indigo-100",
           green: "from-new-green-50 to-new-green-100",

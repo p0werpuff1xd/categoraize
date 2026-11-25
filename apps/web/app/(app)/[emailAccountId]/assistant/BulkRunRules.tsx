@@ -275,7 +275,7 @@ export function BulkRunRules() {
               </ItemCard>
 
               {isTrial && (
-                <div className="flex flex-col gap-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-200 sm:flex-row sm:items-center sm:justify-between">
                   <span>
                     {trialAiLimitMessage ??
                       t`Trials can process up to ${TRIAL_BULK_PROCESS_EMAIL_LIMIT.toLocaleString()} past emails at a time.`}
@@ -283,7 +283,7 @@ export function BulkRunRules() {
                   <EndTrialButton
                     size="sm"
                     variant="outline"
-                    className="self-start border-blue-300 bg-white text-blue-900 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-100 dark:hover:bg-blue-900 sm:self-auto"
+                    className="self-start border-indigo-300 bg-white text-indigo-900 hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-100 dark:hover:bg-indigo-900 sm:self-auto"
                   />
                 </div>
               )}
@@ -340,7 +340,7 @@ export function BulkRunRules() {
               )}
 
               {state.runResult && state.runResult.count === 0 && (
-                <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                <div className="mt-4 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
                   <NoTargetedEmailsMessage
                     includeRead={isIncludeReadEnabled}
                     rerun={isRerunEnabled}

@@ -66,7 +66,7 @@ export function BookingSidebar({
       {backButton}
       <Avatar className="size-12">
         <AvatarImage src={bookingLink.hostImage || undefined} alt={hostName} />
-        <AvatarFallback className="bg-blue-50 text-lg font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+        <AvatarFallback className="bg-indigo-50 text-lg font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
           {initial}
         </AvatarFallback>
       </Avatar>

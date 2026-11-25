@@ -582,7 +582,7 @@ function ActionCard({
                   part.startsWith("{{") ? (
                     <span
                       key={idx}
-                      className="rounded bg-blue-100 px-1 text-blue-500 dark:bg-blue-950 dark:text-blue-400"
+                      className="rounded bg-indigo-100 px-1 text-indigo-500 dark:bg-indigo-950 dark:text-indigo-400"
                     >
                       <sub className="font-sans">AI</sub>
                       {part}
@@ -1687,8 +1687,8 @@ cal.com/example`}
 
 function VariableProTip() {
   return (
-    <div className="mt-4 rounded-md bg-blue-50 p-3 dark:bg-blue-950/30">
-      <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+    <div className="mt-4 rounded-md bg-indigo-50 p-3 dark:bg-indigo-950/30">
+      <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
         <span>
           <Trans>
             ✨ Use {OPEN_VARIABLE}variables{CLOSE_VARIABLE} for personalized

@@ -343,7 +343,7 @@ export function ManageInboxResult({
       initialOpen={isInProgress}
     >
       {isInProgress && (
-        <ToolPanel className="border-blue-200 bg-blue-50/60 text-blue-700 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200">
+        <ToolPanel className="border-indigo-200 bg-indigo-50/60 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/20 dark:text-indigo-200">
           <div className="text-sm">
             <Trans>Processing senders now.</Trans>
           </div>

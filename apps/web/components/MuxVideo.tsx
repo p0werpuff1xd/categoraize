@@ -70,7 +70,7 @@ export function MuxVideo({
           autoPlay={autoPlay}
           playbackId={playbackId}
           metadata={{ video_title: title }}
-          accentColor="#3b82f6"
+          accentColor="#6366f1"
           thumbnailTime={thumbnailTime}
           className={cn(
             "aspect-video h-full w-full rounded-md shadow ring-1 ring-gray-900/10 transition-all duration-200 ease-out group-hover:brightness-[0.9]",

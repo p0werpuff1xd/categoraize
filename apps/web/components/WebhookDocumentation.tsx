@@ -171,8 +171,8 @@ export function WebhookPayloadDocumentation() {
           </div>
         </div>
 
-        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
-          <div className="text-sm text-blue-600 dark:text-blue-400">
+        <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-md">
+          <div className="text-sm text-indigo-600 dark:text-indigo-400">
             <Trans>
               <strong>Authentication:</strong> Each request includes an{" "}
               <code>X-Webhook-Secret</code> header with your webhook secret for
@@ -191,7 +191,7 @@ export function WebhookDocumentationLink() {
       <Button
         variant="link"
         size="xs"
-        className="h-auto p-0 text-xs text-blue-600 hover:text-blue-800"
+        className="h-auto p-0 text-xs text-indigo-600 hover:text-indigo-800"
       >
         <Trans>View payload structure</Trans>
       </Button>

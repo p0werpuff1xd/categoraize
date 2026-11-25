@@ -35,7 +35,7 @@ const MAX_SUBJECTS_PER_SENDER = 3;
 
 const BADGES = {
   green: { bg: "#F3FFEF", border: "#DDF4D3", color: "#17A34A" },
-  blue: { bg: "#EFF6FF", border: "#D6E8FC", color: ACCENT },
+  blue: { bg: "#EEF2FF", border: "#D6E8FC", color: ACCENT },
 };
 
 export default function SummaryEmail(props: SummaryEmailProps) {

@@ -85,7 +85,7 @@ export default function HostBookingConfirmationEmail({
       </Section>
 
       {guestNote ? (
-        <Section className="mb-6 rounded-r-lg border-l-[3px] border-blue-600 bg-[#FAFBFD] px-4 py-3">
+        <Section className="mb-6 rounded-r-lg border-l-[3px] border-indigo-600 bg-[#FAFBFD] px-4 py-3">
           <Text className="m-0 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
             Their note
           </Text>

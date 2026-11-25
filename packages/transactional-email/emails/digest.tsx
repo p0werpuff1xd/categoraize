@@ -20,10 +20,10 @@ type DigestItem = {
 
 const colorClasses = {
   blue: {
-    bg: "bg-blue-50",
-    text: "text-blue-800",
-    leftBorder: "border-l-blue-400",
-    bgAccent: "bg-blue-100",
+    bg: "bg-indigo-50",
+    text: "text-indigo-800",
+    leftBorder: "border-l-indigo-400",
+    bgAccent: "bg-indigo-100",
   },
   green: {
     bg: "bg-green-50",

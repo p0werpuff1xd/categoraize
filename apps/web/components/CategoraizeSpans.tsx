@@ -32,7 +32,7 @@ export function HighlightedText({
         className={cn(
           "rounded px-0.5",
           span.label === "TASK"
-            ? "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100"
+            ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100"
             : "bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100",
         )}
       >
@@ -54,7 +54,7 @@ export function HighlightedText({
 export function SpanLegend() {
   return (
     <div className="flex gap-2 text-xs text-muted-foreground">
-      <span className="rounded bg-blue-100 px-1 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100">
+      <span className="rounded bg-indigo-100 px-1 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100">
         TASK
       </span>
       <span className="rounded bg-green-100 px-1 text-green-900 dark:bg-green-900/40 dark:text-green-100">
@@ -126,7 +126,7 @@ export function AddToCalendarLink({
       href={googleCalendarLink({ title, deadline, details })}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-xs font-medium text-blue-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-blue-300"
+      className="text-xs font-medium text-indigo-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-indigo-300"
     >
       Add to Google Calendar
     </a>

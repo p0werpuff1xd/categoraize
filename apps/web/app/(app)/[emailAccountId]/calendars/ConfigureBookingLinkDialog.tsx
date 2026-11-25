@@ -114,7 +114,7 @@ function TabButton({
       className={cn(
         "-mb-px border-b-2 px-3 py-3 text-sm font-medium transition-colors",
         active
-          ? "border-blue-600 text-foreground"
+          ? "border-indigo-600 text-foreground"
           : "border-transparent text-muted-foreground hover:text-foreground",
       )}
     >

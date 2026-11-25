@@ -127,7 +127,7 @@ const CardBlue = React.forwardRef<
   <Card
     ref={ref}
     className={cn(
-      "border-blue-100 bg-gradient-to-tr from-transparent via-blue-50/80 to-blue-500/15 dark:border-blue-900 dark:from-blue-950/50 dark:via-blue-900/20 dark:to-blue-800/10",
+      "border-indigo-100 bg-gradient-to-tr from-transparent via-indigo-50/80 to-indigo-500/15 dark:border-indigo-900 dark:from-indigo-950/50 dark:via-indigo-900/20 dark:to-indigo-800/10",
       className,
     )}
     {...props}
@@ -180,7 +180,7 @@ const ActionCard = React.forwardRef<
           : CardGreen;
     const iconColor =
       variant === "blue"
-        ? "text-blue-600 dark:text-blue-400"
+        ? "text-indigo-600 dark:text-indigo-400"
         : variant === "destructive"
           ? "text-red-600 dark:text-red-400"
           : "text-green-600 dark:text-green-400";

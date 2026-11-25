@@ -102,7 +102,7 @@ export default function MeetingBriefingEmail({
                   - Join link:{" "}
                   <Link
                     href={videoConferenceLink}
-                    className="text-blue-600 underline"
+                    className="text-indigo-600 underline"
                   >
                     {videoConferenceLink}
                   </Link>
@@ -111,7 +111,7 @@ export default function MeetingBriefingEmail({
               {eventUrl && (
                 <Text className="text-sm text-gray-700 mt-0 mb-0">
                   - Calendar link:{" "}
-                  <Link href={eventUrl} className="text-blue-600 underline">
+                  <Link href={eventUrl} className="text-indigo-600 underline">
                     {eventUrl}
                   </Link>
                 </Text>
