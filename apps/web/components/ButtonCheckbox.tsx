@@ -26,7 +26,7 @@ export function ButtonCheckbox({
       className={cn(
         "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
         checked || indeterminate
-          ? "bg-blue-500 border-blue-500 text-white"
+          ? "bg-indigo-600 border-indigo-600 text-white"
           : "border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500",
       )}
     >

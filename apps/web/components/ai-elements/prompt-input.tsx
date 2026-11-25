@@ -173,7 +173,7 @@ export const PromptInputSubmit = ({
       className={cn(
         variant === "default" &&
           size === "icon" &&
-          "size-9 rounded-full bg-blue-500 text-white hover:bg-blue-600",
+          "size-9 rounded-full bg-indigo-600 text-white hover:bg-indigo-700",
         className,
       )}
       size={size}

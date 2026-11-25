@@ -338,7 +338,7 @@ export const ListToolbar = memo(function ListToolbar({
             aria-label={t`Toggle the assistant`}
             className={cn(
               toolbarButton,
-              "w-8 justify-center bg-blue-500/10 px-0 text-blue-600 hover:bg-blue-500/20 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300",
+              "w-8 justify-center bg-indigo-500/10 px-0 text-indigo-600 hover:bg-indigo-500/20 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300",
             )}
           >
             <SparklesIcon className="size-4" />

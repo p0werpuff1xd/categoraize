@@ -83,7 +83,7 @@ export function PickTimeStep({
                   key={slot.startTime}
                   type="button"
                   onClick={() => onPickSlot(slot)}
-                  className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-medium tabular-nums text-foreground transition-colors hover:border-blue-600 hover:text-blue-700"
+                  className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-medium tabular-nums text-foreground transition-colors hover:border-indigo-600 hover:text-indigo-700"
                 >
                   {formatSlotTime(slot.startTime, timezone, hourFormat)}
                 </button>
@@ -155,7 +155,7 @@ function BookingCalendar({
           "size-9 rounded-lg p-0 text-xs font-normal tabular-nums aria-selected:opacity-100 sm:size-10 sm:text-sm md:size-14",
         ),
         day_selected:
-          "bg-blue-600 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-600 focus:text-white",
+          "bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white",
         day_today: "ring-1 ring-blue-200",
         day_disabled:
           "pointer-events-none cursor-not-allowed text-muted-foreground opacity-40 hover:bg-transparent hover:text-muted-foreground",

@@ -80,7 +80,7 @@ function ActionButton({
       className={cn(
         "flex h-9 items-center gap-2 px-2.5 sm:px-3 text-sm font-medium rounded-lg transition-colors whitespace-nowrap",
         primary
-          ? "bg-blue-600 text-white hover:bg-blue-500"
+          ? "bg-indigo-600 text-white hover:bg-indigo-700"
           : "text-foreground hover:bg-muted",
         loading && "opacity-50 cursor-not-allowed",
       )}

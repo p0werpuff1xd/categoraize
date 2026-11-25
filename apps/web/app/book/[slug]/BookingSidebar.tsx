@@ -141,7 +141,7 @@ export function HourFormatToggle({
           className={cn(
             "rounded px-2 py-0.5 font-medium transition-colors",
             value === option
-              ? "bg-blue-600 text-white"
+              ? "bg-indigo-600 text-white"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
