@@ -79,6 +79,11 @@ class ClassifyRequest(StrictModel):
     pinned_category_id: str | None = Field(default=None, max_length=200)
     # IAS Phase 11 J: false only for a user who turned PII masking off.
     mask_pii: bool = True
+    # Mean embedding of the user's own mail. When given, labels are compared
+    # mean-centred, cos(e - b, c - b): what all email shares is removed, so a
+    # label taught by example competes fairly with description-only labels
+    # instead of pulling in most of the inbox. threshold is then on that scale.
+    background: Vector | None = None
 
     @field_validator("timezone")
     @classmethod

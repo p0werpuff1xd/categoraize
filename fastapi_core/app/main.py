@@ -173,10 +173,17 @@ def classify(request: ClassifyRequest) -> ClassifyResponse:
     timings["embed"] = _elapsed_ms(started)
 
     step = time.perf_counter()
-    ranked = rank_categories(
-        email_vector,
-        [(category.id, category.centroid or description_vectors[category.id]) for category in request.categories],
-    )
+    label_vectors = [
+        (category.id, category.centroid or description_vectors[category.id]) for category in request.categories
+    ]
+    if request.background is not None:
+        background = request.background
+        ranked = rank_categories(
+            _minus(email_vector, background),
+            [(label_id, _minus(vector, background)) for label_id, vector in label_vectors],
+        )
+    else:
+        ranked = rank_categories(email_vector, label_vectors)
     chosen = choose_category(ranked, request.threshold)
     if request.pinned_category_id is not None:
         chosen = next((item for item in ranked if item.id == request.pinned_category_id), None)
@@ -647,6 +654,12 @@ def _embed_cached(texts: list[str]) -> list[list[float]]:
             _DESCRIPTION_CACHE.clear()
         _DESCRIPTION_CACHE.update(zip(missing, model_manager.embed(missing)))
     return [_DESCRIPTION_CACHE[text] for text in texts]
+
+
+def _minus(vector: list[float], background: list[float]) -> list[float]:
+    if len(vector) != len(background):
+        raise HTTPException(status_code=422, detail="background has the wrong dimension")
+    return [value - shift for value, shift in zip(vector, background, strict=True)]
 
 
 def _category_text(category: CategoryInput) -> str:

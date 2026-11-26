@@ -9,6 +9,10 @@ import {
   resortUnreviewedEmails,
   setCategoryCentroid,
 } from "@/utils/categoraize/vectors";
+import {
+  CENTRED_THRESHOLD,
+  getLabelMatching,
+} from "@/utils/categoraize/label-matching";
 import type { Logger } from "@/utils/logger";
 
 /**
@@ -78,8 +82,19 @@ export async function applyLearnedLabels({
   /** Emails whose label changed get a full re-score (priority, spans), up to this many. */
   maxRescore: number;
 }) {
-  await rebuildLabelCentroids(emailAccountId);
-  const moved = await resortUnreviewedEmails(emailAccountId);
+  const counts = await rebuildLabelCentroids(emailAccountId);
+  const labels = await getCategoryVectors(emailAccountId);
+  const matching = await getLabelMatching(
+    emailAccountId,
+    labels.map((label) => label.threshold),
+  );
+  const moved = counts.size
+    ? await resortUnreviewedEmails({
+        emailAccountId,
+        background: matching.background,
+        threshold: matching.threshold ?? CENTRED_THRESHOLD,
+      })
+    : [];
   let rescored = 0;
   for (const { id } of moved.slice(0, maxRescore)) {
     try {

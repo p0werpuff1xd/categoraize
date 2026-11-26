@@ -7,6 +7,7 @@ import prisma from "@/utils/prisma";
 import { getCalendarBusyForPriority } from "@/utils/categoraize/calendar-busy";
 import { categorySlugFor } from "@/utils/categoraize/category-priority";
 import { resolveMailboxTimezone } from "@/utils/categoraize/mailbox-timezone";
+import { getLabelMatching } from "@/utils/categoraize/label-matching";
 import {
   type CategoraizeClassifyRequest,
   type CategoraizeContactRoleLabel,
@@ -347,6 +348,11 @@ async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
       : null,
   ]);
 
+  const matching = await getLabelMatching(
+    emailAccountId,
+    categories.map((category) => category.threshold),
+  );
+
   const request = {
     timezone,
     sender: {
@@ -362,9 +368,9 @@ async function loadClassifyContext(emailAccountId: string, fromEmail: string) {
       centroid: category.centroid,
       slug: categorySlugFor(category.name),
     })),
-    threshold: categories.length
-      ? Math.min(...categories.map((category) => category.threshold))
-      : undefined,
+    threshold: matching.threshold,
+    // Labels are compared mean-centred against the account's own mail.
+    background: matching.background,
     // Free/busy from the user's connected calendars; null (no boost) when none.
     calendar_busy: await getCalendarBusyForPriority({
       emailAccountId,

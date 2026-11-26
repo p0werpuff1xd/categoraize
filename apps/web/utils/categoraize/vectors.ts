@@ -150,13 +150,48 @@ export async function getLabelExampleMean({
   };
 }
 
+/** Fewer emails than this give no stable mean; matching then stays uncentred. */
+export const MIN_BACKGROUND_EMAILS = 20;
+
+/**
+ * The mean embedding of this account's mail (its own emails only). Labels are
+ * compared mean-centred against it, so what all email shares does not count
+ * as a match. Null until the account has MIN_BACKGROUND_EMAILS emails.
+ */
+export async function getAccountBackground(emailAccountId: string) {
+  const rows = await withAccountSql(
+    prisma,
+    emailAccountId,
+    (db) => db.$queryRaw<Array<{ mean: string | null; count: bigint }>>`
+    SELECT avg("embedding")::text AS "mean", count(*) AS "count"
+    FROM "CategorizeClassification"
+    WHERE "emailAccountId" = ${emailAccountId} AND "embedding" IS NOT NULL
+  `,
+  );
+  if (Number(rows[0]?.count ?? 0) < MIN_BACKGROUND_EMAILS) return null;
+  return parseVector(rows[0]?.mean ?? null);
+}
+
 /**
  * Re-sort the emails the user has not reviewed against the current label
  * centroids, in the database (cosine similarity, the service's own rule:
  * best label if it reaches that label's threshold, else Uncategorized).
  * Returns the ids whose label changed, so only those need a full re-score.
  */
-export async function resortUnreviewedEmails(emailAccountId: string) {
+export async function resortUnreviewedEmails({
+  emailAccountId,
+  background,
+  threshold,
+}: {
+  emailAccountId: string;
+  background: number[] | null;
+  threshold: number;
+}) {
+  // Same rule as the service: the best label by (mean-centred) cosine, if it
+  // reaches the threshold; otherwise Uncategorized.
+  const shift = toVectorLiteral(
+    background ?? new Array(VECTOR_DIMENSION).fill(0),
+  );
   const rows = await withAccountSql(
     prisma,
     emailAccountId,
@@ -168,8 +203,7 @@ export async function resortUnreviewedEmails(emailAccountId: string) {
              c."id",
              k."id" AS "bestId",
              k."name" AS "bestName",
-             1 - (c."embedding" <=> k."centroidEmbedding") AS "similarity",
-             k."classificationThreshold" AS "threshold",
+             1 - ((c."embedding" - ${shift}::vector) <=> (k."centroidEmbedding" - ${shift}::vector)) AS "similarity",
              c."categoryId" AS "currentId"
       FROM "CategorizeClassification" c
       JOIN "CategorizeCategory" k
@@ -179,12 +213,13 @@ export async function resortUnreviewedEmails(emailAccountId: string) {
       WHERE c."emailAccountId" = ${emailAccountId}
         AND c."isReviewedByUser" = false
         AND c."embedding" IS NOT NULL
-      ORDER BY c."id", c."embedding" <=> k."centroidEmbedding"
+      ORDER BY c."id",
+               (c."embedding" - ${shift}::vector) <=> (k."centroidEmbedding" - ${shift}::vector)
     ),
     target AS (
       SELECT "id",
-             CASE WHEN "similarity" >= "threshold" THEN "bestId" END AS "categoryId",
-             CASE WHEN "similarity" >= "threshold" THEN "bestName" END AS "categoryName",
+             CASE WHEN "similarity" >= ${threshold} THEN "bestId" END AS "categoryId",
+             CASE WHEN "similarity" >= ${threshold} THEN "bestName" END AS "categoryName",
              "currentId"
       FROM best
     )
@@ -200,6 +235,8 @@ export async function resortUnreviewedEmails(emailAccountId: string) {
   );
   return rows;
 }
+
+const VECTOR_DIMENSION = 384;
 
 export function toVectorLiteral(vector: number[]) {
   if (!vector.every(Number.isFinite)) {

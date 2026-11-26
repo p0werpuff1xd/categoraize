@@ -164,6 +164,8 @@ export type CategoraizeClassifyRequest = {
   pinned_category_id?: string | null;
   /** False only for a user who turned PII masking off (IAS Phase 11 J). */
   mask_pii?: boolean;
+  /** Mean embedding of the account's mail: labels are matched mean-centred. */
+  background?: number[] | null;
 };
 
 export class CategoraizeServiceError extends Error {
